@@ -1,0 +1,25 @@
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="2" width="96" height="96" rx="16" fill="#F8F3E9" stroke="#C2BFD0" stroke-width="4" />
+  
+  {/* Left Column (Straight) */}
+  <rect x="22" y="36" width="14" height="8" rx="4" fill="#A6C1A9" />
+  <rect x="22" y="46" width="14" height="8" rx="4" fill="#ACDEB8" />
+  <rect x="22" y="56" width="14" height="8" rx="4" fill="#CFE98F" />
+  <rect x="22" y="66" width="14" height="8" rx="4" fill="#A5D6EE" />
+  <rect x="22" y="76" width="14" height="8" rx="4" fill="#8FBEEC" />
+
+  {/* Center Column */}
+  <rect x="43" y="26" width="14" height="8" rx="4" fill="#D78B95" />
+  <rect x="43" y="36" width="14" height="8" rx="4" fill="#E1A2AA" />
+  <rect x="43" y="46" width="14" height="8" rx="4" fill="#ECA194" />
+  <rect x="43" y="56" width="14" height="8" rx="4" fill="#EEAF81" />
+  <rect x="43" y="66" width="14" height="8" rx="4" fill="#F4CD83" />
+  <rect x="43" y="76" width="14" height="8" rx="4" fill="#F9E493" />
+
+  {/* Right Column (Straight) */}
+  <rect x="64" y="36" width="14" height="8" rx="4" fill="#A6C1A9" />
+  <rect x="64" y="46" width="14" height="8" rx="4" fill="#ACDEB8" />
+  <rect x="64" y="56" width="14" height="8" rx="4" fill="#CFE98F" />
+  <rect x="64" y="66" width="14" height="8" rx="4" fill="#A5D6EE" />
+  <rect x="64" y="76" width="14" height="8" rx="4" fill="#8FBEEC" />
+</svg>

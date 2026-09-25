@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-base: var(--bg-base);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-input: var(--bg-input);
+  --color-bg-hover: var(--bg-hover);
+  --color-bg-hover-strong: var(--bg-hover-strong);
+  --color-border-color: var(--border-color);
+  --color-border-subtle: var(--border-subtle);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent-bg: var(--accent-bg);
+  --color-accent-text: var(--accent-text);
+  --color-ring-color: var(--ring-color);
+}
+
+@layer base {
+  :root {
+    --bg-base: #F4EFE6;
+    --bg-panel: #FAF5ED;
+    --bg-input: #FFFFFF;
+    --bg-hover: rgba(0, 0, 0, 0.04);
+    --bg-hover-strong: rgba(0, 0, 0, 0.08);
+    --border-color: transparent;
+    --border-subtle: transparent;
+    --text-primary: #111111;
+    --text-secondary: #555555;
+    --text-muted: #888888;
+    --accent-bg: #2C2C2C;
+    --accent-text: #FFFFFF;
+    --ring-color: rgba(0, 0, 0, 0.15);
+  }
+
+  .dark {
+    --bg-base: #121013;
+    --bg-panel: #1A181C;
+    --bg-input: #242226;
+    --bg-hover: rgba(255, 255, 255, 0.05);
+    --bg-hover-strong: rgba(255, 255, 255, 0.1);
+    --border-color: transparent;
+    --border-subtle: transparent;
+    --text-primary: #EDEDED;
+    --text-secondary: #A1A1AA;
+    --text-muted: #71717A;
+    --accent-bg: #EAE5DB;
+    --accent-text: #111111;
+    --ring-color: rgba(255, 255, 255, 0.2);
+  }
+}
+
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes progress-shine {
+  from { background-position: 200% center; }
+  to   { background-position: -200% center; }
+}
+
+.animate-spin-slow  { animation: spin-slow 1s linear infinite; }
+.animate-fade-in-up { animation: fade-in-up 0.25s ease forwards; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+.animate-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+::-webkit-scrollbar       { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 2px; }
+
+audio {
+  border-radius: 6px;
+  width: 100%;
+  height: 34px;
+}
+
+@layer utilities {
+  .animate-eq-1 { animation: eq-level-1 1s infinite alternate; }
+  .animate-eq-2 { animation: eq-level-2 1s infinite alternate; }
+  .animate-eq-3 { animation: eq-level-3 1s infinite alternate; }
+  .animate-eq-4 { animation: eq-level-4 1s infinite alternate; }
+  .animate-eq-5 { animation: eq-level-5 1s infinite alternate; }
+}
+
+@keyframes eq-level-1 { 0%, 90% { opacity: 1; } 91%, 100% { opacity: 0; } }
+@keyframes eq-level-2 { 0%, 80% { opacity: 1; } 81%, 100% { opacity: 0; } }
+@keyframes eq-level-3 { 0%, 65% { opacity: 1; } 66%, 100% { opacity: 0; } }
+@keyframes eq-level-4 { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+@keyframes eq-level-5 { 0%, 35% { opacity: 1; } 36%, 100% { opacity: 0; } }
+
+@keyframes wave-slow {
+  0%, 100% { transform: scaleY(1) translateY(0); }
+  50% { transform: scaleY(1.1) translateY(-2px); }
+}
+.animate-wave-1 { animation: wave-slow 4s ease-in-out infinite; }
+.animate-wave-2 { animation: wave-slow 3.5s ease-in-out infinite 0.5s; }
+.animate-wave-3 { animation: wave-slow 4.5s ease-in-out infinite 1s; }
+.animate-wave-4 { animation: wave-slow 3s ease-in-out infinite 1.5s; }
+
+textarea.custom-highlight::selection {
+  color: transparent !important;
+  background-color: rgba(100, 150, 255, 0.25) !important;
+}

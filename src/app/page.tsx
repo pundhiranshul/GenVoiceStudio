@@ -1,0 +1,1386 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { get, set } from "idb-keyval";
+import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download } from 'lucide-react';
+import { VoiceSelector, Voice } from "@/components/VoiceSelector";
+import { AudioPlayer } from "@/components/AudioPlayer";
+import { stitchChunks } from "@/utils/audioEditor";
+
+const VOCAL_TAGS = [
+  {
+    category: "Laughter",
+    colorClass: "text-yellow-500",
+    tags: ["(laugh)"]
+  },
+  {
+    category: "Breathing",
+    colorClass: "text-teal-500",
+    tags: ["(sigh)"]
+  },
+  {
+    category: "Throat & nose",
+    colorClass: "text-orange-500",
+    tags: ["(clears throat)", "(cough)"]
+  }
+];
+
+const GenVoiceLogo = ({ size = 24, className = "", animate = false }) => {
+  const getEqClass = (y: number) => {
+    if (!animate) return "";
+    if (y <= 26) return "animate-eq-5";
+    if (y <= 36) return "animate-eq-4";
+    if (y <= 46) return "animate-eq-3";
+    if (y <= 56) return "animate-eq-2";
+    if (y <= 66) return "animate-eq-1";
+    return "";
+  };
+
+  const getDelay = (x: number, y: number) => {
+    return `${((x * 13 + y * 17) % 10) * 0.1}s`;
+  };
+
+  const Block = ({ x, y, w, h, fill }: { x: number, y: number, w: number, h: number, fill: string }) => (
+    <rect 
+      x={x} y={y} width={w} height={h} rx="4" fill={fill}
+      className={getEqClass(y)} 
+      style={animate ? { animationDelay: getDelay(x, y) } : {}} 
+    />
+  );
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className={className}>
+      <rect x="2" y="2" width="96" height="96" rx="16" fill="#F8F3E9" stroke="#C2BFD0" strokeWidth="4" />
+      
+      {/* Wavy animated background lines */}
+      <g className={animate ? "animate-wave-1" : ""}>
+        <path d="M 2 70 Q 20 50, 40 70 T 70 70 T 98 70" stroke="#FDE39A" strokeWidth="0.5" fill="none" opacity="0.8" />
+      </g>
+      <g className={animate ? "animate-wave-2" : ""}>
+        <path d="M 2 60 Q 30 30, 50 70 T 80 50 T 98 60" stroke="#99D6F3" strokeWidth="0.5" fill="none" opacity="0.6" />
+      </g>
+      <g className={animate ? "animate-wave-3" : ""}>
+        <path d="M 2 50 Q 20 80, 50 40 T 90 70 T 98 50" stroke="#F89397" strokeWidth="0.5" fill="none" opacity="0.4" />
+      </g>
+      <g className={animate ? "animate-wave-4" : ""}>
+        <path d="M 2 65 Q 15 45, 30 65 T 60 45 T 98 65" stroke="#AFAAB9" strokeWidth="0.5" fill="none" opacity="0.5" />
+      </g>
+
+      {/* Left Column (Straight) */}
+      <Block x={22} y={36} w={14} h={8} fill="#A6C1A9" />
+      <Block x={22} y={46} w={14} h={8} fill="#ACDEB8" />
+      <Block x={22} y={56} w={14} h={8} fill="#CFE98F" />
+      <Block x={22} y={66} w={14} h={8} fill="#A5D6EE" />
+      <Block x={22} y={76} w={14} h={8} fill="#8FBEEC" />
+
+      {/* Center Column */}
+      <Block x={43} y={26} w={14} h={8} fill="#D78B95" />
+      <Block x={43} y={36} w={14} h={8} fill="#E1A2AA" />
+      <Block x={43} y={46} w={14} h={8} fill="#ECA194" />
+      <Block x={43} y={56} w={14} h={8} fill="#EEAF81" />
+      <Block x={43} y={66} w={14} h={8} fill="#F4CD83" />
+      <Block x={43} y={76} w={14} h={8} fill="#F9E493" />
+
+      {/* Right Column (Straight) */}
+      <Block x={64} y={36} w={14} h={8} fill="#A6C1A9" />
+      <Block x={64} y={46} w={14} h={8} fill="#ACDEB8" />
+      <Block x={64} y={56} w={14} h={8} fill="#CFE98F" />
+      <Block x={64} y={66} w={14} h={8} fill="#A5D6EE" />
+      <Block x={64} y={76} w={14} h={8} fill="#8FBEEC" />
+    </svg>
+  );
+};
+
+// ── constants & helpers ────────────────────────────────────────────
+const CHUNK_THRESHOLD = 600;
+
+type AppStatus = "idle" | "generating" | "complete" | "error";
+type AudioFile = { name: string; data: string };
+type CustomVoice = { id: string; name: string; data: string; transcript: string; isPreset?: boolean; };
+
+const PRESET_VOICES: CustomVoice[] = [
+  { id: "el_v3_15", name: "Ellen - Serious, Direct and Confident", data: "/presets/el_15.mp3", transcript: "We don't have time for hesitation. The data is clear, the objective is set, and it's time to execute the plan without second-guessing ourselves.", isPreset: true },
+  { id: "el_v3_16", name: "James - Husky, Engaging and Bold", data: "/presets/el_16.mp3", transcript: "There's a certain kind of magic when you finally take that leap into the unknown. You can either play it safe, or you can build something that actually matters. The choice is yours.", isPreset: true },
+  { id: "el_v3_17", name: "Amy - Natural and Sweet", data: "/presets/el_17.mp3", transcript: "Oh, hi there! I was just thinking about how beautiful the weather is today. Sometimes it's the little things, like a warm cup of tea and a good book, that make all the difference.", isPreset: true },
+  { id: "el_v3_18", name: "Juniper - Grounded and Professional", data: "/presets/el_18.mp3", transcript: "Good morning team. Before we begin today's quarterly review, I'd like to outline the core metrics we need to prioritize. Let's ensure everyone is aligned on our primary objectives.", isPreset: true },
+  { id: "el_v3_19", name: "Mark - Natural Conversations", data: "/presets/el_19.mp3", transcript: "Honestly, I was just telling my buddy the exact same thing yesterday. It's crazy how fast time flies when you're caught up in the daily grind, you know? We definitely need to catch up soon.", isPreset: true },
+  { id: "el_v3_20", name: "Arabella - Mysterious and Emotive", data: "/presets/el_20.mp3", transcript: "There are secrets hidden in the quiet corners of the world, whispering to those who are brave enough to listen. Do you hear it? The faint echo of something long forgotten...", isPreset: true },
+  { id: "el_v3_21", name: "Jane - Professional Audiobook Reader", data: "/presets/el_21.mp3", transcript: "Chapter four. The crimson sun began its slow descent behind the jagged peaks, casting long, haunting shadows across the valley below. She knew, in that exact moment, that nothing would ever be the same.", isPreset: true },
+  { id: "el_v3_22", name: "Hope - upbeat and clear", data: "/presets/el_22.mp3", transcript: "Hey everyone! I am absolutely thrilled to share some amazing news with you today! We've just reached a massive milestone, and I couldn't be more excited for what's coming next!", isPreset: true },
+  { id: "el_v3_0", name: "Roger - Confident and Deep", data: "/presets/el_0.wav", transcript: "It is not so important to know everything as to appreciate what we learn.", isPreset: true },
+  { id: "el_v3_1", name: "Charlie - Friendly and Conversational", data: "/presets/el_1.wav", transcript: "Love all, trust a few, do wrong to none.", isPreset: true },
+  { id: "el_v3_2", name: "George - Warm and Authoritative", data: "/presets/el_2.wav", transcript: "God has given you one face, and you make yourself another.", isPreset: true },
+  { id: "el_v3_3", name: "Callum - Smooth and Engaging", data: "/presets/el_3.wav", transcript: "Life without love is like a tree without blossoms or fruit.", isPreset: true },
+  { id: "el_v3_4", name: "River - Calm and Neutral", data: "/presets/el_4.wav", transcript: "Nature is a mutable cloud which is always and never the same.", isPreset: true },
+  { id: "el_v3_5", name: "Harry - Bright and Energetic", data: "/presets/el_5.wav", transcript: "Friends show their love in times of trouble, not in happiness.", isPreset: true },
+  { id: "el_v3_6", name: "Liam - Strong and Articulate", data: "/presets/el_6.wav", transcript: "Life isn't about finding yourself. Life is about creating yourself.", isPreset: true },
+  { id: "el_v3_7", name: "Alice - Soft and Sweet", data: "/presets/el_7.wav", transcript: "Just trust yourself, then you will know how to live.", isPreset: true },
+  { id: "el_v3_8", name: "Matilda - Warm and Expressive", data: "/presets/el_8.wav", transcript: "Ideas are the beginning points of all fortunes.", isPreset: true },
+  { id: "el_v3_9", name: "Jessica - Bright and Professional", data: "/presets/el_9.wav", transcript: "If you spend your whole life waiting for the storm, you'll never enjoy the sunshine.", isPreset: true },
+  { id: "el_v3_10", name: "Eric - Deep and Resonant", data: "/presets/el_10.wav", transcript: "Gratitude is riches. Complaint is poverty.", isPreset: true },
+  { id: "el_v3_11", name: "Bella - Clear and Engaging", data: "/presets/el_11.wav", transcript: "In the theater of life, we are all actors sharing the same scene.", isPreset: true },
+  { id: "el_v3_12", name: "Chris - Friendly and Upbeat", data: "/presets/el_12.wav", transcript: "A single rose can be my garden... a single friend, my world.", isPreset: true },
+  { id: "el_v3_13", name: "Brian - Professional and Trustworthy", data: "/presets/el_13.wav", transcript: "The thing always happens that you really believe in; and the belief in a thing makes it happen.", isPreset: true },
+  { id: "el_v3_14", name: "Daniel - Calm and Authoritative", data: "/presets/el_14.wav", transcript: "The world is round, and the place which may seem like the end may also be the beginning.", isPreset: true }
+];
+
+function niceName(f: string) {
+  if (f.includes("reference")) return "Reference Voice";
+  if (f.includes("single"))    return "Generated Output";
+  if (f.includes("chunked"))   return "Stitched Output";
+  const m = f.match(/chunk_(\d+)/);
+  if (m) return `Chunk ${parseInt(m[1]) + 1}`;
+  return f;
+}
+function getCategory(f: string) {
+  if (f.includes("reference")) return "reference";
+  if (f.includes("single") || f.includes("chunked")) return "final";
+  return "chunk";
+}
+function fmtEta(s: number) {
+  if (s <= 0) return "<1s";
+  if (s < 60)  return `~${Math.round(s)}s`;
+  const m = Math.floor(s / 60), r = Math.round(s % 60);
+  return r ? `~${m}m ${r}s` : `~${m}m`;
+}
+
+const PANGRAMS = [
+  "The quick brown fox jumps over the lazy dog.",
+  "Pack my box with five dozen liquor jugs.",
+  "Sphinx of black quartz, judge my vow.",
+  "How vexingly quick daft zebras jump.",
+  "A wizard's job is to vex chumps quickly in fog.",
+  "Heavy boxes perform quick waltzes and jigs."
+];
+
+// ── main ───────────────────────────────────────────────────────────
+export default function Home() {
+  const [isDark, setIsDark]         = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+  const [showAbout, setShowAbout]   = useState(false);
+  const [hasCredentials, setHasCredentials] = useState(false);
+  const [authMode, setAuthMode]   = useState<'byok' | 'admin'>('byok');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  
+  const [password, setPassword]   = useState("");
+  const [kaggleUsername, setKaggleUsername] = useState("");
+  const [kaggleKey, setKaggleKey] = useState("");
+  const [text, setText]           = useState("");
+  const [status, setStatus]       = useState<AppStatus>("idle");
+  const [message, setMessage]     = useState("");
+  const [audios, setAudios]       = useState<AudioFile[]>([]);
+  const audiosRef                 = useRef<AudioFile[]>([]);
+  const [showLogs, setShowLogs]   = useState(false);
+  const [logs, setLogs]           = useState<string[]>([]);
+
+  const [chunks, setChunks]         = useState<string[]>([]);
+  const [chunksDone, setChunksDone] = useState(0);
+  const [chunksTotal, setChunksTotal] = useState(0);
+  const [isLongMode, setIsLongMode] = useState(false);
+  const [eta, setEta]               = useState("");
+
+  const [trimMs, setTrimMs] = useState(0);
+  const [stitchedAudioUrl, setStitchedAudioUrl] = useState<string | null>(null);
+  const [isStitching, setIsStitching] = useState(false);
+
+  const [instructions, setInstructions] = useState("");
+  const [designPrompt, setDesignPrompt] = useState("");
+  const [generatedPreviewText, setGeneratedPreviewText] = useState("");
+  const [isVoiceSaved, setIsVoiceSaved] = useState(false);
+  const [guidanceScale, setGuidanceScale] = useState(2);
+
+  const [generationMode, setGenerationMode] = useState<'clone' | 'design'>('clone');
+  const [customVoices, setCustomVoices] = useState<CustomVoice[]>([]);
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string>("el_v3_15"); // Ellen as default
+  const allVoices = [...PRESET_VOICES, ...customVoices];
+
+  const [showUpload, setShowUpload] = useState(false);
+  const [newVoiceName, setNewVoiceName] = useState("");
+  const [newVoiceText, setNewVoiceText] = useState("");
+  const [newVoiceFile, setNewVoiceFile] = useState<File | null>(null);
+
+  const [copiedText, setCopiedText] = useState(false);
+  const [copiedTags, setCopiedTags] = useState(false);
+
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isStoppedRef = useRef(false);
+
+  const stopRun = async () => {
+    isStoppedRef.current = true;
+    if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+    setStatus("idle");
+    setMessage("Stopping run on Kaggle...");
+    addLog("Stop requested by user.");
+    try {
+      const res = await fetch("/api/stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, kaggleUsername, kaggleKey })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setMessage("Run successfully stopped.");
+      addLog("Kernel session cancelled via dummy push.");
+    } catch (e: any) {
+      addLog(`Stop failed: ${e.message}`);
+      setMessage("Failed to stop run.");
+    }
+  };
+
+  const insertTag = (tag: string) => {
+    if (!textAreaRef.current) return;
+    const el = textAreaRef.current;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const charBefore = start > 0 ? el.value[start - 1] : '';
+    const charAfter = end < el.value.length ? el.value[end] : '';
+    const prepend = charBefore && charBefore !== ' ' && charBefore !== '\n' ? ' ' : '';
+    const append = charAfter !== ' ' && charAfter !== '\n' ? ' ' : '';
+    const insertStr = `${prepend}${tag}${append}`;
+    
+    const newText = el.value.substring(0, start) + insertStr + el.value.substring(end);
+    const newCursorPos = start + insertStr.length;
+    
+    setText(newText);
+    
+    // Use timeout to allow React to render the new text before setting the cursor
+    setTimeout(() => {
+      if (textAreaRef.current) {
+        textAreaRef.current.focus();
+        textAreaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 10);
+  };
+
+  const copyText = () => {
+    navigator.clipboard.writeText(text);
+    setCopiedText(true);
+    setTimeout(() => setCopiedText(false), 2000);
+  };
+
+  const copyAllTags = () => {
+    const allTags = VOCAL_TAGS.flatMap(cat => cat.tags).join(', ');
+    navigator.clipboard.writeText(allTags);
+    setCopiedTags(true);
+    setTimeout(() => setCopiedTags(false), 2000);
+  };
+
+  const handleSaveVoice = async (src: string) => {
+    try {
+      const response = await fetch(src);
+      const blob = await response.blob();
+      const file = new File([blob], "designed_voice.wav", { type: blob.type || "audio/wav" });
+      setNewVoiceFile(file);
+      setNewVoiceText(generatedPreviewText || text);
+      const activePrompt = generationMode === "design" ? designPrompt : instructions;
+      setNewVoiceName(activePrompt ? activePrompt.substring(0, 30) + "..." : "New Custom Voice"); 
+      setShowUpload(true);
+    } catch (e) {
+      console.error("Failed to save voice:", e);
+    }
+  };
+
+  const handleDeleteVoice = async (id: string) => {
+    const updated = customVoices.filter(v => v.id !== id);
+    setCustomVoices(updated);
+    await set('custom_voices', updated);
+    if (selectedVoiceId === id) {
+      setSelectedVoiceId("el_v3_15");
+    }
+  };
+
+  useEffect(() => {
+    get('custom_voices').then(val => {
+      if (val) setCustomVoices(val);
+    });
+
+    const storedUsername = localStorage.getItem('kaggleUsername');
+    const storedKey = localStorage.getItem('kaggleKey');
+    const storedPass = localStorage.getItem('appPassword');
+    
+    if (storedUsername) setKaggleUsername(storedUsername);
+    if (storedKey) setKaggleKey(storedKey);
+    if (storedPass) setPassword(storedPass);
+
+    if ((storedUsername && storedKey) || storedPass) {
+      setHasCredentials(true);
+    }
+
+    // Splash screen timer
+    const t = setTimeout(() => setShowSplash(false), 2200);
+    
+    // Initialize theme based on document class
+    setIsDark(document.documentElement.classList.contains('dark'));
+    
+    return () => clearTimeout(t);
+  }, []);
+
+  const toggleTheme = () => {
+    if (document.documentElement.classList.contains('dark')) {
+      document.documentElement.classList.remove('dark');
+      setIsDark(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      setIsDark(true);
+    }
+  };
+
+  const startRef      = useRef<number | null>(null);
+  const firstChunkRef = useRef<number | null>(null);
+  const logsEndRef    = useRef<HTMLDivElement>(null);
+
+  const addLog = (msg: string) =>
+    setLogs(p => [...p, `[${new Date().toLocaleTimeString()}] ${msg}`]);
+
+  useEffect(() => { logsEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [logs]);
+
+  const handleDownloadZip = async () => {
+    if (audiosRef.current.length === 0) return;
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    const chunksToDownload = audiosRef.current.filter(a => a.name.includes("chunk"));
+    chunksToDownload.forEach(audio => {
+      const base64Data = audio.data.split(',')[1];
+      zip.file(audio.name, base64Data, { base64: true });
+    });
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'genvoice_chunks.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  useEffect(() => {
+    if (!chunksDone || !chunksTotal) return;
+    if (!firstChunkRef.current) firstChunkRef.current = Date.now();
+    const elapsed = (Date.now() - firstChunkRef.current) / 1000;
+    setEta(fmtEta((elapsed / chunksDone) * (chunksTotal - chunksDone)));
+  }, [chunksDone, chunksTotal]);
+
+  const handleGenerate = async (overrideText?: string | React.MouseEvent) => {
+    const textToUse = typeof overrideText === 'string' ? overrideText : text;
+    if ((!password && (!kaggleUsername || !kaggleKey)) || !textToUse) {
+      setStatus("error");
+      setMessage("Please enter either your App Password or your Kaggle Credentials, and text to synthesize.");
+      return;
+    }
+    const activeInstructions = generationMode === "design" ? designPrompt : instructions;
+    if (generationMode === "design" && (!activeInstructions || activeInstructions.trim() === "")) {
+      setStatus("error");
+      setMessage("Please provide a Voice Design Instruction to design the voice.");
+      return;
+    }
+    isStoppedRef.current = false;
+    setIsVoiceSaved(false);
+    setStatus("generating"); setMessage("Submitting…");
+    setAudios([]); audiosRef.current = []; setLogs([]); setChunks([]);
+    setChunksDone(0); setChunksTotal(0); setEta(""); setIsLongMode(false);
+    startRef.current = Date.now(); firstChunkRef.current = null;
+    addLog("Initializing…");
+    try {
+      let referenceAudio = "";
+      let referenceText = "";
+      
+      if (generationMode === "clone") {
+        const v = allVoices.find(x => x.id === selectedVoiceId);
+        if (v) {
+          if (v.data.startsWith("/")) {
+            const r = await fetch(v.data);
+            const blob = await r.blob();
+            const reader = new FileReader();
+            referenceAudio = await new Promise<string>((resolve) => {
+              reader.onload = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+          } else {
+            referenceAudio = v.data;
+          }
+          referenceText = v.transcript;
+        }
+      }
+
+      const runId = Math.random().toString(36).substring(2, 10);
+      const payload = { password, kaggleUsername, kaggleKey, text: textToUse, referenceAudio, referenceText, runId, instructions: activeInstructions, guidanceScale };
+      const res  = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Submit failed");
+
+      const { kernel, isLong, charCount, chunks: sc } = data;
+      if (isLong) {
+        setIsLongMode(true);
+        setChunks(sc || []);
+        setChunksTotal(sc?.length || 0);
+        addLog(`Long text (${charCount} chars) — ${sc?.length || "?"} chunks queued.`);
+      } else {
+        addLog(`Short text (${charCount} chars) — single-shot queued.`);
+      }
+      setMessage("Generating...");
+      addLog(`Kernel: ${kernel}`);
+      pollTimeoutRef.current = setTimeout(() => pollStatus(kernel, runId), 15000);
+    } catch (e: any) {
+      setStatus("error"); setMessage(e.message); addLog(`ERROR: ${e.message}`);
+    }
+  };
+
+  const pollStatus = async (kernel: string, runId: string) => {
+    if (isStoppedRef.current) return;
+    try {
+      addLog("Polling status…");
+      const url = new URL("/api/status", window.location.href);
+      url.searchParams.set("kernel", kernel);
+      url.searchParams.set("runId", runId);
+      if (kaggleUsername && kaggleKey) {
+        url.searchParams.set("kaggleUsername", kaggleUsername);
+        url.searchParams.set("kaggleKey", kaggleKey);
+      }
+      const existingAudios = audiosRef.current.map(a => a.name).join(',');
+      if (existingAudios) {
+        url.searchParams.set("existingAudios", existingAudios);
+      }
+      const res  = await fetch(url.toString());
+      const rawText = await res.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (e) {
+        throw new Error(`Server returned invalid JSON. Status: ${res.status}. Body: ${rawText.substring(0, 100)}`);
+      }
+      if (data.error) { setStatus("error"); setMessage(data.error); addLog(`ERROR: ${data.error}`); return; }
+
+      if (data.status === "complete") {
+        addLog("Complete! Fetching audio…");
+        if (data.audios?.length) {
+          setStatus("complete"); setMessage("Generation complete!");
+          setAudios(data.audios);
+          if (isLongMode) setChunksDone(chunksTotal);
+          addLog(`${data.audios.length} audio files ready.`);
+        } else {
+          setStatus("error"); setMessage("No audio in output."); addLog("ERROR: No audio.");
+        }
+      } else if (["error","cancel"].includes(data.status)) {
+        setStatus("error"); setMessage(`Kaggle: ${data.status}`); addLog(`ERROR: ${data.status}`);
+      } else {
+        if (data.newAudios?.length > 0) {
+          const newMerged = [...audiosRef.current, ...data.newAudios];
+          audiosRef.current = newMerged;
+          setAudios(newMerged);
+        }
+        if (data.chunksTotal > 0) { setChunksTotal(data.chunksTotal); setChunksDone(data.chunksCurrent); }
+        const info = data.chunksTotal > 0 ? ` (${data.chunksCurrent}/${data.chunksTotal})` : "";
+        setMessage(`Generating${info}...`);
+        addLog(`${(data.status || "unknown").toUpperCase()}${info}`);
+        pollTimeoutRef.current = setTimeout(() => pollStatus(kernel, runId), 10000);
+      }
+    } catch (e: any) {
+      setStatus("error"); setMessage("Poll failed: " + e.message); addLog(`ERROR: ${e.message}`);
+    }
+  };
+
+  const isGen      = status === "generating";
+  const refAudios  = audios.filter(a => getCategory(a.name) === "reference");
+  const finalAudios = audios.filter(a => getCategory(a.name) === "final");
+  const chunkAudios = audios
+    .filter(a => getCategory(a.name) === "chunk")
+    .sort((a, b) => {
+      const aMatch = a.name.match(/chunk_(\d+)/);
+      const bMatch = b.name.match(/chunk_(\d+)/);
+      const aNum = aMatch ? parseInt(aMatch[1], 10) : 0;
+      const bNum = bMatch ? parseInt(bMatch[1], 10) : 0;
+      return aNum - bNum;
+    });
+
+  useEffect(() => {
+    let currentUrl: string | null = null;
+    let isActive = true;
+
+    if (chunkAudios.length > 1) {
+      setIsStitching(true);
+      const stitch = async () => {
+        try {
+          const blobs = await Promise.all(chunkAudios.map(async a => {
+            const res = await fetch(a.data);
+            return res.blob();
+          }));
+          const stitchedBlob = await stitchChunks(blobs, trimMs);
+          if (!isActive) return;
+          const url = URL.createObjectURL(stitchedBlob);
+          currentUrl = url;
+          setStitchedAudioUrl(url);
+        } catch (e) {
+          console.error("Stitching failed", e);
+        } finally {
+          if (isActive) setIsStitching(false);
+        }
+      };
+      stitch();
+    } else {
+      setStitchedAudioUrl(null);
+    }
+    return () => {
+      isActive = false;
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+    };
+  }, [audios, trimMs]);
+
+  const renderHighlightedText = (t: string) => {
+    const regex = /(\([^)]+\))/g;
+    const parts = t.split(regex);
+    return parts.map((part, i) => {
+      if (part.match(regex)) {
+        let colorClass = "text-purple-400"; // fallback
+        const lower = part.toLowerCase();
+        for (const cat of VOCAL_TAGS) {
+          if (cat.tags.some(tag => lower.includes(tag.slice(1, -1)))) {
+            colorClass = cat.colorClass;
+            break;
+          }
+        }
+        // No extra font-weight — inherit from parent to keep character widths identical
+        return <span key={i} className={colorClass} style={{ fontWeight: 'inherit' }}>{part}</span>;
+      }
+      // Return plain string node, not a span, to avoid extra inline box boundaries
+      return part;
+    });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      const el = e.currentTarget;
+      if (el.selectionStart === el.selectionEnd) {
+        if (e.key === 'Backspace') {
+          const textBefore = text.slice(0, el.selectionStart);
+          const tagMatch = textBefore.match(/(\([^)]+\))$/);
+          if (tagMatch) {
+            e.preventDefault();
+            const startPos = el.selectionStart - tagMatch[0].length;
+            setText(text.slice(0, startPos) + text.slice(el.selectionStart));
+            setTimeout(() => {
+              if (textAreaRef.current) {
+                textAreaRef.current.selectionStart = textAreaRef.current.selectionEnd = startPos;
+              }
+            }, 0);
+          }
+        } else if (e.key === 'Delete') {
+          const textAfter = text.slice(el.selectionStart);
+          const tagMatch = textAfter.match(/^(\([^)]+\))/);
+          if (tagMatch) {
+            e.preventDefault();
+            const endPos = el.selectionStart + tagMatch[0].length;
+            setText(text.slice(0, el.selectionStart) + text.slice(endPos));
+            setTimeout(() => {
+              if (textAreaRef.current) {
+                textAreaRef.current.selectionStart = textAreaRef.current.selectionEnd = el.selectionStart;
+              }
+            }, 0);
+          }
+        }
+      }
+    }
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    const el = e.currentTarget;
+    const pos = el.selectionStart;
+    const textBefore = text.slice(0, pos);
+    const textAfter = text.slice(pos);
+    const openIndex = textBefore.lastIndexOf('(');
+    const closeIndexBefore = textBefore.lastIndexOf(')');
+    
+    // If the closest bracket before cursor is '(', we are inside a tag
+    if (openIndex > closeIndexBefore || openIndex !== -1 && closeIndexBefore === -1) {
+      const closeIndexAfter = textAfter.indexOf(')');
+      if (closeIndexAfter !== -1) {
+        e.preventDefault();
+        const start = openIndex;
+        const end = pos + closeIndexAfter + 1;
+        el.setSelectionRange(start, end);
+      }
+    }
+  };
+
+  if (showSplash) {
+    return (
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-bg-base text-text-primary">
+        <div className="flex flex-col items-center gap-5 animate-in zoom-in duration-1000 slide-in-from-bottom-4">
+            <GenVoiceLogo size={96} animate={true} />
+          <h1 className="text-2xl font-semibold tracking-tight mt-1">GenVoice Studio</h1>
+          
+          {/* Dynamic loading bar */}
+          <div className="w-48 h-1 bg-border-subtle rounded-full overflow-hidden mt-2 relative">
+            <div className="absolute top-0 left-0 h-full bg-accent-bg rounded-full w-full animate-[progress_2s_ease-in-out_forwards]" style={{ transformOrigin: 'left' }} />
+          </div>
+        </div>
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes progress {
+            0% { transform: scaleX(0); }
+            50% { transform: scaleX(0.7); }
+            100% { transform: scaleX(1); }
+          }
+        `}} />
+      </div>
+    );
+  }
+
+  if (!hasCredentials) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-6 animate-in fade-in duration-500 overflow-y-auto">
+        <div className={`max-w-md w-full bg-bg-panel border border-border-color rounded-3xl p-8 sm:p-10 shadow-xl my-auto ${status === 'error' ? 'animate-shake' : ''}`}>
+          <div className="flex flex-col items-center gap-3 mb-8">
+            <GenVoiceLogo size={48} />
+            <h1 className="text-2xl font-semibold tracking-tight mt-2">Welcome to GenVoice</h1>
+            <p className="text-sm text-text-muted text-center leading-relaxed">Choose how you want to authenticate to run your inferences.</p>
+          </div>
+
+          <div className="flex bg-bg-input p-1 rounded-lg border border-border-color mb-8">
+            <button 
+              onClick={() => setAuthMode('byok')}
+              className={`flex-1 py-2 text-xs font-medium rounded-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${authMode === 'byok' ? 'bg-bg-panel text-text-primary shadow-sm border border-border-color' : 'text-text-muted hover:text-text-secondary border border-transparent'}`}
+            >
+              Your Own Kaggle
+            </button>
+            <button 
+              onClick={() => setAuthMode('admin')}
+              className={`flex-1 py-2 text-xs font-medium rounded-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${authMode === 'admin' ? 'bg-bg-panel text-text-primary shadow-sm border border-border-color' : 'text-text-muted hover:text-text-secondary border border-transparent'}`}
+            >
+              Admin Access
+            </button>
+          </div>
+
+          {authMode === 'byok' ? (
+            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2">
+              <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-xl flex items-start gap-3 text-xs text-text-secondary leading-relaxed mb-2">
+                <Info size={16} className="text-accent-bg shrink-0 mt-0.5" />
+                <div className="flex flex-col gap-1.5">
+                  <span className="font-medium text-text-primary">How to get your credentials:</span>
+                  <ol className="list-decimal pl-3.5 space-y-1 text-text-muted">
+                    <li>Create an account at <a href="https://www.kaggle.com" target="_blank" rel="noreferrer" className="text-accent-bg underline underline-offset-2 hover:opacity-80">kaggle.com</a></li>
+                    <li>Go to <a href="https://www.kaggle.com/settings" target="_blank" rel="noreferrer" className="text-accent-bg underline underline-offset-2 hover:opacity-80">kaggle.com/settings</a>, your username is listed under <strong>"Your username"</strong>.</li>
+                    <li>Then go to <a href="https://www.kaggle.com/settings/api" target="_blank" rel="noreferrer" className="text-accent-bg underline underline-offset-2 hover:opacity-80">kaggle.com/settings/api</a>.</li>
+                    <li>Click <strong>"Create New Token"</strong>, enter <strong>"GenVoice"</strong> as the Token Name, click <strong>Generate</strong>, and copy the API Key.</li>
+                  </ol>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Kaggle Username"
+                  value={kaggleUsername}
+                  onChange={e => setKaggleUsername(e.target.value)}
+                  className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
+                />
+                <input
+                  type="password"
+                  placeholder="Kaggle API Key"
+                  value={kaggleKey}
+                  onChange={e => setKaggleKey(e.target.value)}
+                  className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2">
+              <div className="p-4 bg-bg-hover border border-border-color rounded-xl flex items-start gap-3 text-xs text-text-secondary leading-relaxed mb-2">
+                <Shield size={16} className="text-text-muted shrink-0 mt-0.5" />
+                <span>Access the shared hosted instance. This requires the master App Password.</span>
+              </div>
+              <div className="space-y-3">
+                <input
+                  type="password"
+                  placeholder="App Password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          <button
+            disabled={isVerifying}
+            onClick={async () => {
+              if (authMode === 'byok' && kaggleUsername && kaggleKey) {
+                localStorage.setItem('kaggleUsername', kaggleUsername);
+                localStorage.setItem('kaggleKey', kaggleKey);
+                localStorage.removeItem('appPassword');
+                setPassword('');
+                setHasCredentials(true);
+              } else if (authMode === 'admin' && password) {
+                setIsVerifying(true);
+                try {
+                  const res = await fetch('/api/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                  });
+                  if (!res.ok) {
+                    throw new Error("Invalid admin password");
+                  }
+                  localStorage.setItem('appPassword', password);
+                  localStorage.removeItem('kaggleUsername');
+                  localStorage.removeItem('kaggleKey');
+                  setKaggleUsername('');
+                  setKaggleKey('');
+                  setHasCredentials(true);
+                  setStatus("idle");
+                  setMessage("");
+                } catch (e: any) {
+                  setMessage(e.message);
+                  setStatus("error");
+                  setTimeout(() => setStatus("idle"), 3000);
+                } finally {
+                  setIsVerifying(false);
+                }
+              } else {
+                setMessage("Please fill in all required fields.");
+                setStatus("error");
+                setTimeout(() => setStatus("idle"), 3000);
+              }
+            }}
+            className="w-full mt-8 bg-accent-bg text-accent-text font-medium py-3.5 rounded-xl hover:opacity-90 active:scale-[0.98] transition-all shadow-sm flex items-center justify-center gap-2"
+          >
+            {isVerifying ? <Loader2 size={16} className="animate-spin" /> : null}
+            {isVerifying ? "Verifying..." : "Enter Studio"}
+          </button>
+          
+          {status === 'error' && <p className="text-red-400 text-xs text-center mt-4 animate-in fade-in">{message}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary animate-in fade-in duration-700">
+
+      {/* ── Top Header ────────────────────────────────────────────── */}
+      <header className="h-16 px-6 flex items-center justify-between border-b border-border-color shrink-0">
+        <a href="/" className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+          <GenVoiceLogo size={48} className="text-text-primary" />
+          <span className="font-semibold text-lg tracking-tight">GenVoice Studio</span>
+        </a>
+        
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setShowAbout(true)}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+            aria-label="About Architecture"
+          >
+            <Info size={14} />
+            <span>Architecture</span>
+          </button>
+
+          <a
+            href="https://github.com/pundhiranshul/GenVoiceStudio/issues/new"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+            aria-label="Report Bug"
+          >
+            <Bug size={14} />
+            <span>Report Bug</span>
+          </a>
+
+          <button
+            onClick={toggleTheme}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+            aria-label="Toggle Theme"
+          >
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+          
+          <button
+            onClick={() => {
+              localStorage.removeItem('kaggleUsername');
+              localStorage.removeItem('kaggleKey');
+              localStorage.removeItem('appPassword');
+              setHasCredentials(false);
+              setStatus("idle");
+              setMessage("");
+            }}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+            aria-label="Change Credentials"
+          >
+            <Key size={14} />
+            <span>Auth</span>
+          </button>
+        </div>
+      </header>
+
+      {/* ── Main Studio Split ─────────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
+        
+        {/* Center Canvas */}
+        <main className="flex-1 flex flex-col min-w-0 bg-bg-base shrink-0 md:shrink overflow-hidden">
+          <div className="flex-1 flex flex-col max-w-4xl w-full mx-auto p-6 md:p-10 relative min-h-0">
+            
+            <div className="relative flex-1 w-full min-h-0 overflow-y-auto pr-14">
+              {text.length === 0 && (
+                <div className="absolute top-0 left-0 text-text-muted pointer-events-none select-none text-2xl font-light tracking-tight">
+                  What do you want to say?
+                </div>
+              )}
+              
+              {text.length > 0 && (
+                <button
+                  onClick={copyText}
+                  className="absolute top-0 right-4 z-20 flex items-center justify-center p-2 rounded-lg bg-bg-panel border border-border-color shadow-sm text-text-muted hover:text-text-primary hover:bg-bg-hover transition-all"
+                  title="Copy text"
+                >
+                  {copiedText ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                </button>
+              )}
+              
+              <div className="relative w-full min-h-full pb-12">
+                <div 
+                  aria-hidden="true"
+                  className="text-text-primary whitespace-pre-wrap break-words pointer-events-none p-0 m-0 border-0"
+                  style={{
+                    fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+                    fontSize: '1.5rem',
+                    fontWeight: 300,
+                    lineHeight: 1.625,
+                    letterSpacing: 'normal',
+                    fontKerning: 'none',
+                    fontVariantLigatures: 'none',
+                  }}
+                >
+                  {renderHighlightedText(text)}
+                  {text.endsWith('\n') ? <br /> : null}
+                </div>
+                
+                <textarea
+                  ref={textAreaRef}
+                  value={text}
+                  onChange={e => setText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onDoubleClick={handleDoubleClick}
+                  placeholder=""
+                  className="custom-highlight absolute inset-0 z-10 w-full h-full bg-transparent text-transparent outline-none resize-none caret-text-primary p-0 m-0 border-0 overflow-hidden whitespace-pre-wrap break-words"
+                  style={{
+                    fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+                    fontSize: '1.5rem',
+                    fontWeight: 300,
+                    lineHeight: 1.625,
+                    letterSpacing: 'normal',
+                    fontKerning: 'none',
+                    fontVariantLigatures: 'none',
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'none',
+                    appearance: 'none',
+                  }}
+                  spellCheck={false}
+                />
+              </div>
+            </div>
+
+            {/* Editor Footer (Actions & Status) */}
+            <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-end justify-between border-t border-border-color pt-6 gap-6 sm:gap-4 shrink-0">
+              
+              <div className="flex-1 max-w-xl">
+                {(status === "idle" || (status === "error" && message.includes("Voice Design Instruction"))) && finalAudios.length === 0 && (
+                  <div className="flex items-center gap-2 text-text-muted text-sm">
+                    <Wand2 size={16} />
+                    <span>
+                      {generationMode === 'design' 
+                        ? 'Provide a Voice Design Instruction and click Generate Voice Preview.' 
+                        : 'Select a voice and click Generate to begin.'}
+                    </span>
+                  </div>
+                )}
+
+                {isGen && (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3 text-sm text-text-primary">
+                      <Loader2 size={16} className="animate-spin text-text-primary" />
+                      <span>{message}</span>
+                      {eta && <span className="text-text-muted tabular-nums">ETA: {eta}</span>}
+                    </div>
+                    {isLongMode && chunksTotal > 0 && (
+                      <div className="w-full max-w-md h-1.5 bg-accent-bg/10 rounded-full overflow-hidden mt-1">
+                        <div 
+                          className="h-full bg-accent-bg transition-all duration-500" 
+                          style={{ width: `${(chunksDone / chunksTotal) * 100}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {status === "error" && !message.includes("Voice Design Instruction") && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
+                    <strong className="font-semibold">Generation Failed: </strong>
+                    {message}
+                  </div>
+                )}
+
+                {/* Final Output Audio */}
+                {(finalAudios.length > 0 || chunkAudios.length > 0) && (status === "complete" || status === "generating") && (
+                  <div className="animate-in slide-in-from-bottom-4 fade-in duration-500 w-full">
+                    <h3 className="text-xs font-semibold tracking-wider text-text-muted uppercase mb-3">Generated Output</h3>
+                    {generationMode === 'design' && generatedPreviewText && status === "complete" && (
+                      <div className="mb-4 p-3 bg-bg-input/50 border border-border-color rounded-xl text-sm italic text-text-secondary">
+                        "{generatedPreviewText}"
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-3">
+                      {isStitching ? (
+                        <div className="p-4 bg-bg-input border border-border-color rounded-xl flex items-center gap-3 text-sm text-text-primary">
+                          <Loader2 size={16} className="animate-spin text-text-muted" />
+                          <span>Stitching audio chunks...</span>
+                        </div>
+                      ) : stitchedAudioUrl ? (
+                        <AudioPlayer src={stitchedAudioUrl} name="stitched_output.wav" />
+                      ) : finalAudios.map((a, i) => (
+                        <AudioPlayer key={i} src={a.data} name={a.name} />
+                      ))}
+                    </div>
+
+                    {/* Raw Chunks Toggle */}
+                    {chunkAudios.length > 0 && (
+                      <details 
+                        className="mt-6 group border border-border-subtle rounded-xl bg-bg-base/50 overflow-hidden"
+                        onToggle={(e) => setIsEditorOpen((e.target as HTMLDetailsElement).open)}
+                      >
+                        <summary className="text-sm font-medium text-text-secondary cursor-pointer list-none flex items-center justify-between p-4 hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color">
+                          <span className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-accent-bg" />
+                            Chunk Editor ({chunkAudios.length})
+                          </span>
+                          <span className="text-text-muted text-xs bg-bg-input px-2 py-1 rounded-md">
+                            {isEditorOpen ? "Close Editor" : "Edit Crossfade"}
+                          </span>
+                        </summary>
+                        <div className="p-4 pt-0 flex flex-col gap-4 border-t border-border-subtle/50 mt-2">
+                          <p className="text-xs text-text-muted mb-2">
+                            Adjust the crossfade (trim) between chunks. Changes apply instantly to the stitched output above.
+                          </p>
+                          
+                          {/* Trim Slider */}
+                          <div className="flex flex-col gap-2 bg-bg-input/50 p-4 rounded-xl border border-border-subtle">
+                            <div className="flex justify-between items-center text-xs text-text-secondary">
+                              <label htmlFor="trimMs" className="font-medium">Crossfade / Trim (ms)</label>
+                              <span className="tabular-nums font-mono bg-bg-base px-2 py-0.5 rounded border border-border-subtle">{trimMs}ms</span>
+                            </div>
+                            <input
+                              id="trimMs"
+                              type="range"
+                              min="0"
+                              max="500"
+                              step="10"
+                              value={trimMs}
+                              onChange={(e) => setTrimMs(parseInt(e.target.value))}
+                              className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
+                            />
+                            <div className="flex justify-between text-[10px] text-text-muted mt-1">
+                              <span>0ms (No trim)</span>
+                              <span>250ms</span>
+                              <span>500ms</span>
+                            </div>
+                          </div>
+
+                          <div className="h-px bg-border-subtle my-2" />
+
+                          <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-2 pb-2">
+                            <div className="flex justify-between items-center sticky top-0 bg-bg-base/90 py-1 z-10 backdrop-blur-sm -mx-2 px-2">
+                              <span className="text-xs font-medium text-text-secondary">Raw Chunks:</span>
+                              <button
+                                onClick={handleDownloadZip}
+                                className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
+                                title="Download all chunks as ZIP"
+                              >
+                                <Download size={12} />
+                                Download ZIP
+                              </button>
+                            </div>
+                            {chunkAudios.map((a, i) => (
+                              <AudioPlayer key={i} src={a.data} name={a.name} />
+                            ))}
+                          </div>
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3 ml-0 sm:ml-6 shrink-0 w-full sm:w-auto">
+
+                {isGen ? (
+                  <button
+                    onClick={stopRun}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-input text-text-primary hover:bg-bg-hover-strong border border-border-color font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                  >
+                    <Square size={16} className="fill-current text-text-secondary" />
+                    Stop
+                  </button>
+                ) : (
+                  <button
+                    id="main-generate-btn"
+                    onClick={handleGenerate}
+                    disabled={isGen || !text.trim()}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                  >
+                    Generate Speech
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </main>
+
+        {/* Right Settings Sidebar */}
+        <aside className="w-full md:w-[320px] shrink-0 border-t md:border-t-0 md:border-l border-border-color bg-bg-panel flex flex-col overflow-y-auto relative">
+          <div className="p-6 flex flex-col gap-8">
+            
+            {/* Settings Header (Sticky) */}
+            <div className="flex flex-col gap-4 sticky top-0 bg-bg-panel z-20 pb-4 pt-6 -mt-6 -mx-6 px-6 border-b border-border-subtle shadow-sm">
+              <div className="flex items-center gap-2 text-text-primary">
+                <Settings2 size={18} />
+                <h2 className="font-medium text-[15px] tracking-tight">Settings</h2>
+              </div>
+              
+              {/* Generation Mode Toggle */}
+              <div className="flex bg-bg-input p-1 rounded-lg border border-border-color">
+                <button 
+                  onClick={() => { setGenerationMode('clone'); setGuidanceScale(2); }}
+                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${generationMode === 'clone' ? 'bg-bg-panel text-text-primary shadow-sm border border-border-color' : 'text-text-muted hover:text-text-secondary border border-transparent'}`}
+                >
+                  Voice Clone
+                </button>
+                <button 
+                  onClick={() => { setGenerationMode('design'); setGuidanceScale(4); }}
+                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${generationMode === 'design' ? 'bg-bg-panel text-text-primary shadow-sm border border-border-color' : 'text-text-muted hover:text-text-secondary border border-transparent'}`}
+                >
+                  Voice Design
+                </button>
+              </div>
+            </div>
+
+            {/* Voice Selection */}
+            {generationMode === 'clone' && (
+              <div className="flex flex-col gap-2.5">
+                <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Voice</label>
+                <VoiceSelector 
+                  voices={allVoices} 
+                  selectedId={selectedVoiceId} 
+                  onSelect={setSelectedVoiceId} 
+                  onUploadClick={() => setShowUpload(true)} 
+                  onDeleteVoice={handleDeleteVoice}
+                />
+              </div>
+            )}
+            
+            {generationMode === 'design' && (
+              <div className="flex flex-col gap-2.5">
+                <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">
+                  <Sparkles size={16} className="text-accent-bg shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Voice Design</strong> creates an entirely new voice from scratch based purely on your <strong>Voice Design Instruction</strong> below. Describe the age, gender, accent, tone, and character.
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Divider */}
+            <div className="h-px w-full bg-accent-bg/5" />
+
+            {/* Model Info (Static for now) */}
+            <div className="flex flex-col gap-2.5">
+              <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Model</label>
+              <div className="px-3 py-2 bg-bg-input border border-border-color rounded-lg text-sm text-text-primary">
+                Breeze-TTS 2
+              </div>
+            </div>
+
+            {/* Instructions / Prompt */}
+            <div className="flex flex-col gap-2.5">
+              <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
+                {generationMode === 'design' ? 'Voice Design Instruction' : 'Performance Instructions'}
+              </label>
+              <textarea
+                value={generationMode === 'design' ? designPrompt : instructions}
+                onChange={(e) => generationMode === 'design' ? setDesignPrompt(e.target.value) : setInstructions(e.target.value)}
+                placeholder={generationMode === 'design' ? "e.g., A raspy old man with a British accent..." : "e.g., Say it whispering, very quiet and tense..."}
+                className="w-full h-24 p-3 bg-bg-input border border-border-color rounded-xl text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-ring-color transition-all"
+              />
+              <div className="flex justify-between items-center mt-2">
+                <label className="text-[11px] font-medium text-text-secondary">Guidance Scale</label>
+                <span className="text-[10px] font-mono text-text-muted">{guidanceScale}</span>
+              </div>
+              <input
+                type="range"
+                min="1" max="10" step="0.1"
+                value={guidanceScale}
+                onChange={(e) => setGuidanceScale(parseFloat(e.target.value))}
+                className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
+              />
+              <p className="text-[10px] text-text-muted mt-1 leading-relaxed">
+                Higher values strengthen guidance. Recommended: 4.0 for Voice Design, 1–3 for expressive cloning.
+              </p>
+
+              {/* Generate & Save Buttons (Only in Design Mode) */}
+              {generationMode === 'design' && (
+                <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border-subtle">
+                  {status === "error" && message.includes("Voice Design Instruction") && (
+                    <div className="p-2.5 mb-1 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-xs">
+                      <strong className="font-semibold block mb-0.5">Generation Failed:</strong>
+                      {message}
+                    </div>
+                  )}
+                  <button
+                    onClick={() => {
+                      const randomPangram = PANGRAMS[Math.floor(Math.random() * PANGRAMS.length)];
+                      const textToGen = text.trim() || randomPangram;
+                      setGeneratedPreviewText(textToGen);
+                      handleGenerate(textToGen);
+                    }}
+                    disabled={isGen || !designPrompt.trim()}
+                    className="w-full py-2.5 rounded-lg text-sm font-medium bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
+                  >
+                    Generate Voice Preview
+                  </button>
+                  {status === 'complete' && (stitchedAudioUrl || (finalAudios && finalAudios.length > 0)) && !isGen && (
+                    <button
+                      disabled={isVoiceSaved}
+                      onClick={() => handleSaveVoice(stitchedAudioUrl || finalAudios[0].data)}
+                      className="w-full py-2.5 rounded-lg text-sm font-medium bg-bg-input text-text-primary border border-border-color hover:bg-bg-hover disabled:opacity-50 disabled:hover:bg-bg-input transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
+                    >
+                      {isVoiceSaved ? "Saved to Custom Voices!" : "Save to Custom Voices"}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Tags / Directives Section (Only in Clone Mode) */}
+            {generationMode === 'clone' && (
+              <>
+                <div className="h-px w-full bg-accent-bg/5" />
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Vocal Directives</label>
+                    <button
+                      onClick={copyAllTags}
+                      className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
+                      title="Copy all tags"
+                    >
+                      {copiedTags ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                      <span>{copiedTags ? "Copied" : "Copy All"}</span>
+                    </button>
+                  </div>
+                  
+                  <div className="text-xs text-text-secondary space-y-5 pr-2">
+                    <p className="text-text-muted">Click to insert at cursor:</p>
+                    {VOCAL_TAGS.map((cat, i) => (
+                      <div key={i} className="flex flex-col gap-2.5">
+                        <span className="text-[10px] uppercase tracking-wider font-semibold text-text-muted">{cat.category}</span>
+                        <div className="flex flex-wrap gap-2">
+                          {cat.tags.map(tag => (
+                            <button 
+                              key={tag}
+                              onMouseDown={(e) => e.preventDefault()} 
+                              onClick={() => insertTag(tag)} 
+                              className="bg-bg-input hover:bg-accent-bg/10 border border-border-subtle hover:border-border-color px-2.5 py-1 rounded-full text-text-primary transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring-color font-mono text-[12px]"
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <div className="mt-4 pt-4 border-t border-border-subtle">
+                      <p className="mb-3">Pacing is natively controlled by punctuation:</p>
+                      <div className="flex flex-wrap gap-2">
+                        <button onMouseDown={(e) => e.preventDefault()} onClick={() => insertTag(',')} className="bg-bg-input hover:bg-accent-bg/10 border border-border-subtle hover:border-border-color px-3 py-1 rounded-full text-text-primary transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring-color font-mono text-[12px]">Comma ,</button>
+                        <button onMouseDown={(e) => e.preventDefault()} onClick={() => insertTag('...')} className="bg-bg-input hover:bg-accent-bg/10 border border-border-subtle hover:border-border-color px-3 py-1 rounded-full text-text-primary transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring-color font-mono text-[12px]">Ellipses ...</button>
+                        <button onMouseDown={(e) => e.preventDefault()} onClick={() => insertTag('.')} className="bg-bg-input hover:bg-accent-bg/10 border border-border-subtle hover:border-border-color px-3 py-1 rounded-full text-text-primary transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring-color font-mono text-[12px]">Period .</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+          </div>
+        </aside>
+
+      </div>
+
+      {/* ── Footer & Dev Logs ─────────────────────────────────────── */}
+      <footer className="h-8 flex items-center justify-between px-6 border-t border-border-color bg-bg-base shrink-0 relative z-20">
+        <span className="text-[10px] text-text-muted">
+          Built by <a href="https://github.com/pundhiranshul" target="_blank" rel="noreferrer" className="text-text-secondary hover:text-text-primary transition-colors underline decoration-white/20 underline-offset-2">Anshul Pundhir</a>
+        </span>
+        <button
+          onClick={() => setShowLogs(!showLogs)}
+          className="flex items-center gap-1.5 text-[10px] text-text-muted hover:text-text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color rounded"
+        >
+          <Terminal size={12} />
+          {showLogs ? "Hide Dev Logs" : "Show Dev Logs"}
+        </button>
+      </footer>
+
+      {/* Floating Logs Drawer (Dev Only) */}
+      {showLogs && (
+        <div className="absolute bottom-8 right-6 w-[400px] h-[300px] bg-bg-panel border border-border-color rounded-t-xl rounded-bl-xl shadow-2xl flex flex-col z-10 animate-in slide-in-from-bottom-8 fade-in duration-200">
+          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1.5 font-mono text-[10px]">
+            {logs.length === 0
+              ? <span className="text-text-muted">Waiting for logs...</span>
+              : logs.map((log, i) => (
+                <div key={i} className="leading-relaxed text-text-secondary break-words">
+                  <span className="text-text-muted">{log.slice(0, 11)}</span>{log.slice(11)}
+                </div>
+              ))}
+            <div ref={logsEndRef}/>
+          </div>
+        </div>
+      )}
+      {/* ── Modals ────────────────────────────────────────────────── */}
+      {showAbout && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-base/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl bg-bg-panel border border-border-color rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-border-subtle flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Info size={18} className="text-text-primary" />
+                <h3 className="font-semibold text-text-primary tracking-tight">System Architecture</h3>
+              </div>
+              <button 
+                onClick={() => setShowAbout(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex flex-col gap-6 text-sm text-text-secondary leading-relaxed">
+              <section>
+                <h4 className="text-text-primary font-medium mb-2 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent-bg" /> Frontend (Studio UX)
+                </h4>
+                <p>
+                  Built entirely with <strong>Next.js 16 (App Router)</strong>, <strong>React 19</strong>, and <strong>Tailwind CSS v4</strong>. The UI implements a strict zero-accent monochrome design system, natively supporting both Day and Night modes via CSS variables. Extensive use of <code>lucide-react</code> for iconography. Audio synthesis and previews rely on hidden native <code>&lt;audio&gt;</code> elements with custom scrubbers for maximum accessibility and seamless cross-browser playback.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="text-text-primary font-medium mb-2 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent-bg" /> API & Middleware
+                </h4>
+                <p>
+                  Next.js Serverless API routes act as the secure middleware and job orchestrator. It manages secure dispatch, long-polling for generation status, and asynchronous data fetching. This completely shields the client from underlying infrastructure details and secures API endpoints.
+                </p>
+              </section>
+
+              <section>
+                <h4 className="text-text-primary font-medium mb-2 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent-bg" /> Inference & Compute Engine
+                </h4>
+                <p>
+                  The core AI Voice Cloning model is powered by <strong>Breeze-TTS 2</strong>. Model inference runs on a scalable, cloud-hosted <strong>T4 GPU cluster</strong> through an asynchronous task queue. A custom Python backend processes jobs in isolated kernels to ensure privacy. 
+                </p>
+              </section>
+
+              <section>
+                <h4 className="text-text-primary font-medium mb-2 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent-bg" /> Pipeline & Optimizations
+                </h4>
+                <ul className="list-disc pl-5 space-y-1 mt-1">
+                  <li><strong>Intelligent Chunking:</strong> Large text payloads are algorithmically split at sentence boundaries to bypass model memory limits and prevent GPU out-of-memory (OOM) errors.</li>
+                  <li><strong>Progressive Streaming:</strong> The frontend tracks generation progress chunk-by-chunk and dynamically stitches the resulting audio blobs in the browser to maintain ultra-low perceived latency.</li>
+                  <li><strong>Persistent State:</strong> User settings, configurations, and reference voice models are securely cached locally using IndexedDB (<code>idb-keyval</code>).</li>
+                </ul>
+              </section>
+
+              <section className="bg-bg-input/50 p-4 rounded-xl border border-border-subtle">
+                <h4 className="text-text-primary font-medium mb-3 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent-bg" /> GenVoice vs ElevenLabs
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <h5 className="font-medium text-text-primary mb-1">ElevenLabs</h5>
+                    <ul className="list-disc pl-4 space-y-1 text-xs text-text-muted">
+                      <li>Proprietary closed-source models</li>
+                      <li>Pay-per-character pricing</li>
+                      <li>Strict rate limits and token quotas</li>
+                      <li>Standard cloud-based REST APIs</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-text-primary mb-1">GenVoice Studio</h5>
+                    <ul className="list-disc pl-4 space-y-1 text-xs text-text-muted">
+                      <li>Free, open-architecture local inference</li>
+                      <li>Unlimited generation (Zero-cost compute)</li>
+                      <li>Isolated GPU kernel execution for privacy</li>
+                      <li>Custom chunking for infinite-length texts</li>
+                    </ul>
+                  </div>
+                </div>
+              </section>
+            </div>
+            
+            <div className="p-4 border-t border-border-subtle bg-bg-input flex justify-end">
+              <button 
+                onClick={() => setShowAbout(false)}
+                className="px-6 py-2 rounded-lg bg-accent-bg text-accent-text font-medium text-sm hover:bg-accent-bg/90 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Modal (Custom Voice) */}
+      {showUpload && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-base/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-bg-panel border border-border-color rounded-2xl w-full max-w-md p-6 flex flex-col gap-5 shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-medium text-text-primary">Upload Custom Voice</h3>
+            
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Voice Name</label>
+              <input type="text" value={newVoiceName} onChange={e => setNewVoiceName(e.target.value)} placeholder="e.g. My Voice" className="w-full bg-bg-input border border-border-color rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-border-color" />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Audio File (WAV/MP3)</label>
+              <input type="file" accept="audio/*" onChange={e => setNewVoiceFile(e.target.files?.[0] || null)} className="text-sm text-text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-accent-bg file:text-accent-text hover:file:bg-accent-bg/90 cursor-pointer" />
+              {newVoiceFile && <span className="text-xs text-text-muted mt-1">Pre-selected: {newVoiceFile.name} (Ready to save)</span>}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Exact Transcript (Required)</label>
+              <textarea value={newVoiceText} onChange={e => setNewVoiceText(e.target.value)} placeholder="Transcript of the audio file..." rows={3} className="w-full bg-bg-input border border-border-color rounded-lg px-3 py-2 text-sm text-text-primary outline-none resize-none focus:border-border-color" />
+            </div>
+
+            <div className="flex justify-end gap-3 mt-2">
+              <button onClick={() => setShowUpload(false)} className="px-4 py-2 rounded-full text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">Cancel</button>
+              <button onClick={() => {
+                if (!newVoiceName || !newVoiceText || !newVoiceFile) return alert("Fill all fields");
+                const reader = new FileReader();
+                reader.onload = async () => {
+                  const data = reader.result as string;
+                  const newVoice: CustomVoice = { id: Date.now().toString(), name: newVoiceName, transcript: newVoiceText, data };
+                  const updated = [...customVoices, newVoice];
+                  setCustomVoices(updated);
+                  await set('custom_voices', updated);
+                  setSelectedVoiceId(newVoice.id);
+                  setShowUpload(false);
+                  setNewVoiceName(""); setNewVoiceText(""); setNewVoiceFile(null);
+                  setIsVoiceSaved(true);
+                };
+                reader.readAsDataURL(newVoiceFile);
+              }} className="px-4 py-2 rounded-full text-sm font-medium bg-accent-bg text-accent-text hover:bg-accent-bg/90 transition-colors">Save Voice</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

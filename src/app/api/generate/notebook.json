@@ -1,0 +1,195 @@
+{
+  "metadata": {
+    "kernelspec": {
+      "language": "python",
+      "display_name": "Python 3",
+      "name": "python3"
+    },
+    "language_info": {
+      "name": "python",
+      "version": "3.12.13",
+      "mimetype": "text/x-python",
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "pygments_lexer": "ipython3",
+      "nbconvert_exporter": "python",
+      "file_extension": ".py"
+    },
+    "kaggle": {
+      "accelerator": "gpu",
+      "dataSources": [],
+      "dockerImageVersionId": 28755,
+      "isInternetEnabled": true,
+      "language": "python",
+      "sourceType": "notebook",
+      "isGpuEnabled": true
+    }
+  },
+  "nbformat_minor": 4,
+  "nbformat": 4,
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "source": "# Breeze TTS 2 — Voice Cloning Pipeline (Kaggle T4)\n\nRun every cell top to bottom, in order.\n\n**Before running:** in the notebook settings (right sidebar), make sure:\n- **Accelerator** is set to **GPU T4 x2** (or any GPU)\n- **Internet** is turned **ON** (needed for git clone, pip installs, and model download)\n",
+      "metadata": {}
+    },
+    {
+      "cell_type": "markdown",
+      "source": "## 1. Clone the repo and install dependencies",
+      "metadata": {}
+    },
+    {
+      "cell_type": "code",
+      "source": "!git clone https://github.com/breezeblue-ai/breeze-tts.git /kaggle/working/breeze-tts\n%cd /kaggle/working/breeze-tts\n!python -m pip install -r requirements.txt -q\nprint(\"Install complete.\")\n",
+      "metadata": {
+        "trusted": true,
+        "execution": {
+          "iopub.status.busy": "2026-09-24T02:10:54.599977Z",
+          "iopub.execute_input": "2026-09-24T02:10:54.600451Z",
+          "iopub.status.idle": "2026-09-24T02:12:36.632453Z",
+          "shell.execute_reply.started": "2026-09-24T02:10:54.600420Z",
+          "shell.execute_reply": "2026-09-24T02:12:36.631577Z"
+        }
+      },
+      "outputs": [],
+      "execution_count": null
+    },
+    {
+      "cell_type": "markdown",
+      "source": "## 2. Remove torchvision\n\n`transformers` pulls in `torchvision` transitively, and its build doesn't match the `torch` version this repo installs — that mismatch crashes the import (`torchvision::nms does not exist`). Breeze never actually uses `torchvision`, so removing it avoids the crash entirely. Since generation runs `infer.py` in its own subprocess, this doesn't need a kernel restart — just do it before the first generation call below.\n",
+      "metadata": {}
+    },
+    {
+      "cell_type": "code",
+      "source": "!pip uninstall -y torchvision torchtext -q\nprint(\"torchvision removed.\")\n",
+      "metadata": {
+        "trusted": true,
+        "execution": {
+          "iopub.status.busy": "2026-09-24T02:12:53.110477Z",
+          "iopub.execute_input": "2026-09-24T02:12:53.111377Z",
+          "iopub.status.idle": "2026-09-24T02:12:54.929485Z",
+          "shell.execute_reply.started": "2026-09-24T02:12:53.111338Z",
+          "shell.execute_reply": "2026-09-24T02:12:54.928531Z"
+        }
+      },
+      "outputs": [],
+      "execution_count": null
+    },
+    {
+      "cell_type": "markdown",
+      "source": "## 3. Download the Breeze TTS 2 checkpoint",
+      "metadata": {}
+    },
+    {
+      "cell_type": "code",
+      "source": "!pip install huggingface_hub -q\nfrom huggingface_hub import snapshot_download\n\nsnapshot_download(\n    repo_id=\"BreezeBlue/Breeze-TTS-2\",\n    local_dir=\"/kaggle/working/breeze-tts-2\"\n)\nprint(\"Checkpoint downloaded.\")\n",
+      "metadata": {
+        "trusted": true,
+        "execution": {
+          "iopub.status.busy": "2026-09-24T02:13:14.792100Z",
+          "iopub.execute_input": "2026-09-24T02:13:14.793040Z",
+          "iopub.status.idle": "2026-09-24T02:13:43.972876Z",
+          "shell.execute_reply.started": "2026-09-24T02:13:14.793000Z",
+          "shell.execute_reply": "2026-09-24T02:13:43.972159Z"
+        }
+      },
+      "outputs": [],
+      "execution_count": null
+    },
+    {
+      "cell_type": "markdown",
+      "source": "## 4. Build a reference voice clip + transcript\n\nBreeze needs both the reference audio **and its exact transcript** to clone a voice. This pulls a public-domain LibriSpeech sample and concatenates a few clips to reach ~15s. `Audio(decode=False)` + manual `soundfile` reads avoid a separate `torchcodec`/`ffmpeg` loading bug in newer `datasets` versions.\n\nSwap in your own `reference.wav` + `reference_text` here later for a voice you actually want.",
+      "metadata": {}
+    },
+    {
+      "cell_type": "code",
+      "source": "from datasets import load_dataset, Audio\nimport soundfile as sf\nimport numpy as np\nimport io\n\nds = load_dataset(\"hf-internal-testing/librispeech_asr_dummy\", \"clean\", split=\"validation\")\nds = ds.cast_column(\"audio\", Audio(decode=False))\n\ntarget_seconds = 15\nchunks, transcripts, total_len, sr = [], [], 0, None\n\nfor example in ds:\n    audio_bytes = example[\"audio\"][\"bytes\"]\n    arr, this_sr = sf.read(io.BytesIO(audio_bytes))\n    if sr is None:\n        sr = this_sr\n    chunks.append(arr)\n    transcripts.append(example[\"text\"])\n    total_len += len(arr) / sr\n    if total_len >= target_seconds:\n        break\n\nreference_audio = np.concatenate(chunks)\nreference_path = \"/kaggle/working/reference.wav\"\nsf.write(reference_path, reference_audio, sr)\n\nreference_text = \" \".join(transcripts)\nprint(f\"Reference clip: {total_len:.1f}s\")\nprint(f\"Transcript: {reference_text}\")\n",
+      "metadata": {
+        "trusted": true,
+        "execution": {
+          "iopub.status.busy": "2026-09-24T02:13:52.021179Z",
+          "iopub.execute_input": "2026-09-24T02:13:52.021506Z",
+          "iopub.status.idle": "2026-09-24T02:14:00.252977Z",
+          "shell.execute_reply.started": "2026-09-24T02:13:52.021475Z",
+          "shell.execute_reply": "2026-09-24T02:14:00.252009Z"
+        }
+      },
+      "outputs": [],
+      "execution_count": null
+    },
+    {
+      "cell_type": "markdown",
+      "source": "## 5. Generate the paragraph\n\nOne shot, whole paragraph, cloned voice from step 4. Edit `paragraph` below to whatever text you want spoken. Paralinguistic tags use parentheses in English: `(laugh)`, `(sigh)`, `(cough)`, `(clears throat)`.\n",
+      "metadata": {}
+    },
+    {
+      "cell_type": "code",
+      "source": "import subprocess\n\nparagraph = (\"(laugh) I really didn't expect that to actually work, but it did. That is amazing! \"\n    \"Honestly I've been debugging this for hours, and I was starting to think it was \"\n    \"hopeless (sigh). But here we are, clean audio, no crashes, running right on a \"\n    \"free T4. Not bad for an afternoon's work (chuckle).\"\n)\n\nresult = subprocess.run([\n    \"python\", \"infer.py\", \"../breeze-tts-2\",\n    \"--ref-audio\", \"/kaggle/working/reference.wav\",\n    \"--ref-text\", reference_text,\n    \"--text\", paragraph,\n    \"--output\", \"/kaggle/working/breeze_paragraph_single.wav\"\n], capture_output=True, text=True, cwd=\"/kaggle/working/breeze-tts\")\n\nprint(result.stdout[-2000:])\nprint(result.stderr[-2000:])\n",
+      "metadata": {
+        "trusted": true,
+        "execution": {
+          "iopub.status.busy": "2026-09-24T02:14:25.850831Z",
+          "iopub.execute_input": "2026-09-24T02:14:25.851902Z",
+          "iopub.status.idle": "2026-09-24T02:16:31.833519Z",
+          "shell.execute_reply.started": "2026-09-24T02:14:25.851833Z",
+          "shell.execute_reply": "2026-09-24T02:16:31.832696Z"
+        }
+      },
+      "outputs": [],
+      "execution_count": null
+    },
+    {
+      "cell_type": "markdown",
+      "source": "## 6. Play the result",
+      "metadata": {}
+    },
+    {
+      "cell_type": "code",
+      "source": "from IPython.display import Audio, display\ndisplay(Audio(\"/kaggle/working/breeze_paragraph_single.wav\"))\n",
+      "metadata": {
+        "trusted": true,
+        "execution": {
+          "iopub.status.busy": "2026-09-24T02:16:36.885986Z",
+          "iopub.execute_input": "2026-09-24T02:16:36.886443Z",
+          "iopub.status.idle": "2026-09-24T02:16:36.913599Z",
+          "shell.execute_reply.started": "2026-09-24T02:16:36.886414Z",
+          "shell.execute_reply": "2026-09-24T02:16:36.912709Z"
+        }
+      },
+      "outputs": [],
+      "execution_count": null
+    },
+    {
+      "cell_type": "markdown",
+      "source": "## 7. (Optional) Fallback: sentence-chunked with crossfade\n\nOnly run this if step 5's single-shot output loses quality, rushes, or drifts toward the end of the paragraph. It generates each sentence separately (same cloned voice) and crossfades the joins at 80ms so there's no hard cut between chunks.\n",
+      "metadata": {}
+    },
+    {
+      "cell_type": "code",
+      "source": "import re, torch, torchaudio\nfrom IPython.display import Audio, display\nimport soundfile as sf\n\nraw_sentences = [s.strip() for s in re.split(r'(?<=[.!?])\\s+|\\n+', paragraph.strip()) if s.strip()]\nsentences = []\ncurrent_chunk = \"\"\nfor s in raw_sentences:\n    if len(current_chunk) + len(s) < 200:\n        current_chunk += (\" \" if current_chunk else \"\") + s\n    else:\n        if current_chunk:\n            sentences.append(current_chunk)\n        current_chunk = s\nif current_chunk:\n    sentences.append(current_chunk)\n\nprint(f\"{len(sentences)} chunks:\")\nfor s in sentences:\n    print(\" -\", s)\n\ndef crossfade(a, b, sr, fade_ms=80):\n    fade_len = min(int(sr * fade_ms / 1000), a.shape[1], b.shape[1])\n    fade_out = torch.linspace(1, 0, fade_len)\n    fade_in = torch.linspace(0, 1, fade_len)\n    a, b = a.clone(), b.clone()\n    a[:, -fade_len:] *= fade_out\n    b[:, :fade_len] *= fade_in\n    overlap = a[:, -fade_len:] + b[:, :fade_len]\n    return torch.cat([a[:, :-fade_len], overlap, b[:, fade_len:]], dim=1)\n\nwavs = []\nfor i, sentence in enumerate(sentences):\n    out_path = f\"/kaggle/working/breeze_chunk_{i}.wav\"\n    print(f\"Generating {i+1}/{len(sentences)}...\")\n    result = subprocess.run([\n        \"python\", \"infer.py\", \"../breeze-tts-2\",\n        \"--ref-audio\", \"/kaggle/working/reference.wav\",\n        \"--ref-text\", reference_text,\n        \"--text\", sentence,\n        \"--output\", out_path\n    ], capture_output=True, text=True, cwd=\"/kaggle/working/breeze-tts\")\n\n    if result.returncode != 0:\n        print(\"ERROR:\", result.stderr[-1000:])\n        break\n\n    data, sr = sf.read(out_path)\n    wav = torch.from_numpy(data).float()\n    if wav.dim() == 1:\n        wav = wav.unsqueeze(0)\n    else:\n        wav = wav.T\n    wavs.append(wav)\n\nfull_wav = wavs[0]\nfor w in wavs[1:]:\n    full_wav = crossfade(full_wav, w, sr)\n\nfinal_path = \"/kaggle/working/breeze_paragraph_chunked.wav\"\nsf.write(final_path, full_wav.numpy().T, sr)\nprint(f\"Saved to {final_path}\")\ndisplay(Audio(full_wav.numpy(), rate=sr))\n",
+      "metadata": {
+        "trusted": true,
+        "execution": {
+          "iopub.status.busy": "2026-09-24T02:23:55.984687Z",
+          "iopub.execute_input": "2026-09-24T02:23:55.985625Z",
+          "iopub.status.idle": "2026-09-24T02:27:08.449748Z",
+          "shell.execute_reply.started": "2026-09-24T02:23:55.985587Z",
+          "shell.execute_reply": "2026-09-24T02:27:08.448646Z"
+        }
+      },
+      "outputs": [],
+      "execution_count": null
+    },
+    {
+      "cell_type": "code",
+      "source": "",
+      "metadata": {
+        "trusted": true
+      },
+      "outputs": [],
+      "execution_count": null
+    }
+  ]
+}

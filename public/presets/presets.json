@@ -1,0 +1,30 @@
+[
+  {
+    "id": "el_preset_0",
+    "name": "Roger (ElevenLabs)",
+    "data": "/presets/el_0.wav",
+    "transcript": "it is not so important to know everything as to appreciate what we learn",
+    "isPreset": true
+  },
+  {
+    "id": "el_preset_1",
+    "name": "Sarah (ElevenLabs)",
+    "data": "/presets/el_1.wav",
+    "transcript": "never know",
+    "isPreset": true
+  },
+  {
+    "id": "el_preset_2",
+    "name": "Laura (ElevenLabs)",
+    "data": "/presets/el_2.wav",
+    "transcript": "If you do what you've always done, you'll get what you've always gotten.",
+    "isPreset": true
+  },
+  {
+    "id": "el_preset_3",
+    "name": "Charlie (ElevenLabs)",
+    "data": "/presets/el_3.wav",
+    "transcript": "level trust a few do wrong to none",
+    "isPreset": true
+  }
+]
