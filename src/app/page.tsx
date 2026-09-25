@@ -153,6 +153,52 @@ const PANGRAMS = [
   "Heavy boxes perform quick waltzes and jigs."
 ];
 
+const getWelcomeMessages = (name: string) => [
+  `What do you want to say today, ${name}?`,
+  `Ready to create some audio, ${name}?`,
+  `Hey ${name}, let's synthesize something awesome!`,
+  `Welcome back, ${name}. What's on your mind?`,
+  `Hello ${name}, what shall we voice today?`,
+  `${name}, the mic is yours! What's the script?`,
+  `Good to see you, ${name}. Type your text here...`,
+  `Hey ${name}, what story are we telling today?`,
+  `Let's make some noise, ${name}! What's the plan?`,
+  `Waiting for your input, ${name}...`,
+  `Unleash your creativity, ${name}. What's next?`,
+  `Type something magical, ${name}...`,
+  `The studio is yours, ${name}. What are we saying?`,
+  `What's the script for today, ${name}?`,
+  `Hey ${name}, your audience is waiting...`,
+  `Ready when you are, ${name}. Let's go!`,
+  `${name}'s Studio Session: What's the first line?`,
+  `Let's hear it, ${name}! Type your text here.`,
+  `Welcome ${name}! What are we working on?`,
+  `Greetings ${name}! What text should I read?`
+];
+
+const DEFAULT_WELCOME_MESSAGES = [
+  "What do you want to say today?",
+  "Ready to create some audio?",
+  "Let's synthesize something awesome!",
+  "Welcome back. What's on your mind?",
+  "Hello, what shall we voice today?",
+  "The mic is yours! What's the script?",
+  "Good to see you. Type your text here...",
+  "What story are we telling today?",
+  "Let's make some noise! What's the plan?",
+  "Waiting for your input...",
+  "Unleash your creativity. What's next?",
+  "Type something magical...",
+  "The studio is yours. What are we saying?",
+  "What's the script for today?",
+  "Your audience is waiting...",
+  "Ready when you are. Let's go!",
+  "Studio Session: What's the first line?",
+  "Let's hear it! Type your text here.",
+  "Welcome! What are we working on?",
+  "Greetings! What text should I read?"
+];
+
 // ── main ───────────────────────────────────────────────────────────
 export default function Home() {
   const [isDark, setIsDark]         = useState(true);
@@ -169,6 +215,7 @@ export default function Home() {
   const [text, setText]           = useState("");
   const [status, setStatus]       = useState<AppStatus>("idle");
   const [message, setMessage]     = useState("");
+  const [welcomeMessage, setWelcomeMessage] = useState("What do you want to say?");
   const [audios, setAudios]       = useState<AudioFile[]>([]);
   const audiosRef                 = useRef<AudioFile[]>([]);
   const [showLogs, setShowLogs]   = useState(false);
@@ -316,6 +363,13 @@ export default function Home() {
     
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    if (hasCredentials) {
+      const messages = kaggleUsername ? getWelcomeMessages(kaggleUsername) : DEFAULT_WELCOME_MESSAGES;
+      setWelcomeMessage(messages[Math.floor(Math.random() * messages.length)]);
+    }
+  }, [kaggleUsername, hasCredentials]);
 
   const toggleTheme = () => {
     if (document.documentElement.classList.contains('dark')) {
@@ -821,7 +875,7 @@ export default function Home() {
             <div className="relative flex-1 w-full min-h-0 overflow-y-auto pr-14">
               {text.length === 0 && (
                 <div className="absolute top-0 left-0 text-text-muted pointer-events-none select-none text-2xl font-light tracking-tight">
-                  What do you want to say?
+                  {welcomeMessage}
                 </div>
               )}
               
