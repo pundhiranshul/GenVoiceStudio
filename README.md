@@ -1,9 +1,13 @@
-<h1 align="center">GenVoice</h1>
+<div align="center">
+  <img src="public/icon.png" alt="GenVoice Studio Logo" width="128" height="128" />
+</div>
+
+<h1 align="center">GenVoice Studio</h1>
 
 <p align="center"><strong>AI-powered voice cloning from text — built on Kaggle GPU infrastructure.</strong></p>
 
 <p align="center">
-GenVoice lets you clone a voice and synthesize any text at broadcast quality, all from a web interface.
+GenVoice Studio lets you clone a voice and synthesize any text at broadcast quality, all from a web interface.
 No GPU required on your end — generation runs on a free Kaggle T4 GPU via their API.
 </p>
 
