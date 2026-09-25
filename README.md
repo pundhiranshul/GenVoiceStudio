@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/icon.png" alt="GenVoice Studio Logo" width="128" height="128" />
+  <img src="src/app/icon.svg" alt="GenVoice Studio Logo" width="128" height="128" />
 </div>
 
 <h1 align="center">GenVoice Studio</h1>
