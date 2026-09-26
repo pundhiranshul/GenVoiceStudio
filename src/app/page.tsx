@@ -1161,7 +1161,7 @@ export default function Home() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary animate-in fade-in duration-700">
+    <div className="flex flex-col min-h-[100dvh] md:h-screen md:overflow-hidden bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary animate-in fade-in duration-700">
 
       {/* ── Top Header ────────────────────────────────────────────── */}
       <header className="h-16 px-6 flex items-center justify-between border-b border-border-color shrink-0 relative">
@@ -1217,23 +1217,23 @@ export default function Home() {
               setHasCredentials(false);
               setCanCancelAuth(true);
             }}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
             aria-label="Change Credentials"
           >
             <Key size={14} />
-            <span>Auth</span>
+            <span className="hidden sm:inline">Auth</span>
           </button>
         </div>
       </header>
 
       {/* ── Main Studio Split ─────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 min-h-0 md:overflow-hidden">
         
         {/* Center Canvas */}
-        <main className="flex-1 flex flex-col min-w-0 bg-bg-base shrink-0 md:shrink overflow-y-auto">
+        <main className="flex-1 flex flex-col min-w-0 bg-bg-base shrink-0 md:shrink md:overflow-y-auto">
           <div className="flex-1 flex flex-col max-w-5xl w-full mx-auto p-6 md:p-10 relative min-h-0">
             
-            <div className="relative flex-1 w-full min-h-0 overflow-y-auto pr-14">
+            <div className="relative flex-1 w-full min-h-0 md:overflow-y-auto pr-14">
               {text.length === 0 && (
                 <div className="absolute top-0 left-0 text-text-muted pointer-events-none select-none text-2xl font-light tracking-tight">
                   {welcomeMessage}
@@ -1522,7 +1522,7 @@ export default function Home() {
         </main>
 
         {/* Right Settings Sidebar */}
-        <aside className="w-full md:w-[320px] shrink-0 border-t md:border-t-0 md:border-l border-border-color bg-bg-panel flex flex-col overflow-y-auto relative">
+        <aside className="w-full md:w-[320px] shrink-0 border-t md:border-t-0 md:border-l border-border-color bg-bg-panel flex flex-col md:overflow-y-auto relative">
           <div className="p-6 flex flex-col gap-8">
             
             {/* Settings Header (Sticky) */}
@@ -1716,7 +1716,7 @@ export default function Home() {
 
       {/* Floating Logs Drawer (Dev Only) */}
       {showLogs && (
-        <div className="absolute bottom-8 right-6 w-[400px] h-[300px] bg-bg-panel border border-border-color rounded-t-xl rounded-bl-xl shadow-2xl flex flex-col z-10 animate-in slide-in-from-bottom-8 fade-in duration-200">
+        <div className="fixed bottom-8 right-6 w-[calc(100vw-3rem)] sm:w-[400px] h-[300px] bg-bg-panel border border-border-color rounded-t-xl rounded-bl-xl shadow-2xl flex flex-col z-50 animate-in slide-in-from-bottom-8 fade-in duration-200">
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1.5 font-mono text-[10px]">
             {logs.length === 0
               ? <span className="text-text-muted">Waiting for logs...</span>
