@@ -203,7 +203,7 @@ export async function POST(req: Request) {
             ];
           }
           // Also skip the playback cell that tries to display the (non-existent) single-shot wav
-          if (src.includes('breeze_paragraph_single.wav') && src.includes('display(Audio')) {
+          if (src.includes('Skipping IPython display')) {
             cell.source = [`print("Playback cell skipped (single-shot was not generated).")\n`];
           }
         }
