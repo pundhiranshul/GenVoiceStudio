@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       language: "python",
       kernelType: "script",
       isPrivate: true,
-      enableGpu: false,
+      enableGpu: true,
       enableInternet: true,
       datasetDataSources: [],
       competitionDataSources: [],
@@ -62,9 +62,9 @@ export async function POST(req: Request) {
 
     if (parsedData.hasError || parsedData.error) {
       const errorMsg = parsedData.error || parsedData.hasError;
-      if (errorMsg.includes("Internet") || errorMsg.includes("phone verification")) {
+      if (errorMsg.includes("Internet") || errorMsg.includes("phone verification") || errorMsg.includes("GPU")) {
         return NextResponse.json({ 
-          error: 'Your Kaggle account requires phone verification to use internet in notebooks. Please verify your phone number in Kaggle settings.' 
+          error: 'Your Kaggle account requires phone verification to use internet and free GPUs. Please verify your phone number in Kaggle settings.' 
         }, { status: 403 });
       }
       return NextResponse.json({ error: `Kaggle Push Error: ${errorMsg}` }, { status: 400 });
