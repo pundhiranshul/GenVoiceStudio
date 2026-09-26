@@ -10,6 +10,11 @@ export async function POST(req: Request) {
 
     if (text) {
       text = text
+        .replace(/[\u2018\u2019]/g, "'")
+        .replace(/[\u201C\u201D]/g, '"')
+        .replace(/…/g, '...');
+
+      text = text
         .replace(/\(laughs\)/gi, '(laugh)')
         .replace(/\(sighs\)/gi, '(sigh)')
         .replace(/\(coughs\)/gi, '(cough)');
@@ -165,13 +170,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Target cell not found in notebook template' }, { status: 500 });
     }
 
-    // If the text is long (>600 chars), skip single-shot generation to avoid GPU OOM.
-    // The chunking step handles long text safely by generating sentence-by-sentence.
-    // If text is short (<= 600 chars), skip the chunking step since single-shot is faster.
-    const charCount = text.length;
-    const isLong = charCount > 600;
+    // Split text by sentence boundaries to determine if we need chunking
+    const rawSentences = text.split(/(?<=[.!?])\s+|\n+/).filter((s: string) => s.trim().length > 0);
+    let chunksCount = 0;
+    let currentChunk = "";
+    for (const s of rawSentences) {
+      if (currentChunk.length + s.length < 200) {
+        currentChunk += (currentChunk ? " " : "") + s;
+      } else {
+        if (currentChunk) chunksCount++;
+        currentChunk = s;
+      }
+    }
+    if (currentChunk) chunksCount++;
 
-    if (isLong) {
+    const needsChunking = chunksCount > 1;
+
+    if (needsChunking) {
       // Drop the single-shot cell — replace it with a skip notice
       for (const cell of notebook.cells) {
         if (cell.cell_type === 'code' && cell.source) {
@@ -180,7 +195,7 @@ export async function POST(req: Request) {
             cell.source = [
               `import subprocess\n`,
               `paragraph = ${JSON.stringify(text)}\n`,
-              `print("Single-shot skipped for long text (${charCount} chars > 600 char limit). Running chunked generation instead.")\n`
+              `print("Single-shot skipped since text splits into ${chunksCount} chunks. Running chunked generation instead.")\n`
             ];
           }
           // Also skip the playback cell that tries to display the (non-existent) single-shot wav
