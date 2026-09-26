@@ -1901,6 +1901,88 @@ export default function Home() {
         </div>
       )}
 
+      {/* Story Gen Modal */}
+      {showStoryModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-bg-panel w-full max-w-lg rounded-2xl shadow-xl border border-border-subtle flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-border-subtle">
+              <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+                ✨ AI Write Story
+              </h2>
+              <p className="text-sm text-text-muted mt-1">
+                Uses Kaggle AI credits to write an expressive script with vocal cues like (laugh) and (sigh).
+              </p>
+            </div>
+            
+            <div className="p-6 flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-text-primary">Topic / Premise</label>
+                <textarea
+                  value={storyTopic}
+                  onChange={e => setStoryTopic(e.target.value)}
+                  placeholder="A lonely astronaut discovers a strange planet..."
+                  className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3 text-sm text-text-primary outline-none focus:border-text-muted resize-none transition-colors"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-1 flex flex-col gap-2">
+                  <label className="text-sm font-medium text-text-primary">Tone</label>
+                  <select 
+                    value={storyTone}
+                    onChange={e => setStoryTone(e.target.value)}
+                    className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary outline-none focus:border-text-muted transition-colors appearance-none"
+                  >
+                    <option>Dramatic</option>
+                    <option>Funny</option>
+                    <option>Scary</option>
+                    <option>Educational</option>
+                    <option>Neutral</option>
+                  </select>
+                </div>
+                <div className="flex-1 flex flex-col gap-2">
+                  <label className="text-sm font-medium text-text-primary">Length</label>
+                  <select 
+                    value={storyLength}
+                    onChange={e => setStoryLength(e.target.value)}
+                    className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary outline-none focus:border-text-muted transition-colors appearance-none"
+                  >
+                    <option>Short (1 min)</option>
+                    <option>Medium (3 mins)</option>
+                    <option>Long (5 mins)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-border-subtle bg-bg-base flex gap-3">
+              <button
+                onClick={() => setShowStoryModal(false)}
+                disabled={isStoryGen}
+                className="flex-1 px-4 py-2.5 bg-bg-input text-text-primary text-sm font-medium rounded-xl text-center transition-colors hover:bg-bg-hover disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleStoryGenerate}
+                disabled={!storyTopic.trim() || isStoryGen}
+                className="flex-1 px-4 py-2.5 bg-accent-bg text-accent-text text-sm font-medium rounded-xl text-center transition-colors hover:bg-accent-bg/90 disabled:opacity-50 flex justify-center items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              >
+                {isStoryGen ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Writing...
+                  </>
+                ) : (
+                  "Generate Script"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
