@@ -24,6 +24,7 @@ import json
 import traceback
 
 results = {"internet": False, "gpu": False, "error": None}
+errors = []
 
 # Check Internet
 try:
@@ -32,7 +33,7 @@ try:
     print("INTERNET: SUCCESS")
 except Exception as e:
     results["internet"] = False
-    results["error"] = f"Internet failed: {e}"
+    errors.append("Internet access blocked")
     print(f"INTERNET: FAILED - {e}")
 
 # Check GPU
@@ -43,11 +44,15 @@ try:
         print("GPU: SUCCESS")
     else:
         results["gpu"] = False
-        results["error"] = "CUDA is not available. GPU allocation failed."
+        errors.append("CUDA is not available (No GPU allocated)")
         print("GPU: FAILED - CUDA not available")
 except Exception as e:
     results["gpu"] = False
+    errors.append("GPU check failed")
     print(f"GPU: FAILED - {e}")
+
+if errors:
+    results["error"] = " | ".join(errors)
 
 with open("/kaggle/working/verify_results.json", "w") as f:
     json.dump(results, f)

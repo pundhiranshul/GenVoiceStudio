@@ -722,22 +722,113 @@ export default function Home() {
             </div>
 
             {verifyStatus === 'error' && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
-                <strong className="font-semibold">Verification Failed: </strong>
-                {verifyError}
+              <div className="flex flex-col gap-4">
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
+                  <strong className="font-semibold">Verification Failed: </strong>
+                  {verifyError}
+                </div>
+
+                <div className="p-5 bg-accent-bg/5 border border-accent-bg/10 rounded-xl text-sm text-text-secondary">
+                  <p className="font-medium text-text-primary mb-3 text-base">How to fix this:</p>
+                  <ol className="list-decimal pl-4 space-y-2">
+                    <li>Go to <a href="https://www.kaggle.com/settings" target="_blank" rel="noreferrer" className="text-accent-bg hover:underline font-medium">kaggle.com/settings</a></li>
+                    <li>Find <strong>"Phone verify"</strong> under Phone verification and complete the steps to unlock internet access.</li>
+                    <li>Make sure you haven't exceeded your weekly 30-hour free GPU quota.</li>
+                  </ol>
+                </div>
+
+                <div className="flex gap-3 mt-2">
+                  <button 
+                    onClick={() => {
+                      setVerifyScreen(false);
+                      setIsVerifying(false);
+                    }}
+                    className="flex-1 bg-bg-input text-text-primary font-medium py-3.5 rounded-xl hover:bg-bg-hover transition-all shadow-sm flex items-center justify-center gap-2 border border-border-color"
+                  >
+                    Go Back
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      // Just re-trigger the same onClick flow from the start button
+                      setVerifyStatus('pending');
+                      setVerifyError("");
+                      
+                      try {
+                        const startRes = await fetch('/api/verifyKaggleStart', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ kaggleUsername, kaggleKey })
+                        });
+                        const startData = await startRes.json();
+                        
+                        if (!startRes.ok) {
+                          throw new Error(startData.error || "Failed to start verification process.");
+                        }
+                        
+                        setVerifyStatus('internet');
+                        const ref = startData.ref;
+                        
+                        let polling = true;
+                        let attempts = 0;
+                        while (polling) {
+                          attempts++;
+                          if (attempts > 30) {
+                            polling = false;
+                            setVerifyStatus('error');
+                            setVerifyError("Verification timed out after 2 minutes.");
+                            break;
+                          }
+                          const statusRes = await fetch('/api/verifyKaggleStatus', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ kaggleUsername, kaggleKey, ref })
+                          });
+                          
+                          const statusData = await statusRes.json();
+                          
+                          if (statusData.status === 'running') {
+                            await new Promise(r => setTimeout(r, 4000));
+                          } else if (statusData.status === 'complete') {
+                            polling = false;
+                            const results = statusData.results;
+                            if (results.internet) {
+                              setVerifyStatus('gpu');
+                            }
+                            
+                            if (results.internet && results.gpu) {
+                              setVerifyStatus('success');
+                              setTimeout(() => {
+                                setVerifyScreen(false);
+                                setIsVerifying(false);
+                                localStorage.setItem('kaggleUsername', kaggleUsername);
+                                localStorage.setItem('kaggleKey', kaggleKey);
+                                localStorage.removeItem('appPassword');
+                                setPassword('');
+                                setHasCredentials(true);
+                                setStatus("idle");
+                                setMessage("");
+                              }, 1000);
+                            } else {
+                              setVerifyStatus('error');
+                              setVerifyError(results.error || "Verification failed. Internet or GPU not available.");
+                            }
+                          } else {
+                            polling = false;
+                            setVerifyStatus('error');
+                            setVerifyError(statusData.error || "Failed to complete verification.");
+                          }
+                        }
+                      } catch (e: any) {
+                        setVerifyStatus('error');
+                        setVerifyError(e.message);
+                      }
+                    }}
+                    className="flex-1 bg-accent-bg text-accent-text font-medium py-3.5 rounded-xl hover:bg-accent-bg/90 transition-all shadow-sm flex items-center justify-center gap-2"
+                  >
+                    Retry Verification
+                  </button>
+                </div>
               </div>
-            )}
-            
-            {verifyStatus === 'error' && (
-              <button 
-                onClick={() => {
-                  setVerifyScreen(false);
-                  setIsVerifying(false);
-                }}
-                className="w-full mt-2 bg-bg-input text-text-primary font-medium py-3.5 rounded-xl hover:bg-bg-hover transition-all shadow-sm flex items-center justify-center gap-2 border border-border-color"
-              >
-                Go Back
-              </button>
             )}
           </div>
         </div>
