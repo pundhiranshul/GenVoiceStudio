@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { get, set } from "idb-keyval";
-import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User, ArrowLeft } from 'lucide-react';
+import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User, ArrowLeft, Mic } from 'lucide-react';
 import { VoiceSelector, Voice } from "@/components/VoiceSelector";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { stitchChunks } from "@/utils/audioEditor";
@@ -1680,9 +1680,9 @@ export default function Home() {
                         <button
                           onClick={() => setShowOptimizeModal(true)}
                           disabled={isGen || isStoryGen || isOptimizing || !text.trim()}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {isOptimizing ? <Loader2 size={16} className="animate-spin" /> : "✨ Optimize Script"}
+                          {isOptimizing ? <Loader2 size={16} className="animate-spin" /> : <><Wand2 size={16} /> Optimize Script</>}
                         </button>
                         <button
                           id="main-generate-btn"
@@ -1744,7 +1744,7 @@ export default function Home() {
                   disabled={isRecommending || !text.trim()}
                   className="mt-1 flex items-center justify-center gap-2 w-full px-3 py-2 text-xs font-medium bg-bg-panel text-text-secondary border border-border-color rounded-lg hover:bg-bg-hover hover:text-text-primary transition-all disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                 >
-                  {isRecommending ? <Loader2 size={14} className="animate-spin" /> : "✨ AI Recommend Voice"}
+                  {isRecommending ? <Loader2 size={14} className="animate-spin" /> : <><Mic size={14} /> AI Recommend Voice</>}
                 </button>
               </div>
             )}
