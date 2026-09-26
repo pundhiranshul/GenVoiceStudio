@@ -205,6 +205,7 @@ export default function Home() {
   const [showSplash, setShowSplash] = useState(true);
   const [showAbout, setShowAbout]   = useState(false);
   const [hasCredentials, setHasCredentials] = useState(false);
+  const [canCancelAuth, setCanCancelAuth] = useState(false);
   const [authMode, setAuthMode]   = useState<'byok' | 'admin'>('byok');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyScreen, setVerifyScreen] = useState(false);
@@ -837,7 +838,23 @@ export default function Home() {
 
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-6 animate-in fade-in duration-500 overflow-y-auto">
-        <div className={`max-w-xl w-full bg-bg-panel border border-border-color rounded-3xl p-8 sm:p-10 shadow-xl my-auto ${status === 'error' ? 'animate-shake' : ''}`}>
+        <div className={`max-w-xl w-full bg-bg-panel border border-border-color rounded-3xl p-8 sm:p-10 shadow-xl my-auto ${status === 'error' ? 'animate-shake' : ''} relative`}>
+          
+          {canCancelAuth && !verifyScreen && (
+            <button
+              onClick={() => {
+                setKaggleUsername(localStorage.getItem('kaggleUsername') || '');
+                setKaggleKey(localStorage.getItem('kaggleKey') || '');
+                setPassword(localStorage.getItem('appPassword') || '');
+                setHasCredentials(true);
+              }}
+              className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+          )}
+
           <div className="flex flex-col items-center gap-3 mb-8">
             <GenVoiceLogo size={48} />
             <h1 className="text-2xl font-semibold tracking-tight mt-2">Welcome to GenVoice</h1>
@@ -1086,12 +1103,8 @@ export default function Home() {
           
           <button
             onClick={() => {
-              localStorage.removeItem('kaggleUsername');
-              localStorage.removeItem('kaggleKey');
-              localStorage.removeItem('appPassword');
               setHasCredentials(false);
-              setStatus("idle");
-              setMessage("");
+              setCanCancelAuth(true);
             }}
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
             aria-label="Change Credentials"
