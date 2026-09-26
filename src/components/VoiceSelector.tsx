@@ -25,7 +25,8 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
   const [playingId, setPlayingId] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const audioCacheRef = useRef<Record<string, HTMLAudioElement>>({});
   const [expandedTranscriptId, setExpandedTranscriptId] = useState<string | null>(null);
 
   const selectedVoice = voices.find(v => v.id === selectedId);
@@ -56,38 +57,59 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
+  // Preload audio when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      voices.forEach(voice => {
+        if (voice.data && !audioCacheRef.current[voice.id]) {
+          const audio = new Audio(voice.data);
+          audio.preload = "auto";
+          audioCacheRef.current[voice.id] = audio;
+        }
+      });
+    }
+  }, [isOpen, voices]);
+
   const filteredVoices = voices.filter(v => 
     v.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const togglePreview = (e: React.MouseEvent, voice: Voice) => {
     e.stopPropagation();
+    
+    // Stop currently playing
+    if (activeAudioRef.current) {
+      activeAudioRef.current.pause();
+      activeAudioRef.current.currentTime = 0;
+      activeAudioRef.current = null;
+    }
+
     if (playingId === voice.id) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
       setPlayingId(null);
     } else {
-      if (audioRef.current) {
-        audioRef.current.pause();
+      let audio = audioCacheRef.current[voice.id];
+      if (!audio) {
+        audio = new Audio(voice.data);
+        audioCacheRef.current[voice.id] = audio;
       }
-      const audio = new Audio(voice.data);
+      
+      audio.currentTime = 0;
       audio.onended = () => {
         setPlayingId(null);
-        audioRef.current = null;
+        activeAudioRef.current = null;
       };
       audio.play().catch(err => console.error("Preview play failed:", err));
-      audioRef.current = audio;
+      activeAudioRef.current = audio;
       setPlayingId(voice.id);
     }
   };
 
   // Cleanup audio on unmount or modal close
   useEffect(() => {
-    if (!isOpen && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
+    if (!isOpen && activeAudioRef.current) {
+      activeAudioRef.current.pause();
+      activeAudioRef.current.currentTime = 0;
+      activeAudioRef.current = null;
       setPlayingId(null);
     }
   }, [isOpen]);
