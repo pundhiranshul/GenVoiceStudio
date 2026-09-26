@@ -8,11 +8,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing credentials or kernel' }, { status: 400 });
     }
 
-    const auth = Buffer.from(`${username}:${key}`).toString('base64');
+    let authHeader = '';
+    if (key.length === 32 && /^[0-9a-f]+$/i.test(key)) {
+      authHeader = 'Basic ' + Buffer.from(`${username}:${key}`).toString('base64');
+    } else {
+      authHeader = 'Bearer ' + key;
+    }
+
     const logsRes = await fetch(`https://www.kaggle.com/api/v1/kernels/output/${kernel}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Basic ${auth}`,
+        'Authorization': authHeader,
         'Accept': 'application/json'
       }
     });

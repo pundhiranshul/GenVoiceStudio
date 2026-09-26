@@ -57,32 +57,36 @@ export async function POST(req: Request) {
       nbformat_minor: 4
     };
 
-    const metadata = {
-      id: kernelSlug,
-      title: "genvoice-story-api",
-      code_file: "__notebook__.ipynb",
+    const payload = {
+      slug: kernelSlug,
+      newTitle: "genvoice-story-api",
+      text: JSON.stringify(notebookContent),
       language: "python",
-      kernel_type: "notebook",
-      is_private: true,
-      enable_gpu: false,
-      enable_internet: true
+      kernelType: "notebook",
+      isPrivate: true,
+      enableGpu: false,
+      enableInternet: true,
+      datasetDataSources: [],
+      competitionDataSources: [],
+      kernelDataSources: [],
+      modelDataSources: [],
+      categoryIds: []
     };
 
-    // 1. Push Kernel
-    const pushFormData = new FormData();
-    const nbBlob = new Blob([JSON.stringify(notebookContent)], { type: 'application/json' });
-    const metaBlob = new Blob([JSON.stringify(metadata)], { type: 'application/json' });
-    pushFormData.append('file', nbBlob, '__notebook__.ipynb');
-    pushFormData.append('metadata', metaBlob, 'kernel-metadata.json');
-
-    const auth = Buffer.from(`${username}:${key}`).toString('base64');
+    let authHeader = '';
+    if (key.length === 32 && /^[0-9a-f]+$/i.test(key)) {
+      authHeader = 'Basic ' + Buffer.from(`${username}:${key}`).toString('base64');
+    } else {
+      authHeader = 'Bearer ' + key;
+    }
 
     const pushRes = await fetch('https://www.kaggle.com/api/v1/kernels/push', {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${auth}`
+        'Authorization': authHeader,
+        'Content-Type': 'application/json'
       },
-      body: pushFormData
+      body: JSON.stringify(payload)
     });
 
     if (!pushRes.ok) {
