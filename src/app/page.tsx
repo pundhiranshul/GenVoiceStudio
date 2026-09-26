@@ -714,7 +714,8 @@ export default function Home() {
                   <span className="font-medium text-text-primary">How to get your credentials:</span>
                   <ol className="list-decimal pl-3.5 space-y-1 text-text-muted">
                     <li>Create an account at <a href="https://www.kaggle.com" target="_blank" rel="noreferrer" className="text-accent-bg underline underline-offset-2 hover:opacity-80">kaggle.com</a></li>
-                    <li>Go to <a href="https://www.kaggle.com/settings" target="_blank" rel="noreferrer" className="text-accent-bg underline underline-offset-2 hover:opacity-80">kaggle.com/settings</a>, your username is listed under <strong>"Your username"</strong>.</li>
+                    <li><strong>Important:</strong> You must verify your phone number to use internet access. Go to <a href="https://www.kaggle.com/settings" target="_blank" rel="noreferrer" className="text-accent-bg underline underline-offset-2 hover:opacity-80">kaggle.com/settings</a>, find <strong>"Phone verify"</strong> under Phone verification, and follow the steps.</li>
+                    <li>On the same settings page, your username is listed under <strong>"Your username"</strong>.</li>
                     <li>Then go to <a href="https://www.kaggle.com/settings/api" target="_blank" rel="noreferrer" className="text-accent-bg underline underline-offset-2 hover:opacity-80">kaggle.com/settings/api</a>.</li>
                     <li>Click <strong>"Create New Token"</strong>, enter <strong>"GenVoice"</strong> as the Token Name, click <strong>Generate</strong>, and copy the API Key.</li>
                   </ol>
@@ -759,11 +760,32 @@ export default function Home() {
             disabled={isVerifying}
             onClick={async () => {
               if (authMode === 'byok' && kaggleUsername && kaggleKey) {
-                localStorage.setItem('kaggleUsername', kaggleUsername);
-                localStorage.setItem('kaggleKey', kaggleKey);
-                localStorage.removeItem('appPassword');
-                setPassword('');
-                setHasCredentials(true);
+                setIsVerifying(true);
+                try {
+                  const res = await fetch('/api/verifyKaggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ kaggleUsername, kaggleKey })
+                  });
+                  const data = await res.json();
+                  if (!res.ok) {
+                    throw new Error(data.error || "Failed to verify Kaggle credentials");
+                  }
+                  localStorage.setItem('kaggleUsername', kaggleUsername);
+                  localStorage.setItem('kaggleKey', kaggleKey);
+                  localStorage.removeItem('appPassword');
+                  setPassword('');
+                  setHasCredentials(true);
+                  setStatus("idle");
+                  setMessage("");
+                } catch (e: any) {
+                  setMessage(e.message);
+                  setStatus("error");
+                  // Make error message persistent slightly longer for reading
+                  setTimeout(() => setStatus("idle"), 6000);
+                } finally {
+                  setIsVerifying(false);
+                }
               } else if (authMode === 'admin' && password) {
                 setIsVerifying(true);
                 try {
