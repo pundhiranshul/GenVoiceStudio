@@ -1329,7 +1329,7 @@ export default function Home() {
         <main className="flex-1 flex flex-col min-w-0 bg-bg-base shrink-0 md:shrink md:overflow-y-auto">
           <div className={`flex-1 flex flex-col w-full mx-auto p-6 md:p-10 relative min-h-0 ${isEditorOpen ? 'max-w-7xl' : 'max-w-5xl'}`}>
             
-            <div className="relative flex-1 w-full min-h-0 md:overflow-y-auto pr-14">
+            <div className="relative flex-1 w-full min-h-0 flex flex-col">
               {text.length === 0 && (
                 <div className="absolute top-0 left-0 text-text-muted pointer-events-none select-none text-2xl font-light tracking-tight">
                   {welcomeMessage}
@@ -1346,6 +1346,7 @@ export default function Home() {
                 </button>
               )}
               
+              <div className="flex-1 w-full min-h-0 md:overflow-y-auto pr-14">
             {!isEditorOpen && (
               status === "complete" && (finalAudios.length > 0 || chunkAudios.length > 0) ? (
                 <div className="w-full text-text-primary whitespace-pre-wrap break-words pb-12"
@@ -1406,6 +1407,7 @@ export default function Home() {
               )
             )}
 
+              </div>
             
             {!isEditorOpen && text.length > 0 && (
               <div className="absolute bottom-2 right-4 text-xs font-medium text-text-muted bg-bg-panel border border-border-color px-2 py-1 rounded-md shadow-sm pointer-events-none select-none z-20">
