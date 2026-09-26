@@ -1,4 +1,4 @@
-export async function stitchChunks(chunks: Blob[], trimMs: number | number[]): Promise<Blob> {
+export async function stitchChunks(chunks: Blob[], trimMs: number | number[], trimModes: ('crossfade' | 'trim')[] = []): Promise<Blob> {
   if (!chunks || chunks.length === 0) throw new Error("No chunks provided");
   if (chunks.length === 1) return chunks[0];
 
@@ -55,12 +55,18 @@ export async function stitchChunks(chunks: Blob[], trimMs: number | number[]): P
         
         // Simple crossfade for the overlap region
         if (frames > 0) {
+          const mode = trimModes[i - 1] || 'crossfade';
           for (let f = 0; f < frames; f++) {
             const outIdx = offset + f;
             if (outIdx >= 0 && outIdx < outChannel.length) {
-              const fraction = f / frames;
-              // Fade out previous chunk, fade in new chunk
-              outChannel[outIdx] = outChannel[outIdx] * (1 - fraction) + inChannel[f] * fraction;
+              if (mode === 'crossfade') {
+                const fraction = f / frames;
+                // Fade out previous chunk, fade in new chunk
+                outChannel[outIdx] = outChannel[outIdx] * (1 - fraction) + inChannel[f] * fraction;
+              } else {
+                // Hard trim: overwrite the previous chunk's end with the new chunk's start
+                outChannel[outIdx] = inChannel[f];
+              }
             }
           }
         }

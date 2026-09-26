@@ -238,6 +238,7 @@ export default function Home() {
   const [isLongMode, setIsLongMode] = useState(false);
   const [eta, setEta]               = useState("");
   const [chunkTrims, setChunkTrims] = useState<number[]>([]);
+  const [chunkTrimModes, setChunkTrimModes] = useState<('crossfade' | 'trim')[]>([]);
 
   const [stitchedAudioUrl, setStitchedAudioUrl] = useState<string | null>(null);
   const [isStitching, setIsStitching] = useState(false);
@@ -559,7 +560,7 @@ export default function Home() {
             const res = await fetch(a.data);
             return res.blob();
           }));
-          const stitchedBlob = await stitchChunks(blobs, chunkTrims);
+          const stitchedBlob = await stitchChunks(blobs, chunkTrims, chunkTrimModes);
           if (!isActive) return;
           const url = URL.createObjectURL(stitchedBlob);
           currentUrl = url;
@@ -578,7 +579,7 @@ export default function Home() {
       isActive = false;
       if (currentUrl) URL.revokeObjectURL(currentUrl);
     };
-  }, [audios, chunkTrims]);
+  }, [audios, chunkTrims, chunkTrimModes]);
 
   const renderHighlightedText = (t: string) => {
     const regex = /(\([^)]+\))/g;
@@ -1114,7 +1115,7 @@ export default function Home() {
         
         {/* Center Canvas */}
         <main className="flex-1 flex flex-col min-w-0 bg-bg-base shrink-0 md:shrink overflow-y-auto">
-          <div className="flex-1 flex flex-col max-w-4xl w-full mx-auto p-6 md:p-10 relative min-h-0">
+          <div className="flex-1 flex flex-col max-w-5xl w-full mx-auto p-6 md:p-10 relative min-h-0">
             
             <div className="relative flex-1 w-full min-h-0 overflow-y-auto pr-14">
               {text.length === 0 && (
@@ -1258,13 +1259,51 @@ export default function Home() {
                               <div key={i}>
                                 <AudioPlayer src={a.data} name={getDownloadFilename(a.name)} transcript={chunks[i]} />
                                 {i < chunkAudios.length - 1 && (
-                                  <div className="flex flex-col gap-2 bg-bg-input/40 p-3 rounded-lg border border-border-subtle ml-8 relative before:absolute before:left-[-16px] before:top-1/2 before:w-4 before:h-px before:bg-border-subtle">
-                                    <div className="flex justify-between items-center text-[11px] text-text-secondary">
-                                      <label className="font-medium flex items-center gap-1.5">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
-                                        Crossfade with next chunk
-                                      </label>
-                                      <div className="flex items-center gap-1">
+                                  <div className="flex flex-col gap-3 bg-bg-input/20 p-4 rounded-xl border border-border-subtle ml-6 relative before:absolute before:left-[-12px] before:top-1/2 before:w-3 before:h-px before:bg-border-subtle">
+                                    <div className="flex flex-wrap justify-between items-center gap-3">
+                                      <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-1.5 p-1 bg-bg-panel border border-border-color rounded-lg">
+                                          <button
+                                            onClick={() => {
+                                              const modes = [...chunkTrimModes];
+                                              modes[i] = 'crossfade';
+                                              setChunkTrimModes(modes);
+                                            }}
+                                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                                              (chunkTrimModes[i] || 'crossfade') === 'crossfade' 
+                                                ? 'bg-accent-bg text-accent-text shadow-sm' 
+                                                : 'text-text-muted hover:text-text-primary hover:bg-bg-hover'
+                                            }`}
+                                          >
+                                            Crossfade
+                                          </button>
+                                          <button
+                                            onClick={() => {
+                                              const modes = [...chunkTrimModes];
+                                              modes[i] = 'trim';
+                                              setChunkTrimModes(modes);
+                                            }}
+                                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                                              chunkTrimModes[i] === 'trim' 
+                                                ? 'bg-accent-bg text-accent-text shadow-sm' 
+                                                : 'text-text-muted hover:text-text-primary hover:bg-bg-hover'
+                                            }`}
+                                          >
+                                            Trim
+                                          </button>
+                                        </div>
+                                        <div className="group relative flex items-center justify-center cursor-help">
+                                          <div className="w-5 h-5 rounded-full border border-border-color flex items-center justify-center text-[10px] font-bold text-text-muted hover:bg-bg-hover transition-colors">
+                                            i
+                                          </div>
+                                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-bg-panel border border-border-color shadow-lg rounded-xl text-xs text-text-secondary opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none">
+                                            <strong className="block text-text-primary mb-1">Crossfade vs Trim</strong>
+                                            <strong>Crossfade</strong> smoothly blends the overlap between this chunk and the next. <strong>Trim</strong> performs a hard cut, removing the specified duration from the end of this chunk without blending.
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center gap-2">
                                         <input
                                           type="number"
                                           min="0"
@@ -1274,9 +1313,9 @@ export default function Home() {
                                             newTrims[i] = parseInt(e.target.value) || 0;
                                             setChunkTrims(newTrims);
                                           }}
-                                          className="w-16 bg-bg-base border border-border-subtle rounded px-1.5 py-0.5 text-right font-mono text-text-primary outline-none focus:border-border-color"
+                                          className="w-16 bg-bg-base border border-border-subtle rounded-md px-2 py-1 text-right font-mono text-sm text-text-primary outline-none focus:border-accent-bg transition-colors shadow-sm"
                                         />
-                                        <span>ms</span>
+                                        <span className="text-xs text-text-muted font-medium">ms</span>
                                       </div>
                                     </div>
                                     <input
@@ -1290,9 +1329,9 @@ export default function Home() {
                                         newTrims[i] = parseInt(e.target.value) || 0;
                                         setChunkTrims(newTrims);
                                       }}
-                                      className="w-full h-1 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
+                                      className="w-full h-1.5 bg-border-color rounded-full appearance-none cursor-pointer accent-accent-bg"
                                     />
-                                    <div className="flex justify-between text-[9px] text-text-muted mt-0.5">
+                                    <div className="flex justify-between text-[10px] font-medium text-text-muted/60 mt-0.5 px-1">
                                       <span>0s</span>
                                       <span>1s</span>
                                       <span>2s</span>
@@ -1339,14 +1378,16 @@ export default function Home() {
                     Stop
                   </button>
                 ) : (
-                  <button
-                    id="main-generate-btn"
-                    onClick={handleGenerate}
-                    disabled={isGen || !text.trim()}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                  >
-                    Generate Speech
-                  </button>
+                  !isEditorOpen && (
+                    <button
+                      id="main-generate-btn"
+                      onClick={handleGenerate}
+                      disabled={isGen || !text.trim()}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                    >
+                      Generate Speech
+                    </button>
+                  )
                 )}
               </div>
             </div>
