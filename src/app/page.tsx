@@ -616,6 +616,19 @@ export default function Home() {
   const finalAudios = audios.filter(a => getCategory(a.name) === "final");
   const isAudioShown = (chunksTotal > 0 && chunksDone === chunksTotal) || (!isLongMode && finalAudios.some(a => a.name.includes('single.wav')));
 
+  const handleNewScript = () => {
+    setText("");
+    setAudios([]);
+    setChunksTotal(0);
+    setChunksDone(0);
+    setStatus("idle");
+    setMessage("");
+    setCellsDone(0);
+    setCellsTotal(0);
+    setStitchedAudioUrl(null);
+    setGeneratedPreviewText("");
+  };
+
   // Simulated cell progress since Kaggle API doesn't expose live notebook stdout
   useEffect(() => {
     if (isGen && cellsTotal > 0 && startRef.current) {
@@ -1250,10 +1263,8 @@ export default function Home() {
                 </button>
               )}
               
-              <div className="relative w-full min-h-full pb-12">
-                <div 
-                  aria-hidden="true"
-                  className="text-text-primary whitespace-pre-wrap break-words pointer-events-none p-0 m-0 border-0"
+              {status === "complete" && (finalAudios.length > 0 || chunkAudios.length > 0) ? (
+                <div className="w-full text-text-primary whitespace-pre-wrap break-words pb-12"
                   style={{
                     fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
                     fontSize: '1.5rem',
@@ -1265,32 +1276,50 @@ export default function Home() {
                   }}
                 >
                   {renderHighlightedText(text)}
-                  {text.endsWith('\n') ? <br /> : null}
                 </div>
-                
-                <textarea
-                  ref={textAreaRef}
-                  value={text}
-                  onChange={e => setText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  onDoubleClick={handleDoubleClick}
-                  placeholder=""
-                  className="custom-highlight absolute inset-0 z-10 w-full h-full bg-transparent text-transparent outline-none resize-none caret-text-primary p-0 m-0 border-0 overflow-hidden whitespace-pre-wrap break-words"
-                  style={{
-                    fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
-                    fontSize: '1.5rem',
-                    fontWeight: 300,
-                    lineHeight: 1.625,
-                    letterSpacing: 'normal',
-                    fontKerning: 'none',
-                    fontVariantLigatures: 'none',
-                    WebkitAppearance: 'none',
-                    MozAppearance: 'none',
-                    appearance: 'none',
-                  }}
-                  spellCheck={false}
-                />
-              </div>
+              ) : (
+                <div className="relative w-full min-h-full pb-12">
+                  <div 
+                    aria-hidden="true"
+                    className="text-text-primary whitespace-pre-wrap break-words pointer-events-none p-0 m-0 border-0"
+                    style={{
+                      fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+                      fontSize: '1.5rem',
+                      fontWeight: 300,
+                      lineHeight: 1.625,
+                      letterSpacing: 'normal',
+                      fontKerning: 'none',
+                      fontVariantLigatures: 'none',
+                    }}
+                  >
+                    {renderHighlightedText(text)}
+                    {text.endsWith('\n') ? <br /> : null}
+                  </div>
+                  
+                  <textarea
+                    ref={textAreaRef}
+                    value={text}
+                    onChange={e => setText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onDoubleClick={handleDoubleClick}
+                    placeholder=""
+                    className="custom-highlight absolute inset-0 z-10 w-full h-full bg-transparent text-transparent outline-none resize-none caret-text-primary p-0 m-0 border-0 overflow-hidden whitespace-pre-wrap break-words"
+                    style={{
+                      fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
+                      fontSize: '1.5rem',
+                      fontWeight: 300,
+                      lineHeight: 1.625,
+                      letterSpacing: 'normal',
+                      fontKerning: 'none',
+                      fontVariantLigatures: 'none',
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none',
+                      appearance: 'none',
+                    }}
+                    spellCheck={false}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Editor Footer (Actions & Status) */}
@@ -1333,9 +1362,9 @@ export default function Home() {
                           <span>Stitching audio chunks...</span>
                         </div>
                       ) : stitchedAudioUrl ? (
-                        <AudioPlayer src={stitchedAudioUrl} name="GenVoice_Final.wav" transcript={text} />
+                        <AudioPlayer src={stitchedAudioUrl} name="GenVoice_Final.wav" />
                       ) : finalAudios.map((a, i) => (
-                        <AudioPlayer key={i} src={a.data} name={getDownloadFilename(a.name)} transcript={text} />
+                        <AudioPlayer key={i} src={a.data} name={getDownloadFilename(a.name)} />
                       ))}
                     </div>
 
@@ -1495,6 +1524,29 @@ export default function Home() {
                     <Square size={16} className="fill-current text-text-secondary" />
                     Stop
                   </button>
+                ) : (status === "complete" && (finalAudios.length > 0 || chunkAudios.length > 0)) ? (
+                  <>
+                    <button
+                      onClick={handleNewScript}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                    >
+                      New Script
+                    </button>
+                    <button
+                      onClick={() => { setAudios([]); setStitchedAudioUrl(null); setStatus("idle"); }}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                    >
+                      Edit Script
+                    </button>
+                    <button
+                      id="main-generate-btn"
+                      onClick={handleGenerate}
+                      disabled={isGen || isStoryGen || !text.trim()}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                    >
+                      Retry Generation
+                    </button>
+                  </>
                 ) : (
                   !isEditorOpen && (
                     <>
