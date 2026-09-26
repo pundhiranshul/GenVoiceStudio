@@ -55,6 +55,7 @@ export async function POST(req: Request) {
 
     // Attempt to fetch logs regardless if complete or error, because Kaggle might output why it failed in the logs.
     let logFile = '';
+    let outData: any = {};
     try {
       const outputPayload = JSON.stringify({ userName: kernelUserName, kernelSlug });
       const outRes = await fetch('https://api.kaggle.com/v1/kernels.KernelsApiService/ListKernelSessionOutput', {
@@ -67,14 +68,35 @@ export async function POST(req: Request) {
       });
 
       if (outRes.ok) {
-        const outData = await outRes.json();
+        outData = await outRes.json();
         logFile = outData.log || '';
       }
     } catch (e) {
       // ignore log fetch errors, we will fallback to failureMessage
     }
 
-    // Parse log for FINAL_RESULT
+    // 1. Try to find the verify_results.json file
+    if (outData && (outData.files || outData.outputFiles)) {
+      const files = outData.files || outData.outputFiles || [];
+      const jsonFile = files.find((f: any) => {
+        const fname = f.fileName || f.name || '';
+        return fname.includes('verify_results.json');
+      });
+
+      if (jsonFile && (jsonFile.url || jsonFile.downloadUrl)) {
+        try {
+          const fileRes = await fetch(jsonFile.url || jsonFile.downloadUrl);
+          if (fileRes.ok) {
+            const results = await fileRes.json();
+            return NextResponse.json({ status: 'complete', results });
+          }
+        } catch (e) {
+          // ignore error and fallback to parsing log
+        }
+      }
+    }
+
+    // 2. Parse log for FINAL_RESULT as fallback
     if (logFile) {
       const match = logFile.match(/FINAL_RESULT:\s*(\{.*\})/);
       if (match) {
