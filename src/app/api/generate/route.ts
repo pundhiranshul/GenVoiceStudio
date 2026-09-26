@@ -170,19 +170,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Target cell not found in notebook template' }, { status: 500 });
     }
 
+    const charCount = text.length;
+
     // Split text by sentence boundaries to determine if we need chunking
     const rawSentences = text.split(/(?<=[.!?])\s+|\n+/).filter((s: string) => s.trim().length > 0);
-    let chunksCount = 0;
+    const finalChunks: string[] = [];
     let currentChunk = "";
     for (const s of rawSentences) {
       if (currentChunk.length + s.length < 200) {
         currentChunk += (currentChunk ? " " : "") + s;
       } else {
-        if (currentChunk) chunksCount++;
+        if (currentChunk) finalChunks.push(currentChunk);
         currentChunk = s;
       }
     }
-    if (currentChunk) chunksCount++;
+    if (currentChunk) finalChunks.push(currentChunk);
+
+    const chunksCount = finalChunks.length;
 
     const needsChunking = chunksCount > 1;
 
@@ -285,13 +289,11 @@ export async function POST(req: Request) {
       // ignore JSON parse error and fallback to hardcoded slug
     }
 
-    // Split into sentences if chunked mode, same logic as Python notebook
-    const chunks = isLong
-      ? text.trim().split(/(?<=[.!?…])\s+/).filter((s: string) => s.trim().length > 0)
-      : [];
+    // Return the actual chunk list for progress tracking
+    const chunks = needsChunking ? finalChunks : [];
 
     console.log(`[DEBUG] Final actualKernelRef: ${actualKernelRef}`);
-    return NextResponse.json({ status: 'queued', kernel: actualKernelRef, rawResponse: kaggleData, charCount, isLong, chunks });
+    return NextResponse.json({ status: 'queued', kernel: actualKernelRef, rawResponse: kaggleData, charCount, isLong: needsChunking, chunks });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
