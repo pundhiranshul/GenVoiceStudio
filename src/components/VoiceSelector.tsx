@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Search, Check, ChevronDown, User, X, Play, Pause, Trash2, Info, Download } from 'lucide-react';
+import { Search, Check, ChevronDown, User, X, Play, Pause, Trash2, HelpCircle, Download } from 'lucide-react';
 
 export interface Voice {
   id: string;
@@ -26,6 +26,7 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
   const modalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [expandedTranscriptId, setExpandedTranscriptId] = useState<string | null>(null);
 
   const selectedVoice = voices.find(v => v.id === selectedId);
 
@@ -142,12 +143,12 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
               <div className="flex flex-col gap-1">
                 {filteredVoices.length > 0 ? (
                   filteredVoices.map(voice => (
-                    <button
-                      key={voice.id}
-                      onClick={() => {
-                        onSelect(voice.id);
-                        setIsOpen(false);
-                      }}
+                    <div key={voice.id} className="flex flex-col">
+                      <button
+                        onClick={() => {
+                          onSelect(voice.id);
+                          setIsOpen(false);
+                        }}
                       className={`group flex items-center gap-3 w-full text-left p-3 rounded-xl transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${
                         selectedId === voice.id ? 'bg-accent-bg/10' : 'hover:bg-accent-bg/5'
                       }`}
@@ -177,13 +178,20 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
                       
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0">
                         {voice.transcript && (
-                          <div 
-                            className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-accent-bg/10 text-text-muted hover:text-text-primary transition-colors cursor-help"
-                            title={`Transcript: "${voice.transcript}"`}
-                            onClick={(e) => e.stopPropagation()}
+                          <button 
+                            className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors outline-none ${
+                              expandedTranscriptId === voice.id 
+                                ? 'bg-accent-bg/10 text-accent-text' 
+                                : 'hover:bg-accent-bg/10 text-text-muted hover:text-text-primary'
+                            }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandedTranscriptId(expandedTranscriptId === voice.id ? null : voice.id);
+                            }}
+                            title="Show Transcript"
                           >
-                            <Info size={14} />
-                          </div>
+                            <HelpCircle size={14} />
+                          </button>
                         )}
                         {voice.data && (
                           <a
@@ -210,7 +218,15 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
                           <Trash2 size={14} />
                         </button>
                       )}
-                    </button>
+                      </button>
+                      
+                      {expandedTranscriptId === voice.id && voice.transcript && (
+                        <div className="mx-3 mb-2 px-4 py-3 bg-bg-input/50 rounded-lg text-xs text-text-secondary border border-border-subtle animate-in slide-in-from-top-2 fade-in duration-200 shadow-inner">
+                          <span className="font-semibold tracking-wide text-[10px] uppercase text-text-primary/70 mb-1.5 block">Reference Transcript</span>
+                          <p className="italic leading-relaxed">"{voice.transcript}"</p>
+                        </div>
+                      )}
+                    </div>
                   ))
                 ) : (
                   <div className="p-6 text-center text-sm text-text-muted">
