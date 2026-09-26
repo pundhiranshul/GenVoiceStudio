@@ -8,25 +8,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Username, API Key, and ref are required' }, { status: 400 });
     }
 
-    const cleanUsername = kaggleUsername.trim();
     const cleanToken = kaggleKey.trim();
 
     let authHeader = '';
     if (cleanToken.length === 32 && /^[0-9a-f]+$/i.test(cleanToken)) {
-      authHeader = 'Basic ' + Buffer.from(`${cleanUsername}:${cleanToken}`).toString('base64');
+      authHeader = 'Basic ' + Buffer.from(`${kaggleUsername.trim()}:${cleanToken}`).toString('base64');
     } else {
       authHeader = 'Bearer ' + cleanToken;
     }
 
-    const statusRes = await fetch(`https://www.kaggle.com/api/v1/kernels/status?kernelRef=${ref}`, {
-      headers: { 'Authorization': authHeader }
+    const parts = ref.split('/');
+    const kernelUserName = parts[0];
+    const kernelSlug = parts[1] || 'genvoice-verify';
+
+    const statusPayload = JSON.stringify({ userName: kernelUserName, kernelSlug });
+    const statusRes = await fetch('https://api.kaggle.com/v1/kernels.KernelsApiService/GetKernelSessionStatus', {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json'
+      },
+      body: statusPayload
     });
     
     if (!statusRes.ok) {
       const errText = await statusRes.text();
-      // Kaggle sometimes takes a moment to register the kernel, returning 404 initially.
       if (statusRes.status === 404 || statusRes.status === 403) {
-        return NextResponse.json({ status: 'running' }); // Let frontend keep polling instead of instantly failing
+        return NextResponse.json({ status: 'running' }); // Let frontend keep polling
       }
       return NextResponse.json({ error: `Failed to fetch status: ${statusRes.status} ${errText}` }, { status: statusRes.status });
     }
@@ -42,14 +50,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: 'error', error: 'Verification was cancelled.' });
     }
 
-    // It's complete or error. Let's fetch output.
-    const outRes = await fetch(`https://www.kaggle.com/api/v1/kernels/output?kernelRef=${ref}`, {
-      headers: { 'Authorization': authHeader }
+    // It's complete or error. Let's fetch output log.
+    const outputPayload = JSON.stringify({ userName: kernelUserName, kernelSlug });
+    const outRes = await fetch('https://api.kaggle.com/v1/kernels.KernelsApiService/ListKernelSessionOutput', {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json'
+      },
+      body: outputPayload
     });
 
     if (!outRes.ok) {
       const outText = await outRes.text();
-      return NextResponse.json({ status: 'error', error: `Verification kernel failed to produce output logs: ${outRes.status} ${outText}` });
+      return NextResponse.json({ status: 'error', error: `Output fetch failed: ${outRes.status} ${outText}` });
     }
 
     const outData = await outRes.json();
