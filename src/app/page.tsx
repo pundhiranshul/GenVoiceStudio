@@ -272,7 +272,7 @@ export default function Home() {
   const [storyTopic, setStoryTopic] = useState("");
   const [storyTone, setStoryTone] = useState("Dramatic");
   const [customTone, setCustomTone] = useState("");
-  const [storyLength, setStoryLength] = useState("Short");
+  const [storyLength, setStoryLength] = useState("Short (~100 words)");
   const [customLength, setCustomLength] = useState("");
   const [isStoryGen, setIsStoryGen] = useState(false);
 
@@ -1322,6 +1322,13 @@ export default function Home() {
                 </div>
               )
             )}
+
+            
+            {!isEditorOpen && text.length > 0 && (
+              <div className="absolute bottom-2 right-4 text-xs font-medium text-text-muted bg-bg-panel border border-border-color px-2 py-1 rounded-md shadow-sm pointer-events-none select-none z-20">
+                {text.split(/\s+/).filter(w => w.length > 0).length} words
+              </div>
+            )}
             </div>
 
             {/* Editor Footer (Actions & Status) */}
@@ -1416,7 +1423,7 @@ export default function Home() {
                           </div>
                           <div className="text-xs text-text-secondary leading-relaxed">
                             <strong className="text-text-primary block mb-1">Crossfade vs Trim</strong>
-                            <strong>Crossfade</strong> smoothly blends the overlap between this chunk and the next. <strong>Trim</strong> performs a hard cut, removing the specified duration from the end of the chunk without blending. Changes apply instantly to the stitched output above.
+                            <strong>Crossfade</strong> smoothly blends the overlap between this chunk and the next. <strong>Trim</strong> performs a hard cut, removing the specified duration from the end of the chunk without blending. <strong>Negative values</strong> add silence (padding) between chunks instead of trimming. Changes apply instantly.
                           </div>
                         </div>
 
@@ -1461,9 +1468,21 @@ export default function Home() {
                                       </div>
 
                                       <div className="flex items-center gap-2">
+                                        <button
+                                          onClick={() => {
+                                            const currentTrim = chunkTrims[i] || 0;
+                                            const currentMode = chunkTrimModes[i] || 'crossfade';
+                                            setChunkTrims(Array(chunkAudios.length - 1).fill(currentTrim));
+                                            setChunkTrimModes(Array(chunkAudios.length - 1).fill(currentMode));
+                                          }}
+                                          className="text-[10px] bg-bg-panel border border-border-color hover:bg-bg-hover text-text-muted hover:text-text-primary px-2 py-1 rounded transition-colors whitespace-nowrap"
+                                          title="Apply this exact setting to all chunks"
+                                        >
+                                          Apply to All
+                                        </button>
                                         <input
                                           type="number"
-                                          min="0"
+                                          min="-2000"
                                           value={chunkTrims[i] || 0}
                                           onChange={(e) => {
                                             const newTrims = [...chunkTrims];
@@ -1477,7 +1496,7 @@ export default function Home() {
                                     </div>
                                     <input
                                       type="range"
-                                      min="0"
+                                      min="-2000"
                                       max="2000"
                                       step="10"
                                       value={chunkTrims[i] || 0}
@@ -1489,6 +1508,8 @@ export default function Home() {
                                       className="w-full h-1.5 bg-border-color rounded-full appearance-none cursor-pointer accent-accent-bg"
                                     />
                                     <div className="flex justify-between text-[10px] font-medium text-text-muted/60 mt-0.5 px-1">
+                                      <span>-2s</span>
+                                      <span>-1s</span>
                                       <span>0s</span>
                                       <span>1s</span>
                                       <span>2s</span>
@@ -2022,10 +2043,10 @@ export default function Home() {
                       onChange={e => setStoryLength(e.target.value)}
                       className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary outline-none focus:border-text-muted transition-colors appearance-none"
                     >
-                      <option>Short (1 min)</option>
-                      <option>Medium (3 mins)</option>
-                      <option>Long (5 mins)</option>
-                      <option>Custom</option>
+                      <option value="Short (~100 words)">Short (~100 words)</option>
+                      <option value="Medium (~300 words)">Medium (~300 words)</option>
+                      <option value="Long (~500 words)">Long (~500 words)</option>
+                      <option value="Custom">Custom</option>
                     </select>
                   </div>
                 </div>
@@ -2053,7 +2074,7 @@ export default function Home() {
                           type="text"
                           value={customLength}
                           onChange={e => setCustomLength(e.target.value)}
-                          placeholder="e.g. 10 minutes, 2 paragraphs"
+                          placeholder="e.g. 1000 words, 2 paragraphs"
                           className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary outline-none focus:border-text-muted transition-colors"
                         />
                       </div>

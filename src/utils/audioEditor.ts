@@ -21,12 +21,14 @@ export async function stitchChunks(chunks: Blob[], trimMs: number | number[], tr
     if (index === 0) return 0;
     const ms = Array.isArray(trimMs) ? (trimMs[index - 1] || 0) : trimMs;
     const requestedFrames = Math.floor(sampleRate * (ms / 1000));
+    if (requestedFrames < 0) return requestedFrames;
     return Math.min(requestedFrames, buffers[index].length, buffers[index - 1].length);
   };
   
   for (let i = 0; i < buffers.length; i++) {
     let len = buffers[i].length;
     // For all chunks except the first, we subtract the trim amount (crossfade overlap)
+    // If negative, subtracting a negative adds padding
     if (i > 0) {
       len -= getTrimFrames(i);
     }
@@ -53,7 +55,7 @@ export async function stitchChunks(chunks: Blob[], trimMs: number | number[], tr
         const frames = getTrimFrames(i);
         offset -= frames;
         
-        // Simple crossfade for the overlap region
+        // Simple crossfade for the overlap region (only if frames > 0)
         if (frames > 0) {
           const mode = trimModes[i - 1] || 'crossfade';
           for (let f = 0; f < frames; f++) {
@@ -72,10 +74,11 @@ export async function stitchChunks(chunks: Blob[], trimMs: number | number[], tr
         }
         
         // Copy the rest of the new chunk
-        const remainingFrames = buf.length - frames;
+        const remainingFrames = frames > 0 ? buf.length - frames : buf.length;
         if (remainingFrames > 0) {
-          const restOfIn = inChannel.subarray(frames);
-          outChannel.set(restOfIn, offset + frames);
+          const restOfIn = frames > 0 ? inChannel.subarray(frames) : inChannel;
+          const writeOffset = frames > 0 ? offset + frames : offset;
+          outChannel.set(restOfIn, writeOffset);
         }
         
         offset += buf.length;
