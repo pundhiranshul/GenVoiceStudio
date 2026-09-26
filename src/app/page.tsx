@@ -132,6 +132,13 @@ function niceName(f: string) {
   if (m) return `Chunk ${parseInt(m[1]) + 1}`;
   return f;
 }
+function getDownloadFilename(f: string) {
+  if (f.includes("reference")) return "GenVoice_Reference.wav";
+  if (f.includes("single") || f.includes("chunked")) return "GenVoice_Final.wav";
+  const m = f.match(/chunk_(\d+)/);
+  if (m) return `GenVoice_Chunk_${m[1]}.wav`;
+  return f;
+}
 function getCategory(f: string) {
   if (f.includes("reference")) return "reference";
   if (f.includes("single") || f.includes("chunked")) return "final";
@@ -1206,9 +1213,9 @@ export default function Home() {
                           <span>Stitching audio chunks...</span>
                         </div>
                       ) : stitchedAudioUrl ? (
-                        <AudioPlayer src={stitchedAudioUrl} name="stitched_output.wav" transcript={text} />
+                        <AudioPlayer src={stitchedAudioUrl} name="GenVoice_Final.wav" transcript={text} />
                       ) : finalAudios.map((a, i) => (
-                        <AudioPlayer key={i} src={a.data} name={a.name} transcript={text} />
+                        <AudioPlayer key={i} src={a.data} name={getDownloadFilename(a.name)} transcript={text} />
                       ))}
                     </div>
 
@@ -1246,7 +1253,7 @@ export default function Home() {
                             </div>
                             {chunkAudios.map((a, i) => (
                               <div key={i}>
-                                <AudioPlayer src={a.data} name={a.name} transcript={chunks[i]} />
+                                <AudioPlayer src={a.data} name={getDownloadFilename(a.name)} transcript={chunks[i]} />
                                 {i < chunkAudios.length - 1 && (
                                   <div className="flex flex-col gap-2 bg-bg-input/40 p-3 rounded-lg border border-border-subtle ml-8 relative before:absolute before:left-[-16px] before:top-1/2 before:w-4 before:h-px before:bg-border-subtle">
                                     <div className="flex justify-between items-center text-[11px] text-text-secondary">
@@ -1254,25 +1261,38 @@ export default function Home() {
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
                                         Crossfade with next chunk
                                       </label>
-                                      <span className="tabular-nums font-mono bg-bg-base px-1.5 py-0.5 rounded border border-border-subtle">{chunkTrims[i] || 0}ms</span>
+                                      <div className="flex items-center gap-1">
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          value={chunkTrims[i] || 0}
+                                          onChange={(e) => {
+                                            const newTrims = [...chunkTrims];
+                                            newTrims[i] = parseInt(e.target.value) || 0;
+                                            setChunkTrims(newTrims);
+                                          }}
+                                          className="w-16 bg-bg-base border border-border-subtle rounded px-1.5 py-0.5 text-right font-mono text-text-primary outline-none focus:border-border-color"
+                                        />
+                                        <span>ms</span>
+                                      </div>
                                     </div>
                                     <input
                                       type="range"
                                       min="0"
-                                      max="500"
+                                      max="2000"
                                       step="10"
                                       value={chunkTrims[i] || 0}
                                       onChange={(e) => {
                                         const newTrims = [...chunkTrims];
-                                        newTrims[i] = parseInt(e.target.value);
+                                        newTrims[i] = parseInt(e.target.value) || 0;
                                         setChunkTrims(newTrims);
                                       }}
                                       className="w-full h-1 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
                                     />
                                     <div className="flex justify-between text-[9px] text-text-muted mt-0.5">
-                                      <span>0ms</span>
-                                      <span>250ms</span>
-                                      <span>500ms</span>
+                                      <span>0s</span>
+                                      <span>1s</span>
+                                      <span>2s</span>
                                     </div>
                                   </div>
                                 )}

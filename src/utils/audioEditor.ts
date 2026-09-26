@@ -20,7 +20,8 @@ export async function stitchChunks(chunks: Blob[], trimMs: number | number[]): P
   const getTrimFrames = (index: number) => {
     if (index === 0) return 0;
     const ms = Array.isArray(trimMs) ? (trimMs[index - 1] || 0) : trimMs;
-    return Math.floor(sampleRate * (ms / 1000));
+    const requestedFrames = Math.floor(sampleRate * (ms / 1000));
+    return Math.min(requestedFrames, buffers[index].length, buffers[index - 1].length);
   };
   
   for (let i = 0; i < buffers.length; i++) {
