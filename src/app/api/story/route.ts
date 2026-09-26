@@ -18,6 +18,7 @@ export async function POST(req: Request) {
           execution_count: null,
           metadata: {},
           source: [
+            "!pip install --upgrade protobuf kaggle-benchmarks -q\n",
             "import kaggle_benchmarks as kbench\n",
             "\n",
             `PROMPT = """${prompt.replace(/"/g, '\\"')}"""\n`,
