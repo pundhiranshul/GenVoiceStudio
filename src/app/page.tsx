@@ -1171,23 +1171,7 @@ export default function Home() {
                   </div>
                 )}
 
-                {isGen && (
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-3 text-sm text-text-primary">
-                      <Loader2 size={16} className="animate-spin text-text-primary" />
-                      <span>{message}</span>
-                      {eta && <span className="text-text-muted tabular-nums">ETA: {eta}</span>}
-                    </div>
-                    {isLongMode && chunksTotal > 0 && (
-                      <div className="w-full max-w-md h-1.5 bg-accent-bg/10 rounded-full overflow-hidden mt-1">
-                        <div 
-                          className="h-full bg-accent-bg transition-all duration-500" 
-                          style={{ width: `${(chunksDone / chunksTotal) * 100}%` }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
+
 
                 {status === "error" && !message.includes("Voice Design Instruction") && (
                   <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
@@ -1281,6 +1265,24 @@ export default function Home() {
                           </div>
                         </div>
                       </details>
+                    )}
+                  </div>
+                )}
+
+                {isGen && (
+                  <div className={`flex flex-col gap-2 ${(finalAudios.length > 0 || chunkAudios.length > 0) ? 'mt-4 pt-4 border-t border-border-subtle' : ''}`}>
+                    <div className="flex items-center gap-3 text-sm text-text-primary">
+                      <Loader2 size={16} className="animate-spin text-text-primary" />
+                      <span>{message}</span>
+                      {eta && <span className="text-text-muted tabular-nums">ETA: {eta}</span>}
+                    </div>
+                    {isLongMode && chunksTotal > 0 && (
+                      <div className="w-full max-w-md h-1.5 bg-accent-bg/10 rounded-full overflow-hidden mt-1">
+                        <div 
+                          className="h-full bg-accent-bg transition-all duration-500" 
+                          style={{ width: `${(chunksDone / chunksTotal) * 100}%` }}
+                        />
+                      </div>
                     )}
                   </div>
                 )}
