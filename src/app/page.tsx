@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { get, set } from "idb-keyval";
-import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User } from 'lucide-react';
+import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User, ArrowLeft } from 'lucide-react';
 import { VoiceSelector, Voice } from "@/components/VoiceSelector";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { stitchChunks } from "@/utils/audioEditor";
@@ -1263,7 +1263,8 @@ export default function Home() {
                 </button>
               )}
               
-              {status === "complete" && (finalAudios.length > 0 || chunkAudios.length > 0) ? (
+            {!isEditorOpen && (
+              status === "complete" && (finalAudios.length > 0 || chunkAudios.length > 0) ? (
                 <div className="w-full text-text-primary whitespace-pre-wrap break-words pb-12"
                   style={{
                     fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
@@ -1319,7 +1320,8 @@ export default function Home() {
                     spellCheck={false}
                   />
                 </div>
-              )}
+              )
+            )}
             </div>
 
             {/* Editor Footer (Actions & Status) */}
@@ -1369,44 +1371,57 @@ export default function Home() {
                     </div>
 
                     {/* Raw Chunks Toggle */}
-                    {chunkAudios.length > 0 && (
-                      <details 
-                        className="mt-6 group border border-border-subtle rounded-xl bg-bg-base/50 overflow-hidden"
-                        onToggle={(e) => setIsEditorOpen((e.target as HTMLDetailsElement).open)}
+                    {chunkAudios.length > 0 && !isEditorOpen && (
+                      <button 
+                        onClick={() => setIsEditorOpen(true)}
+                        className="mt-6 w-full flex items-center justify-between p-4 border border-border-subtle rounded-xl bg-bg-base/50 hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color group"
                       >
-                        <summary className="text-sm font-medium text-text-secondary cursor-pointer list-none flex items-center justify-between p-4 hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color">
-                          <span className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-accent-bg" />
-                            Chunk Editor ({chunkAudios.length})
-                          </span>
-                          <span className="text-text-muted text-xs bg-bg-input px-2 py-1 rounded-md">
-                            {isEditorOpen ? "Close Editor" : "Edit Crossfade"}
-                          </span>
-                        </summary>
-                        <div className="p-4 pt-0 flex flex-col gap-4 border-t border-border-subtle/50 mt-2">
-                          <div className="bg-bg-input/30 border border-border-subtle rounded-xl p-3 mb-2 flex items-start gap-3 mt-4">
-                            <div className="w-5 h-5 rounded-full border border-border-color flex items-center justify-center text-[10px] font-bold text-text-muted shrink-0 mt-0.5">
-                              i
-                            </div>
-                            <div className="text-xs text-text-secondary leading-relaxed">
-                              <strong className="text-text-primary block mb-1">Crossfade vs Trim</strong>
-                              <strong>Crossfade</strong> smoothly blends the overlap between this chunk and the next. <strong>Trim</strong> performs a hard cut, removing the specified duration from the end of the chunk without blending. Changes apply instantly to the stitched output above.
-                            </div>
-                          </div>
+                        <span className="flex items-center gap-2 text-sm font-medium text-text-secondary">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent-bg" />
+                          Chunk Editor ({chunkAudios.length})
+                        </span>
+                        <span className="text-text-muted text-xs bg-bg-input px-2 py-1 rounded-md group-hover:bg-bg-panel transition-colors">
+                          Edit Crossfade
+                        </span>
+                      </button>
+                    )}
 
-                          <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-2 pb-2">
-                            <div className="flex justify-between items-center sticky top-0 bg-bg-base/90 py-1 z-10 backdrop-blur-sm -mx-2 px-2">
-                              <span className="text-xs font-medium text-text-secondary">Raw Chunks:</span>
-                              <button
-                                onClick={handleDownloadZip}
-                                className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
-                                title="Download all chunks as ZIP"
-                              >
-                                <Download size={12} />
-                                Download ZIP
-                              </button>
-                            </div>
-                            {chunkAudios.map((a, i) => (
+                    {/* The Chunk Editor View */}
+                    {chunkAudios.length > 0 && isEditorOpen && (
+                      <div className="mt-8 flex flex-col gap-4 animate-in fade-in duration-200">
+                        <div className="flex justify-between items-center mb-2 pb-4 border-b border-border-subtle sticky top-0 bg-bg-base z-20">
+                          <div className="flex items-center gap-4">
+                            <button 
+                              onClick={() => setIsEditorOpen(false)}
+                              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-input text-text-primary hover:bg-bg-hover transition-colors text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                            >
+                              <ArrowLeft size={16} /> Back
+                            </button>
+                            <h2 className="text-lg font-semibold text-text-primary">Chunk Editor</h2>
+                          </div>
+                          
+                          <button
+                            onClick={handleDownloadZip}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bg-panel border border-border-color text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+                            title="Download all chunks as ZIP"
+                          >
+                            <Download size={14} />
+                            Download ZIP
+                          </button>
+                        </div>
+                        
+                        <div className="bg-bg-input/30 border border-border-subtle rounded-xl p-3 mb-2 flex items-start gap-3">
+                          <div className="w-5 h-5 rounded-full border border-border-color flex items-center justify-center text-[10px] font-bold text-text-muted shrink-0 mt-0.5">
+                            i
+                          </div>
+                          <div className="text-xs text-text-secondary leading-relaxed">
+                            <strong className="text-text-primary block mb-1">Crossfade vs Trim</strong>
+                            <strong>Crossfade</strong> smoothly blends the overlap between this chunk and the next. <strong>Trim</strong> performs a hard cut, removing the specified duration from the end of the chunk without blending. Changes apply instantly to the stitched output above.
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-3 max-h-[700px] overflow-y-auto pr-2 pb-2">
+                          {chunkAudios.map((a, i) => (
                               <div key={i}>
                                 <AudioPlayer src={a.data} name={getDownloadFilename(a.name)} transcript={chunks[i]} />
                                 {i < chunkAudios.length - 1 && (
@@ -1482,9 +1497,8 @@ export default function Home() {
                                 )}
                               </div>
                             ))}
-                          </div>
                         </div>
-                      </details>
+                      </div>
                     )}
                   </div>
                 )}
@@ -1574,7 +1588,7 @@ export default function Home() {
         </main>
 
         {/* Right Settings Sidebar */}
-        <aside className="w-full md:w-[320px] shrink-0 border-t md:border-t-0 md:border-l border-border-color bg-bg-panel flex flex-col md:overflow-y-auto relative">
+        <aside className={`${isEditorOpen ? 'hidden' : 'flex'} w-full md:w-[320px] shrink-0 border-t md:border-t-0 md:border-l border-border-color bg-bg-panel flex-col md:overflow-y-auto relative`}>
           <div className="p-6 flex flex-col gap-8">
             
             {/* Settings Header (Sticky) */}
