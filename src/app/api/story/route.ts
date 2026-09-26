@@ -1,100 +1,157 @@
 import { NextResponse } from 'next/server';
+import { sanitizeText } from '@/utils/sanitizeText';
+
+const KAGGLE_PROXY_MINT_URL = 'https://www.kaggle.com/api/v1/models.ModelProxyApiService/CreateDefaultModelProxyToken';
+
+async function mintProxyToken(username: string | null, key: string) {
+  let authHeader = '';
+  if (key.length === 32 && /^[0-9a-f]+$/i.test(key)) {
+    authHeader = 'Basic ' + Buffer.from(`${username}:${key}`).toString('base64');
+  } else {
+    authHeader = 'Bearer ' + key;
+  }
+  
+  const res = await fetch(KAGGLE_PROXY_MINT_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': authHeader,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({})
+  });
+  
+  if (!res.ok) {
+    throw new Error(`Failed to mint proxy token: ${res.status} ${res.statusText}`);
+  }
+  
+  const data = await res.json();
+  return {
+    token: data.token,
+    baseUri: data.baseUri,
+    expiryTime: data.expiryTime
+  };
+}
+
+async function generateStory(token: string, baseUri: string, prompt: string) {
+  // Model Proxy URL formatting:
+  // We append /openapi/chat/completions to the baseUri (e.g., https://mp-staging.kaggle.net/models)
+  // This endpoint is an OpenAI-compatible REST API.
+  // Example Curl Test:
+  // curl https://mp-staging.kaggle.net/models/openapi/chat/completions \
+  //   -H "Authorization: Bearer <minted-model-proxy-key>" \
+  //   -H "Content-Type: application/json" \
+  //   -d '{"model": "google/gemini-3.7-flash", "messages": [{"role":"user","content":"Say hello in one sentence."}]}'
+  // Response shape is standard OpenAI ChatCompletion (e.g., choices[0].message.content).
+  
+  const cleanBaseUri = baseUri.replace(/\/$/, '');
+  const url = `${cleanBaseUri}/openapi/chat/completions`;
+  
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'google/gemini-3.7-flash', // Confirmed supported model
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Model proxy error (${res.status}): ${errText}`);
+  }
+  
+  const data = await res.json();
+  if (data.choices && data.choices.length > 0 && data.choices[0].message) {
+    return data.choices[0].message.content;
+  }
+  throw new Error('Unexpected response format from model proxy');
+}
 
 export async function POST(req: Request) {
   try {
-    const { prompt, username, key } = await req.json();
+    const { prompt, password, username: reqUsername, key: reqKey, modelProxyKey, modelProxyExpiresAt } = await req.json();
 
-    if (!prompt || !username || !key) {
-      return NextResponse.json({ error: 'Missing prompt, username, or key' }, { status: 400 });
+    if (!prompt) {
+      return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
     }
 
-    const kernelSlug = `${username}/genvoice-story-api`;
+    let username = reqUsername ? reqUsername.trim() : null;
+    let key = reqKey ? reqKey.trim() : null;
 
-    // Create the notebook payload
-    const notebookContent = {
-      cells: [
-        {
-          cell_type: "code",
-          execution_count: null,
-          metadata: {},
-          source: [
-            "!pip install --upgrade protobuf kaggle-benchmarks jupyter_bokeh -q\n",
-            "import kaggle_benchmarks as kbench\n",
-            "\n",
-            `PROMPT = """${prompt.replace(/"/g, '\\"')}"""\n`,
-            "\n",
-            "@kbench.task(name=\"genvoice-story-gen\")\n",
-            "def generate(llm):\n",
-            "    response = llm.prompt(PROMPT)\n",
-            "    with open('story.txt', 'w', encoding='utf-8') as f:\n",
-            "        f.write(str(response))\n",
-            "\n",
-            "_ = generate.run(kbench.llm)\n"
-          ]
-        }
-      ],
-      metadata: {
-        kernelspec: {
-          display_name: "Python 3",
-          language: "python",
-          name: "python3"
-        },
-        language_info: {
-          codemirror_mode: {
-            name: "ipython",
-            version: 3
-          },
-          file_extension: ".py",
-          mimetype: "text/x-python",
-          name: "python",
-          nbconvert_exporter: "python",
-          pygments_lexer: "ipython3",
-          version: "3.10.12"
-        }
-      },
-      nbformat: 4,
-      nbformat_minor: 4
-    };
-
-    const payload = {
-      slug: kernelSlug,
-      newTitle: "genvoice-story-api",
-      text: JSON.stringify(notebookContent),
-      language: "python",
-      kernelType: "notebook",
-      isPrivate: true,
-      enableGpu: false,
-      enableInternet: true,
-      datasetDataSources: [],
-      competitionDataSources: [],
-      kernelDataSources: [],
-      modelDataSources: [],
-      categoryIds: []
-    };
-
-    let authHeader = '';
-    if (key.length === 32 && /^[0-9a-f]+$/i.test(key)) {
-      authHeader = 'Basic ' + Buffer.from(`${username}:${key}`).toString('base64');
+    if (username && key) {
+      // Using custom credentials
     } else {
-      authHeader = 'Bearer ' + key;
+      // Using shared credentials
+      if (password !== (process.env.APP_PASSWORD || 'secret')) {
+        return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
+      }
+      username = process.env.KAGGLE_USERNAME || null;
+      key = process.env.KAGGLE_TOKEN || process.env.KAGGLE_KEY || null;
     }
 
-    const pushRes = await fetch('https://www.kaggle.com/api/v1/kernels/push', {
-      method: 'POST',
-      headers: {
-        'Authorization': authHeader,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
+    if (!key) {
+      return NextResponse.json({ error: 'Kaggle credentials not provided or not configured on server.' }, { status: 500 });
+    }
+
+    let currentToken = modelProxyKey;
+    let currentExpiry = modelProxyExpiresAt;
+    let currentBaseUri = 'https://mp-staging.kaggle.net/models'; // default fallback
+    let didJustMint = false;
+
+    // Check if we need to mint a new token
+    if (currentToken && currentExpiry) {
+      const expiryDate = new Date(currentExpiry);
+      const now = new Date();
+      const fiveMinsFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+      
+      if (expiryDate <= fiveMinsFromNow) {
+        currentToken = null; // force remint
+      }
+    } else {
+      currentToken = null;
+    }
+
+    if (!currentToken) {
+      console.log("[Story API] Minting new model proxy token...");
+      const mintRes = await mintProxyToken(username, key);
+      currentToken = mintRes.token;
+      currentExpiry = mintRes.expiryTime;
+      currentBaseUri = mintRes.baseUri;
+      didJustMint = true;
+    }
+
+    let storyText = '';
+    try {
+      console.log("[Story API] Requesting story generation...");
+      storyText = await generateStory(currentToken, currentBaseUri, prompt);
+    } catch (e: any) {
+      // If we failed with an auth error and didn't just mint, try minting once
+      if (!didJustMint && (e.message.includes('Model proxy error (401)') || e.message.includes('Model proxy error (403)'))) {
+        console.log("[Story API] Token rejected, reminting and retrying...");
+        const mintRes = await mintProxyToken(username, key);
+        currentToken = mintRes.token;
+        currentExpiry = mintRes.expiryTime;
+        currentBaseUri = mintRes.baseUri;
+        
+        storyText = await generateStory(currentToken, currentBaseUri, prompt);
+      } else {
+        throw e;
+      }
+    }
+
+    // Sanitize the story text
+    const sanitizedText = sanitizeText(storyText);
+
+    return NextResponse.json({ 
+      success: true, 
+      story: sanitizedText,
+      modelProxyKey: currentToken,
+      modelProxyExpiresAt: currentExpiry,
+      modelProxyBaseUri: currentBaseUri
     });
-
-    if (!pushRes.ok) {
-      const text = await pushRes.text();
-      throw new Error(`Failed to push story kernel: ${pushRes.status} ${text}`);
-    }
-
-    const pushData = await pushRes.json();
-    return NextResponse.json({ success: true, kernel: kernelSlug, run: pushData });
 
   } catch (error: any) {
     console.error("Story Gen Error:", error);

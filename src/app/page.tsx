@@ -223,6 +223,8 @@ export default function Home() {
   const [password, setPassword]   = useState("");
   const [kaggleUsername, setKaggleUsername] = useState("");
   const [kaggleKey, setKaggleKey] = useState("");
+  const [modelProxyKey, setModelProxyKey] = useState("");
+  const [modelProxyExpiresAt, setModelProxyExpiresAt] = useState("");
   const [text, setText]           = useState("");
   const [status, setStatus]       = useState<AppStatus>("idle");
   const [message, setMessage]     = useState("");
@@ -353,10 +355,14 @@ export default function Home() {
     const storedUsername = localStorage.getItem('kaggleUsername');
     const storedKey = localStorage.getItem('kaggleKey');
     const storedPass = localStorage.getItem('appPassword');
+    const storedProxyKey = localStorage.getItem('modelProxyKey');
+    const storedProxyExpires = localStorage.getItem('modelProxyExpiresAt');
     
     if (storedUsername) setKaggleUsername(storedUsername);
     if (storedKey) setKaggleKey(storedKey);
     if (storedPass) setPassword(storedPass);
+    if (storedProxyKey) setModelProxyKey(storedProxyKey);
+    if (storedProxyExpires) setModelProxyExpiresAt(storedProxyExpires);
 
     if ((storedUsername && storedKey) || storedPass) {
       setHasCredentials(true);
@@ -427,7 +433,7 @@ export default function Home() {
 
 
   const handleStoryGenerate = async () => {
-    if (!storyTopic.trim() || !kaggleUsername || !kaggleKey) return;
+    if (!storyTopic.trim() || (!password && (!kaggleUsername || !kaggleKey))) return;
     setIsStoryGen(true);
     
     const finalLength = storyLength === "Custom" ? customLength : storyLength;
@@ -439,39 +445,34 @@ export default function Home() {
       const res = await fetch('/api/story', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, username: kaggleUsername, key: kaggleKey })
+        body: JSON.stringify({ 
+          prompt, 
+          password,
+          username: kaggleUsername, 
+          key: kaggleKey,
+          modelProxyKey,
+          modelProxyExpiresAt
+        })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       
-      const kernelSlug = data.kernel;
-      
-      const pollStory = async () => {
-        try {
-          const sRes = await fetch('/api/storyStatus', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: kaggleUsername, key: kaggleKey, kernel: kernelSlug })
-          });
-          const sData = await sRes.json();
-          if (sData.status === "complete" && sData.story) {
-            setText(sData.story);
-            setIsStoryGen(false);
-            setShowStoryModal(false);
-            setStoryTopic("");
-          } else if (sData.status === "error") {
-            setIsStoryGen(false);
-            alert("Story generation failed: " + sData.error);
-          } else {
-            setTimeout(pollStory, 10000);
-          }
-        } catch (e) {
-          setIsStoryGen(false);
-          alert("Polling failed");
+      if (data.success && data.story) {
+        setText(data.story);
+        setIsStoryGen(false);
+        setShowStoryModal(false);
+        setStoryTopic("");
+        
+        // Save the minted token if returned
+        if (data.modelProxyKey && data.modelProxyExpiresAt) {
+          setModelProxyKey(data.modelProxyKey);
+          setModelProxyExpiresAt(data.modelProxyExpiresAt);
+          localStorage.setItem('modelProxyKey', data.modelProxyKey);
+          localStorage.setItem('modelProxyExpiresAt', data.modelProxyExpiresAt);
         }
-      };
-      
-      setTimeout(pollStory, 20000); // Wait 20s before polling
+      } else {
+        throw new Error("Story generation failed to return text.");
+      }
       
     } catch (e: any) {
       setIsStoryGen(false);

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import notebookTemplate from './notebook.json';
+import { sanitizeText } from '@/utils/sanitizeText';
 
 export const maxDuration = 60;
 
@@ -9,25 +10,7 @@ export async function POST(req: Request) {
     let { password, kaggleUsername, kaggleKey, text, referenceAudio, referenceText, runId, instructions, guidanceScale } = body;
 
     if (text) {
-      text = text
-        .replace(/[\u2018\u2019]/g, "'")
-        .replace(/[\u201C\u201D]/g, '"')
-        .replace(/…/g, '...');
-
-      text = text
-        .replace(/\(laughs\)/gi, '(laugh)')
-        .replace(/\(sighs\)/gi, '(sigh)')
-        .replace(/\(coughs\)/gi, '(cough)');
-        
-      text = text.replace(/\([^)]+\)/g, (match: string) => {
-        const lowerMatch = match.toLowerCase();
-        if (['(laugh)', '(sigh)', '(cough)', '(clears throat)'].includes(lowerMatch)) {
-          return lowerMatch;
-        }
-        console.warn(`[GENERATE API] Stripped unsupported tag: ${match}`);
-        return ''; // Strip unsupported tags
-      });
-      text = text.replace(/ +/g, ' ').trim();
+      text = sanitizeText(text);
     }
 
     let username = kaggleUsername ? kaggleUsername.trim() : null;
