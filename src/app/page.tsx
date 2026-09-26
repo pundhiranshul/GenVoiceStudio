@@ -253,12 +253,17 @@ export default function Home() {
 
   const [copiedText, setCopiedText] = useState(false);
   const [copiedTags, setCopiedTags] = useState(false);
+  const [showStopModal, setShowStopModal] = useState(false);
+  const [activeKernelUrl, setActiveKernelUrl] = useState<string>("");
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isStoppedRef = useRef(false);
 
+  const stopRun = () => {
+    setShowStopModal(true);
+  };
 
   const insertTag = (tag: string) => {
     if (!textAreaRef.current) return;
@@ -450,6 +455,7 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || "Submit failed");
 
       const { kernel, isLong, charCount, chunks: sc } = data;
+      setActiveKernelUrl(`https://www.kaggle.com/${kernel}`);
       if (isLong) {
         setIsLongMode(true);
         setChunks(sc || []);
@@ -1299,11 +1305,11 @@ export default function Home() {
 
                 {isGen ? (
                   <button
-                    disabled
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-input text-text-muted border border-border-color font-medium text-sm transition-all outline-none cursor-not-allowed"
+                    onClick={stopRun}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-input text-text-primary hover:bg-bg-hover-strong border border-border-color font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                   >
-                    <Loader2 size={16} className="animate-spin text-text-muted" />
-                    Generating...
+                    <Square size={16} className="fill-current text-text-secondary" />
+                    Stop
                   </button>
                 ) : (
                   <button
@@ -1667,6 +1673,52 @@ export default function Home() {
           </div>
         </div>
       )}
+      {/* Stop Run Modal */}
+      {showStopModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-bg-panel border border-border-color rounded-2xl p-6 shadow-xl max-w-sm w-full relative mx-4">
+            <button
+              onClick={() => setShowStopModal(false)}
+              className="absolute top-4 right-4 text-text-muted hover:text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring-color rounded-lg p-1"
+            >
+              <X size={16} />
+            </button>
+            <h3 className="text-lg font-semibold text-text-primary mb-2 tracking-tight">Stop Generation</h3>
+            <p className="text-sm text-text-secondary mb-6 leading-relaxed">
+              Programmatic stopping is not supported by Kaggle. To stop generation, please visit your active session and click <strong className="text-text-primary">Stop Session</strong> manually.
+              <br/><br/>
+              Once stopped, the studio will detect the cancellation automatically.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowStopModal(false)}
+                className="flex-1 px-4 py-2.5 bg-bg-hover text-text-primary text-sm font-medium rounded-xl transition-colors hover:bg-bg-hover-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              >
+                Close
+              </button>
+              {activeKernelUrl ? (
+                <a
+                  href={activeKernelUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setShowStopModal(false)}
+                  className="flex-1 px-4 py-2.5 bg-accent-bg text-accent-text text-sm font-medium rounded-xl text-center transition-colors hover:bg-accent-bg/90 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                >
+                  Open Kaggle
+                </a>
+              ) : (
+                <button
+                  disabled
+                  className="flex-1 px-4 py-2.5 bg-bg-input text-text-muted text-sm font-medium rounded-xl text-center transition-colors outline-none cursor-not-allowed border border-border-color"
+                >
+                  Link Unavailable
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
