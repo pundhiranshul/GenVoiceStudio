@@ -1,4 +1,4 @@
-export async function stitchChunks(chunks: Blob[], trimMs: number): Promise<Blob> {
+export async function stitchChunks(chunks: Blob[], trimMs: number | number[]): Promise<Blob> {
   if (!chunks || chunks.length === 0) throw new Error("No chunks provided");
   if (chunks.length === 1) return chunks[0];
 
@@ -17,13 +17,17 @@ export async function stitchChunks(chunks: Blob[], trimMs: number): Promise<Blob
   
   // Calculate total length
   let totalLength = 0;
-  const trimFrames = Math.floor(sampleRate * (trimMs / 1000));
+  const getTrimFrames = (index: number) => {
+    if (index === 0) return 0;
+    const ms = Array.isArray(trimMs) ? (trimMs[index - 1] || 0) : trimMs;
+    return Math.floor(sampleRate * (ms / 1000));
+  };
   
   for (let i = 0; i < buffers.length; i++) {
     let len = buffers[i].length;
     // For all chunks except the first, we subtract the trim amount (crossfade overlap)
     if (i > 0) {
-      len -= trimFrames;
+      len -= getTrimFrames(i);
     }
     totalLength += len;
   }
@@ -45,14 +49,15 @@ export async function stitchChunks(chunks: Blob[], trimMs: number): Promise<Blob
         outChannel.set(inChannel, 0);
         offset += buf.length;
       } else {
-        offset -= trimFrames;
+        const frames = getTrimFrames(i);
+        offset -= frames;
         
         // Simple crossfade for the overlap region
-        if (trimFrames > 0) {
-          for (let f = 0; f < trimFrames; f++) {
+        if (frames > 0) {
+          for (let f = 0; f < frames; f++) {
             const outIdx = offset + f;
             if (outIdx >= 0 && outIdx < outChannel.length) {
-              const fraction = f / trimFrames;
+              const fraction = f / frames;
               // Fade out previous chunk, fade in new chunk
               outChannel[outIdx] = outChannel[outIdx] * (1 - fraction) + inChannel[f] * fraction;
             }
@@ -60,10 +65,10 @@ export async function stitchChunks(chunks: Blob[], trimMs: number): Promise<Blob
         }
         
         // Copy the rest of the new chunk
-        const remainingFrames = buf.length - trimFrames;
+        const remainingFrames = buf.length - frames;
         if (remainingFrames > 0) {
-          const restOfIn = inChannel.subarray(trimFrames);
-          outChannel.set(restOfIn, offset + trimFrames);
+          const restOfIn = inChannel.subarray(frames);
+          outChannel.set(restOfIn, offset + frames);
         }
         
         offset += buf.length;

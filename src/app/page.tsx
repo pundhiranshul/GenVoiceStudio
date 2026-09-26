@@ -230,8 +230,8 @@ export default function Home() {
   const [chunksTotal, setChunksTotal] = useState(0);
   const [isLongMode, setIsLongMode] = useState(false);
   const [eta, setEta]               = useState("");
+  const [chunkTrims, setChunkTrims] = useState<number[]>([]);
 
-  const [trimMs, setTrimMs] = useState(0);
   const [stitchedAudioUrl, setStitchedAudioUrl] = useState<string | null>(null);
   const [isStitching, setIsStitching] = useState(false);
 
@@ -549,7 +549,7 @@ export default function Home() {
             const res = await fetch(a.data);
             return res.blob();
           }));
-          const stitchedBlob = await stitchChunks(blobs, trimMs);
+          const stitchedBlob = await stitchChunks(blobs, chunkTrims);
           if (!isActive) return;
           const url = URL.createObjectURL(stitchedBlob);
           currentUrl = url;
@@ -568,7 +568,7 @@ export default function Home() {
       isActive = false;
       if (currentUrl) URL.revokeObjectURL(currentUrl);
     };
-  }, [audios, trimMs]);
+  }, [audios, chunkTrims]);
 
   const renderHighlightedText = (t: string) => {
     const regex = /(\([^)]+\))/g;
@@ -1229,35 +1229,10 @@ export default function Home() {
                         </summary>
                         <div className="p-4 pt-0 flex flex-col gap-4 border-t border-border-subtle/50 mt-2">
                           <p className="text-xs text-text-muted mb-2">
-                            Adjust the crossfade (trim) between chunks. Changes apply instantly to the stitched output above.
+                            Adjust the crossfade (trim) between individual chunks. Changes apply instantly to the stitched output above.
                           </p>
-                          
-                          {/* Trim Slider */}
-                          <div className="flex flex-col gap-2 bg-bg-input/50 p-4 rounded-xl border border-border-subtle">
-                            <div className="flex justify-between items-center text-xs text-text-secondary">
-                              <label htmlFor="trimMs" className="font-medium">Crossfade / Trim (ms)</label>
-                              <span className="tabular-nums font-mono bg-bg-base px-2 py-0.5 rounded border border-border-subtle">{trimMs}ms</span>
-                            </div>
-                            <input
-                              id="trimMs"
-                              type="range"
-                              min="0"
-                              max="500"
-                              step="10"
-                              value={trimMs}
-                              onChange={(e) => setTrimMs(parseInt(e.target.value))}
-                              className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
-                            />
-                            <div className="flex justify-between text-[10px] text-text-muted mt-1">
-                              <span>0ms (No trim)</span>
-                              <span>250ms</span>
-                              <span>500ms</span>
-                            </div>
-                          </div>
 
-                          <div className="h-px bg-border-subtle my-2" />
-
-                          <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-2 pb-2">
+                          <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-2 pb-2">
                             <div className="flex justify-between items-center sticky top-0 bg-bg-base/90 py-1 z-10 backdrop-blur-sm -mx-2 px-2">
                               <span className="text-xs font-medium text-text-secondary">Raw Chunks:</span>
                               <button
@@ -1270,7 +1245,38 @@ export default function Home() {
                               </button>
                             </div>
                             {chunkAudios.map((a, i) => (
-                              <AudioPlayer key={i} src={a.data} name={a.name} transcript={chunks[i]} />
+                              <div key={i}>
+                                <AudioPlayer src={a.data} name={a.name} transcript={chunks[i]} />
+                                {i < chunkAudios.length - 1 && (
+                                  <div className="flex flex-col gap-2 bg-bg-input/40 p-3 rounded-lg border border-border-subtle ml-8 relative before:absolute before:left-[-16px] before:top-1/2 before:w-4 before:h-px before:bg-border-subtle">
+                                    <div className="flex justify-between items-center text-[11px] text-text-secondary">
+                                      <label className="font-medium flex items-center gap-1.5">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+                                        Crossfade with next chunk
+                                      </label>
+                                      <span className="tabular-nums font-mono bg-bg-base px-1.5 py-0.5 rounded border border-border-subtle">{chunkTrims[i] || 0}ms</span>
+                                    </div>
+                                    <input
+                                      type="range"
+                                      min="0"
+                                      max="500"
+                                      step="10"
+                                      value={chunkTrims[i] || 0}
+                                      onChange={(e) => {
+                                        const newTrims = [...chunkTrims];
+                                        newTrims[i] = parseInt(e.target.value);
+                                        setChunkTrims(newTrims);
+                                      }}
+                                      className="w-full h-1 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
+                                    />
+                                    <div className="flex justify-between text-[9px] text-text-muted mt-0.5">
+                                      <span>0ms</span>
+                                      <span>250ms</span>
+                                      <span>500ms</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             ))}
                           </div>
                         </div>
