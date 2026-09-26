@@ -1036,19 +1036,26 @@ export default function Home() {
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary animate-in fade-in duration-700">
 
       {/* ── Top Header ────────────────────────────────────────────── */}
-      <header className="h-16 px-6 flex items-center justify-between border-b border-border-color shrink-0">
-        <a href="/" className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+      <header className="h-16 px-6 flex items-center justify-between border-b border-border-color shrink-0 relative">
+        <a href="/" className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity z-10">
           <GenVoiceLogo size={48} className="text-text-primary" />
           <span className="font-semibold text-lg tracking-tight">GenVoice Studio</span>
         </a>
         
-        <div className="flex items-center gap-4">
-          {text.length > 0 && (
-            <span className="hidden md:flex items-center gap-2 text-xs font-medium text-accent-text bg-accent-bg/10 px-3 py-1.5 rounded-full mr-2 animate-in fade-in duration-300">
-              <User size={12} className="opacity-70" />
-              {kaggleUsername ? `Welcome, ${kaggleUsername}` : 'Welcome, Studio User'}
-            </span>
-          )}
+        {/* Center Salutation */}
+        <div 
+          className={`absolute inset-0 pointer-events-none flex items-center justify-center transition-all duration-700 ease-in-out ${
+            text.length > 0 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+          }`}
+        >
+          <span className="hidden md:flex items-center gap-2 text-sm font-light text-text-secondary tracking-wide">
+            <User size={14} className="opacity-50" />
+            Welcome back, <span className="font-medium text-text-primary">{kaggleUsername || 'Studio User'}</span>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-4 z-10">
+
           <button
             onClick={() => setShowAbout(true)}
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
