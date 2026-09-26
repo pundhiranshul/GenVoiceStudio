@@ -56,29 +56,39 @@ export async function POST(req: Request) {
       ]
     };
 
-    const authHeader = 'Basic ' + Buffer.from(username + ':' + token).toString('base64');
+    const cleanUsername = username.trim();
+    const cleanToken = token.trim();
+
+    let authHeader = '';
+    if (cleanToken.length === 32 && /^[0-9a-f]+$/i.test(cleanToken)) {
+      authHeader = 'Basic ' + Buffer.from(`${cleanUsername}:${cleanToken}`).toString('base64');
+    } else {
+      authHeader = 'Bearer ' + cleanToken;
+    }
+
+    const payload = {
+      slug: `${cleanUsername}/${slug}`,
+      newTitle: slug,
+      text: JSON.stringify(dummyNotebook),
+      language: "python",
+      kernelType: "notebook",
+      isPrivate: true,
+      enableGpu: true,
+      enableInternet: true,
+      datasetDataSources: [],
+      competitionDataSources: [],
+      kernelDataSources: [],
+      modelDataSources: [],
+      categoryIds: []
+    };
+
     const kaggleRes = await fetch('https://www.kaggle.com/api/v1/kernels/push', {
       method: 'POST',
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        id: `${username}/${slug}`,
-        title: slug,
-        code_file: "notebook.json",
-        language: "python",
-        kernel_type: "notebook",
-        is_private: true,
-        enable_gpu: true,
-        enable_internet: true,
-        dataset_sources: [],
-        competition_sources: [],
-        kernel_sources: [],
-        model_sources: [],
-        category_ids: [],
-        text: JSON.stringify(dummyNotebook)
-      })
+      body: JSON.stringify(payload)
     });
 
     if (!kaggleRes.ok) {

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { get, set } from "idb-keyval";
-import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download } from 'lucide-react';
+import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User } from 'lucide-react';
 import { VoiceSelector, Voice } from "@/components/VoiceSelector";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { stitchChunks } from "@/utils/audioEditor";
@@ -1043,6 +1043,12 @@ export default function Home() {
         </a>
         
         <div className="flex items-center gap-4">
+          {text.length > 0 && (
+            <span className="hidden md:flex items-center gap-2 text-xs font-medium text-accent-text bg-accent-bg/10 px-3 py-1.5 rounded-full mr-2 animate-in fade-in duration-300">
+              <User size={12} className="opacity-70" />
+              {kaggleUsername ? `Welcome, ${kaggleUsername}` : 'Welcome, Studio User'}
+            </span>
+          )}
           <button
             onClick={() => setShowAbout(true)}
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
