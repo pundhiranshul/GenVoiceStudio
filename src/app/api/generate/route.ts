@@ -220,7 +220,7 @@ export async function POST(req: Request) {
     const codeCells = notebook.cells.filter((c: any) => c.cell_type === 'code');
     const totalCodeCells = codeCells.length;
     codeCells.forEach((cell: any, index: number) => {
-      const printStmt = `\nprint("CELL_PROGRESS: ${index + 1}/${totalCodeCells}", flush=True)\n`;
+      const printStmt = `\nimport sys\nprint("CELL_PROGRESS: ${index + 1}/${totalCodeCells}", file=sys.stderr, flush=True)\n`;
       if (Array.isArray(cell.source)) {
         cell.source.push(printStmt);
       } else {
