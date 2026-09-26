@@ -512,8 +512,11 @@ export default function Home() {
         } else {
           setStatus("error"); setMessage("No audio in output."); addLog("ERROR: No audio.");
         }
-      } else if (["error","cancel"].includes(data.status)) {
-        setStatus("error"); setMessage(`Kaggle: ${data.status}`); addLog(`ERROR: ${data.status}`);
+      } else if (data.status === "error") {
+        setStatus("error"); setMessage(`Kaggle Error`); addLog(`ERROR: ${data.status}`);
+      } else if (["cancel", "cancel_requested", "cancel_acknowledged"].includes(data.status)) {
+        setStatus("idle"); setMessage(`Generation cancelled.`); addLog(`CANCELLED: ${data.status}`);
+        isStoppedRef.current = true;
       } else {
         if (data.newAudios?.length > 0) {
           const newMerged = [...audiosRef.current, ...data.newAudios];
