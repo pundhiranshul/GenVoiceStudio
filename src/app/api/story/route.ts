@@ -26,9 +26,8 @@ export async function POST(req: Request) {
             "@kbench.task(name=\"genvoice-story-gen\")\n",
             "def generate(llm):\n",
             "    response = llm.prompt(PROMPT)\n",
-            "    print(\"\\n---STORY_START---\")\n",
-            "    print(response)\n",
-            "    print(\"---STORY_END---\\n\")\n",
+            "    with open('story.txt', 'w', encoding='utf-8') as f:\n",
+            "        f.write(response)\n",
             "\n",
             "_ = generate.run(kbench.llm)\n"
           ]

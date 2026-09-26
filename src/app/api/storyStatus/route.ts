@@ -33,21 +33,16 @@ export async function POST(req: Request) {
     if (logData.status === "error") {
       return NextResponse.json({ status: "error", error: "Kaggle session failed" });
     }
-    
-    // Check the log for STORY_START and STORY_END
-    const fullLog = logData.log || "";
-    const startIdx = fullLog.indexOf("---STORY_START---");
-    const endIdx = fullLog.indexOf("---STORY_END---");
-
-    if (startIdx !== -1 && endIdx !== -1) {
-      // Extract the story
-      const story = fullLog.substring(startIdx + 17, endIdx).trim();
-      return NextResponse.json({ status: "complete", story });
-    }
-
     if (logData.status === "complete") {
-      // Completed but no story found?
-      return NextResponse.json({ status: "error", error: "Story not found in logs." });
+      const storyFile = logData.files?.find((f: any) => f.fileName === "story.txt");
+      if (storyFile && storyFile.url) {
+        const storyRes = await fetch(storyFile.url);
+        if (storyRes.ok) {
+          const story = await storyRes.text();
+          return NextResponse.json({ status: "complete", story: story.trim() });
+        }
+      }
+      return NextResponse.json({ status: "error", error: "Story not found in logs or files." });
     }
 
     return NextResponse.json({ status: logData.status || "running" });
