@@ -58,6 +58,13 @@ export async function GET(req: Request) {
       });
       const statusText = await statusRes.text();
       console.log(`[STATUS API] Kaggle status HTTP ${statusRes.status}, body length: ${statusText.length}`);
+      
+      // If Kaggle itself is having a transient issue, keep polling instead of aborting the generation
+      if (statusRes.status === 502 || statusRes.status === 503 || statusRes.status === 504) {
+        console.warn(`[STATUS API] Transient HTTP ${statusRes.status} from Kaggle — returning running to keep polling`);
+        return NextResponse.json({ status: 'running', chunksCurrent: 0, chunksTotal: 0, newAudios: [] });
+      }
+
       try {
         statusData = JSON.parse(statusText);
       } catch (parseErr) {
