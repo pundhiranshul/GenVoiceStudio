@@ -269,7 +269,9 @@ export default function Home() {
   const [showStoryModal, setShowStoryModal] = useState(false);
   const [storyTopic, setStoryTopic] = useState("");
   const [storyTone, setStoryTone] = useState("Dramatic");
-  const [storyLength, setStoryLength] = useState("Short");
+  const [customTone, setCustomTone] = useState("");
+  const [storyLength, setStoryLength] = useState("Short (1 min)");
+  const [customLength, setCustomLength] = useState("");
   const [isStoryGen, setIsStoryGen] = useState(false);
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -428,7 +430,10 @@ export default function Home() {
     if (!storyTopic.trim() || !kaggleUsername || !kaggleKey) return;
     setIsStoryGen(true);
     
-    const prompt = `Write a ${storyLength} story about ${storyTopic} with a ${storyTone} tone. The story MUST be written as a spoken script for a single narrator. CRITICAL: You must include vocal expressions like (laugh), (sigh), (clears throat), or (cough) naturally throughout the script to add emotion. Do NOT output any title, markdown formatting, or introductory text. Just the script.`;
+    const finalLength = storyLength === "Custom" ? customLength : storyLength;
+    const finalTone = storyTone === "Custom" ? customTone : storyTone;
+    
+    const prompt = `Write a ${finalLength} story about ${storyTopic} with a ${finalTone} tone. The story MUST be written as a spoken script for a single narrator. CRITICAL: You must include vocal expressions like (laugh), (sigh), (clears throat), or (cough) naturally throughout the script to add emotion. Do NOT output any title, markdown formatting, or introductory text. Just the script.`;
     
     try {
       const res = await fetch('/api/story', {
@@ -1926,33 +1931,68 @@ export default function Home() {
                 />
               </div>
 
-              <div className="flex gap-4">
-                <div className="flex-1 flex flex-col gap-2">
-                  <label className="text-sm font-medium text-text-primary">Tone</label>
-                  <select 
-                    value={storyTone}
-                    onChange={e => setStoryTone(e.target.value)}
-                    className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary outline-none focus:border-text-muted transition-colors appearance-none"
-                  >
-                    <option>Dramatic</option>
-                    <option>Funny</option>
-                    <option>Scary</option>
-                    <option>Educational</option>
-                    <option>Neutral</option>
-                  </select>
+              <div className="flex flex-col gap-4">
+                <div className="flex gap-4">
+                  <div className="flex-1 flex flex-col gap-2">
+                    <label className="text-sm font-medium text-text-primary">Tone</label>
+                    <select 
+                      value={storyTone}
+                      onChange={e => setStoryTone(e.target.value)}
+                      className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary outline-none focus:border-text-muted transition-colors appearance-none"
+                    >
+                      <option>Dramatic</option>
+                      <option>Funny</option>
+                      <option>Scary</option>
+                      <option>Educational</option>
+                      <option>Neutral</option>
+                      <option>Custom</option>
+                    </select>
+                  </div>
+                  <div className="flex-1 flex flex-col gap-2">
+                    <label className="text-sm font-medium text-text-primary">Length</label>
+                    <select 
+                      value={storyLength}
+                      onChange={e => setStoryLength(e.target.value)}
+                      className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary outline-none focus:border-text-muted transition-colors appearance-none"
+                    >
+                      <option>Short (1 min)</option>
+                      <option>Medium (3 mins)</option>
+                      <option>Long (5 mins)</option>
+                      <option>Custom</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="flex-1 flex flex-col gap-2">
-                  <label className="text-sm font-medium text-text-primary">Length</label>
-                  <select 
-                    value={storyLength}
-                    onChange={e => setStoryLength(e.target.value)}
-                    className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary outline-none focus:border-text-muted transition-colors appearance-none"
-                  >
-                    <option>Short (1 min)</option>
-                    <option>Medium (3 mins)</option>
-                    <option>Long (5 mins)</option>
-                  </select>
-                </div>
+
+                {/* Custom Inputs */}
+                {(storyTone === "Custom" || storyLength === "Custom") && (
+                  <div className="flex gap-4 animate-in slide-in-from-top-2 duration-200">
+                    {storyTone === "Custom" ? (
+                      <div className="flex-1 flex flex-col gap-2">
+                        <label className="text-sm font-medium text-text-primary">Custom Tone</label>
+                        <input 
+                          type="text"
+                          value={customTone}
+                          onChange={e => setCustomTone(e.target.value)}
+                          placeholder="e.g. Sarcastic, Melancholic"
+                          className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary outline-none focus:border-text-muted transition-colors"
+                        />
+                      </div>
+                    ) : <div className="flex-1" />}
+                    
+                    {storyLength === "Custom" ? (
+                      <div className="flex-1 flex flex-col gap-2">
+                        <label className="text-sm font-medium text-text-primary">Custom Length</label>
+                        <input 
+                          type="text"
+                          value={customLength}
+                          onChange={e => setCustomLength(e.target.value)}
+                          placeholder="e.g. 10 minutes, 2 paragraphs"
+                          className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary outline-none focus:border-text-muted transition-colors"
+                        />
+                      </div>
+                    ) : <div className="flex-1" />}
+                  </div>
+                )}
               </div>
             </div>
 
