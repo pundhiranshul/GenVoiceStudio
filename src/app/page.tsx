@@ -531,7 +531,7 @@ export default function Home() {
           setAudios(newMerged);
         }
         if (data.chunksTotal > 0) { setChunksTotal(data.chunksTotal); setChunksDone(data.chunksCurrent); }
-        if (data.cellsTotal > 0) { setCellsTotal(data.cellsTotal); setCellsDone(data.cellsCurrent); }
+        if (data.cellsTotal > 0) { setCellsTotal(data.cellsTotal); }
         
         let isFullyDone = false;
         if (data.chunksTotal > 0 && data.chunksCurrent === data.chunksTotal) isFullyDone = true;
@@ -560,17 +560,30 @@ export default function Home() {
   
   // Simulated cell progress since Kaggle API doesn't expose live notebook stdout
   useEffect(() => {
-    if (isGen && cellsTotal > 0 && cellsDone < cellsTotal - 1) {
-      // Setup cells usually take ~90 seconds total, we slowly simulate progress
+    if (isGen && cellsTotal > 0) {
+      const startTime = Date.now();
       const timer = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
         setCellsDone(prev => {
-          if (prev < cellsTotal - 1.5) return prev + 0.2;
-          return prev;
+          let expected = 0;
+          if (elapsed < 115) {
+            expected = (elapsed / 115) * 1;
+          } else if (elapsed < 141) {
+            expected = 1 + ((elapsed - 115) / 26) * 2;
+          } else if (elapsed < 164) {
+            expected = 3 + ((elapsed - 141) / 23) * 3;
+          } else {
+            const genTime = (chunksTotal || 1) * 60; // ~60s per chunk
+            expected = 6 + ((elapsed - 164) / genTime) * 1.8;
+          }
+          
+          if (expected > cellsTotal - 0.2) expected = cellsTotal - 0.2; // Cap at 98%
+          return Math.max(prev, expected);
         });
-      }, 3000);
+      }, 1000);
       return () => clearInterval(timer);
     }
-  }, [isGen, cellsTotal, cellsDone]);
+  }, [isGen, cellsTotal, chunksTotal]);
   const refAudios  = audios.filter(a => getCategory(a.name) === "reference");
   const finalAudios = audios.filter(a => getCategory(a.name) === "final");
   const chunkAudios = audios
