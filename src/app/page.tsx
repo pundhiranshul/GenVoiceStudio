@@ -270,7 +270,7 @@ export default function Home() {
   const [storyTopic, setStoryTopic] = useState("");
   const [storyTone, setStoryTone] = useState("Dramatic");
   const [customTone, setCustomTone] = useState("");
-  const [storyLength, setStoryLength] = useState("Short (1 min)");
+  const [storyLength, setStoryLength] = useState("Short");
   const [customLength, setCustomLength] = useState("");
   const [isStoryGen, setIsStoryGen] = useState(false);
 

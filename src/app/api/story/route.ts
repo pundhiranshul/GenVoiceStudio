@@ -18,7 +18,6 @@ export async function POST(req: Request) {
           execution_count: null,
           metadata: {},
           source: [
-
             "import kaggle_benchmarks as kbench\n",
             "\n",
             `PROMPT = """${prompt.replace(/"/g, '\\"')}"""\n`,
