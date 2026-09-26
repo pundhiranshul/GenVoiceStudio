@@ -1,0 +1,13 @@
+
+> vercel-app@0.1.0 dev
+> next dev
+
+▲ Next.js 16.3.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.0.0.129:3000
+✓ Ready in 559ms
+✓ Running next.config.ts took 41ms
+
+ POST /api/generate 401 in 1366ms (next.js: 1316ms, application-code: 49ms)
+○ Compiling /_not-found/page ...
+ POST /api/hang 404 in 4.1s (next.js: 3.8s, application-code: 256ms)

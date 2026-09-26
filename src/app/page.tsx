@@ -254,7 +254,6 @@ export default function Home() {
   const [copiedText, setCopiedText] = useState(false);
   const [copiedTags, setCopiedTags] = useState(false);
   const [showStopModal, setShowStopModal] = useState(false);
-  const [activeKernelUrl, setActiveKernelUrl] = useState<string>("");
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -455,7 +454,6 @@ export default function Home() {
       if (!res.ok) throw new Error(data.error || "Submit failed");
 
       const { kernel, isLong, charCount, chunks: sc } = data;
-      setActiveKernelUrl(`https://www.kaggle.com/${kernel}`);
       if (isLong) {
         setIsLongMode(true);
         setChunks(sc || []);
@@ -1685,7 +1683,9 @@ export default function Home() {
             </button>
             <h3 className="text-lg font-semibold text-text-primary mb-2 tracking-tight">Stop Generation</h3>
             <p className="text-sm text-text-secondary mb-6 leading-relaxed">
-              Programmatic stopping is not supported by Kaggle. To stop generation, please visit your active session and click <strong className="text-text-primary">Stop Session</strong> manually.
+              Programmatic stopping is not supported by Kaggle. To stop generation, please open Kaggle, look in the <strong className="text-text-primary">bottom left corner</strong> and click <strong className="text-text-primary">View Active Events</strong>.
+              <br/><br/>
+              You will see <strong className="text-text-primary">genvoice-api</strong> running. Click the three dots and select <strong className="text-text-primary">Stop Session</strong>.
               <br/><br/>
               Once stopped, the studio will detect the cancellation automatically.
             </p>
@@ -1696,24 +1696,15 @@ export default function Home() {
               >
                 Close
               </button>
-              {activeKernelUrl ? (
-                <a
-                  href={activeKernelUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={() => setShowStopModal(false)}
-                  className="flex-1 px-4 py-2.5 bg-accent-bg text-accent-text text-sm font-medium rounded-xl text-center transition-colors hover:bg-accent-bg/90 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                >
-                  Open Kaggle
-                </a>
-              ) : (
-                <button
-                  disabled
-                  className="flex-1 px-4 py-2.5 bg-bg-input text-text-muted text-sm font-medium rounded-xl text-center transition-colors outline-none cursor-not-allowed border border-border-color"
-                >
-                  Link Unavailable
-                </button>
-              )}
+              <a
+                href="https://www.kaggle.com/"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setShowStopModal(false)}
+                className="flex-1 px-4 py-2.5 bg-accent-bg text-accent-text text-sm font-medium rounded-xl text-center transition-colors hover:bg-accent-bg/90 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              >
+                Open Kaggle
+              </a>
             </div>
           </div>
         </div>
