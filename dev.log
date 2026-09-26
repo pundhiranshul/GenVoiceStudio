@@ -11,3 +11,4 @@
  POST /api/generate 401 in 1366ms (next.js: 1316ms, application-code: 49ms)
 ○ Compiling /_not-found/page ...
  POST /api/hang 404 in 4.1s (next.js: 3.8s, application-code: 256ms)
+ POST /api/generate 401 in 164ms (next.js: 10ms, application-code: 155ms)

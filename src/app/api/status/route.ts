@@ -215,11 +215,41 @@ export async function GET(req: Request) {
         const last = cellMatches[cellMatches.length - 1];
         cellsCurrent = parseInt(last[1], 10);
         cellsTotal = parseInt(last[2], 10);
+        console.log(`[STATUS API] Parsed cell progress: ${cellsCurrent}/${cellsTotal}`);
+      } else {
+        console.log(`[STATUS API] No CELL_PROGRESS found in log of length ${partialLog.length}. Snippet: ${partialLog.slice(-200).replace(/\n/g, '\\n')}`);
+      }
+
+      // 2. Parse from files (if Kaggle API lists files live)
+      const pageFiles: any[] = logData.files || logData.outputFiles || [];
+      const progressFiles = pageFiles.filter((f: any) => {
+        const name = (f.fileName || f.name || '').toLowerCase();
+        return name.startsWith('cell_progress_');
+      });
+      if (progressFiles.length > 0) {
+        let maxCurrent = 0;
+        let maxTotal = 0;
+        progressFiles.forEach((f: any) => {
+          const name = f.fileName || f.name || '';
+          const match = name.match(/cell_progress_(\d+)_of_(\d+)\.txt/i);
+          if (match) {
+            const cur = parseInt(match[1], 10);
+            const tot = parseInt(match[2], 10);
+            if (cur > maxCurrent) {
+              maxCurrent = cur;
+              maxTotal = tot;
+            }
+          }
+        });
+        if (maxCurrent > cellsCurrent) {
+          cellsCurrent = maxCurrent;
+          cellsTotal = maxTotal;
+          console.log(`[STATUS API] Parsed cell progress from files: ${cellsCurrent}/${cellsTotal}`);
+        }
       }
 
       const existingAudiosStr = searchParams.get('existingAudios') || '';
       const existingAudios = existingAudiosStr ? existingAudiosStr.split(',') : [];
-      const pageFiles: any[] = logData.files || logData.outputFiles || [];
       const partialWavs = pageFiles.filter((f: any) => {
         const name = (f.fileName || f.name || '').toLowerCase();
         return name.endsWith('.wav') && !existingAudios.includes(name);
