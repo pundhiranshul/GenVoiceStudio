@@ -1355,10 +1355,15 @@ export default function Home() {
                       {eta && <span className="text-text-muted tabular-nums">ETA: {eta}</span>}
                     </div>
                     {isLongMode && chunksTotal > 0 && (
-                      <div className="w-full max-w-md h-1.5 bg-accent-bg/10 rounded-full overflow-hidden mt-1">
+                      <div className="w-full max-w-md h-1.5 bg-accent-bg/10 rounded-full overflow-hidden mt-1 relative">
                         <div 
-                          className="h-full bg-accent-bg transition-all duration-500" 
-                          style={{ width: `${(chunksDone / chunksTotal) * 100}%` }}
+                          className="h-full bg-accent-bg" 
+                          style={{ 
+                            width: `${Math.min(100, ((chunksDone + 0.9) / chunksTotal) * 100)}%`,
+                            transitionProperty: 'width',
+                            transitionDuration: '15s',
+                            transitionTimingFunction: 'cubic-bezier(0.1, 0.7, 0.1, 1)'
+                          }}
                         />
                       </div>
                     )}
