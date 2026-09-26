@@ -40,51 +40,56 @@ export async function POST(req: Request) {
     }
     
     const statusData = await statusRes.json();
-    const status = statusData.status; // "queued", "running", "complete", "error", "cancel"
+    
+    const currentStatus = typeof statusData?.status === 'string'
+      ? statusData.status.toLowerCase()
+      : 'queued';
 
-    if (status === 'queued' || status === 'running') {
+    if (currentStatus === 'queued' || currentStatus === 'running' || currentStatus === 'starting' || currentStatus === 'preparing') {
       return NextResponse.json({ status: 'running' });
     }
 
-    if (status === 'cancel') {
+    if (currentStatus === 'cancel') {
       return NextResponse.json({ status: 'error', error: 'Verification was cancelled.' });
     }
 
-    // It's complete or error. Let's fetch output log.
-    const outputPayload = JSON.stringify({ userName: kernelUserName, kernelSlug });
-    const outRes = await fetch('https://api.kaggle.com/v1/kernels.KernelsApiService/ListKernelSessionOutput', {
-      method: 'POST',
-      headers: {
-        'Authorization': authHeader,
-        'Content-Type': 'application/json'
-      },
-      body: outputPayload
-    });
+    // Attempt to fetch logs regardless if complete or error, because Kaggle might output why it failed in the logs.
+    let logFile = '';
+    try {
+      const outputPayload = JSON.stringify({ userName: kernelUserName, kernelSlug });
+      const outRes = await fetch('https://api.kaggle.com/v1/kernels.KernelsApiService/ListKernelSessionOutput', {
+        method: 'POST',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json'
+        },
+        body: outputPayload
+      });
 
-    if (!outRes.ok) {
-      const outText = await outRes.text();
-      return NextResponse.json({ status: 'error', error: `Output fetch failed: ${outRes.status} ${outText}` });
+      if (outRes.ok) {
+        const outData = await outRes.json();
+        logFile = outData.log || '';
+      }
+    } catch (e) {
+      // ignore log fetch errors, we will fallback to failureMessage
     }
 
-    const outData = await outRes.json();
-    const logFile = outData.log;
-    
-    if (!logFile) {
-      return NextResponse.json({ status: 'error', error: 'No logs found for verification kernel.' });
-    }
-
-    // parse log for FINAL_RESULT
-    const match = logFile.match(/FINAL_RESULT:\s*(\{.*\})/);
-    if (match) {
-      try {
-        const results = JSON.parse(match[1]);
-        return NextResponse.json({ status: 'complete', results });
-      } catch (e) {
-        return NextResponse.json({ status: 'error', error: 'Failed to parse verification results.' });
+    // Parse log for FINAL_RESULT
+    if (logFile) {
+      const match = logFile.match(/FINAL_RESULT:\s*(\{.*\})/);
+      if (match) {
+        try {
+          const results = JSON.parse(match[1]);
+          return NextResponse.json({ status: 'complete', results });
+        } catch (e) {
+          // ignore parse error, fallback below
+        }
       }
     }
 
-    return NextResponse.json({ status: 'error', error: 'Verification kernel did not output expected results. It might have crashed.' });
+    // If we didn't find FINAL_RESULT, we consider it an error.
+    const failureMsg = statusData.failureMessage || 'Verification kernel did not output expected results. It might have crashed.';
+    return NextResponse.json({ status: 'error', error: failureMsg });
 
   } catch (error: any) {
     return NextResponse.json({ status: 'error', error: error.message || 'An unexpected error occurred' });
