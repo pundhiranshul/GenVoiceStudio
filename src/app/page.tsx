@@ -533,17 +533,10 @@ export default function Home() {
         if (data.chunksTotal > 0) { setChunksTotal(data.chunksTotal); setChunksDone(data.chunksCurrent); }
         if (data.cellsTotal > 0) { setCellsTotal(data.cellsTotal); }
         
-        let isFullyDone = false;
-        if (data.chunksTotal > 0 && data.chunksCurrent === data.chunksTotal) isFullyDone = true;
-        else if (!isLongMode && audiosRef.current.some(a => a.name.includes('single.wav'))) isFullyDone = true;
-
-        if (isFullyDone) {
-          setStatus("complete");
-          setMessage("Generation complete!");
+        // We do NOT stop polling here when audio is found.
+        // We let it continue polling until Kaggle returns status === "complete" or "error".
+        if (data.chunksTotal > 0 && data.chunksCurrent === data.chunksTotal) {
           if (isLongMode) setChunksDone(data.chunksTotal || chunksTotal);
-          setCellsDone(data.cellsTotal || cellsTotal || 1);
-          addLog(`Early completion detected! Stopping polling.`);
-          return;
         }
 
         const info = data.chunksTotal > 0 ? ` (${data.chunksCurrent}/${data.chunksTotal})` : "";
@@ -557,35 +550,47 @@ export default function Home() {
   };
 
   const isGen      = status === "generating";
-  
+  const finalAudios = audios.filter(a => getCategory(a.name) === "final");
+  const isAudioShown = (chunksTotal > 0 && chunksDone === chunksTotal) || (!isLongMode && finalAudios.some(a => a.name.includes('single.wav')));
+
   // Simulated cell progress since Kaggle API doesn't expose live notebook stdout
   useEffect(() => {
-    if (isGen && cellsTotal > 0) {
-      const startTime = Date.now();
+    if (isGen && cellsTotal > 0 && startRef.current) {
       const timer = setInterval(() => {
-        const elapsed = (Date.now() - startTime) / 1000;
+        const elapsed = (Date.now() - startRef.current!) / 1000;
         setCellsDone(prev => {
           let expected = 0;
-          if (elapsed < 115) {
-            expected = (elapsed / 115) * 1;
-          } else if (elapsed < 141) {
-            expected = 1 + ((elapsed - 115) / 26) * 2;
-          } else if (elapsed < 164) {
-            expected = 3 + ((elapsed - 141) / 23) * 3;
+          if (elapsed < 148) {
+            expected = (elapsed / 148) * 1;
+          } else if (elapsed < 150) {
+            expected = 1 + ((elapsed - 148) / 2) * 1;
+          } else if (elapsed < 326) {
+            expected = 2 + ((elapsed - 150) / 176) * 1;
+          } else if (elapsed < 336) {
+            expected = 3 + ((elapsed - 326) / 10) * 2.5; // reaches 5.5 (approx 75%)
           } else {
-            const genTime = (chunksTotal || 1) * 60; // ~60s per chunk
-            expected = 6 + ((elapsed - 164) / genTime) * 1.8;
+            if (isAudioShown) {
+              // Audio is shown, slowly fill up to 6.7 (90%) while waiting for Kaggle run to fully end
+              expected = 5.9 + ((elapsed - 336) / 300) * 0.8;
+              if (expected > 6.7) expected = 6.7; 
+            } else {
+              // Generating chunks (Waiting for audio), cap at 5.9 (80%)
+              const genTime = (chunksTotal || 1) * 60; // ~60s per chunk
+              expected = 5.5 + ((elapsed - 336) / genTime) * 0.4;
+              if (expected > 5.9) expected = 5.9;
+            }
           }
           
-          if (expected > cellsTotal - 0.2) expected = cellsTotal - 0.2; // Cap at 98%
+          if (expected > cellsTotal - 0.2) expected = cellsTotal - 0.2;
           return Math.max(prev, expected);
         });
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [isGen, cellsTotal, chunksTotal]);
+  }, [isGen, cellsTotal, chunksTotal, isAudioShown]);
+
   const refAudios  = audios.filter(a => getCategory(a.name) === "reference");
-  const finalAudios = audios.filter(a => getCategory(a.name) === "final");
+
   const chunkAudios = audios
     .filter(a => getCategory(a.name) === "chunk")
     .sort((a, b) => {
