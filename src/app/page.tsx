@@ -1675,7 +1675,7 @@ export default function Home() {
                           disabled={isGen || isStoryGen || isOptimizing}
                           className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                         >
-                          {isStoryGen ? <Loader2 size={16} className="animate-spin" /> : "✨ AI Write Story"}
+                          {isStoryGen ? <Loader2 size={16} className="animate-spin" /> : <><Sparkles size={16} /> AI Write Story</>}
                         </button>
                         <button
                           onClick={() => setShowOptimizeModal(true)}
@@ -2099,7 +2099,7 @@ export default function Home() {
           <div className="bg-bg-panel w-full max-w-lg rounded-2xl shadow-xl border border-border-subtle flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-border-subtle">
               <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
-                ✨ AI Write Story
+                <Sparkles size={20} /> AI Write Story
               </h2>
               <p className="text-sm text-text-muted mt-1">
                 Uses Kaggle AI credits to write an expressive script with vocal cues like (laugh) and (sigh).
