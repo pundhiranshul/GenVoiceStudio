@@ -844,7 +844,15 @@ export default function Home() {
                   
                   // Start polling
                   let polling = true;
+                  let attempts = 0;
                   while (polling) {
+                    attempts++;
+                    if (attempts > 30) {
+                      polling = false;
+                      setVerifyStatus('error');
+                      setVerifyError("Verification timed out after 2 minutes.");
+                      break;
+                    }
                     const statusRes = await fetch('/api/verifyKaggleStatus', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },

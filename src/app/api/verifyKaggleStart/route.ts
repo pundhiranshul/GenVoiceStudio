@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     }
 
     const scriptCode = `
-import urllib.request
+import requests
 import json
 import traceback
 
@@ -27,7 +27,7 @@ results = {"internet": False, "gpu": False, "error": None}
 
 # Check Internet
 try:
-    urllib.request.urlopen("https://github.com", timeout=10)
+    requests.get("https://github.com", timeout=10)
     results["internet"] = True
     print("INTERNET: SUCCESS")
 except Exception as e:

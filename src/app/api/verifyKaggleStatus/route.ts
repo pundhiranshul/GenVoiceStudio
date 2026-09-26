@@ -23,7 +23,12 @@ export async function POST(req: Request) {
     });
     
     if (!statusRes.ok) {
-      return NextResponse.json({ error: 'Failed to fetch status' }, { status: statusRes.status });
+      const errText = await statusRes.text();
+      // Kaggle sometimes takes a moment to register the kernel, returning 404 initially.
+      if (statusRes.status === 404 || statusRes.status === 403) {
+        return NextResponse.json({ status: 'running' }); // Let frontend keep polling instead of instantly failing
+      }
+      return NextResponse.json({ error: `Failed to fetch status: ${statusRes.status} ${errText}` }, { status: statusRes.status });
     }
     
     const statusData = await statusRes.json();
@@ -43,7 +48,8 @@ export async function POST(req: Request) {
     });
 
     if (!outRes.ok) {
-      return NextResponse.json({ status: 'error', error: 'Verification kernel failed to produce output logs.' });
+      const outText = await outRes.text();
+      return NextResponse.json({ status: 'error', error: `Verification kernel failed to produce output logs: ${outRes.status} ${outText}` });
     }
 
     const outData = await outRes.json();
