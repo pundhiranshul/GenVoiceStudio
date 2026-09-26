@@ -264,6 +264,13 @@ export default function Home() {
   const [copiedText, setCopiedText] = useState(false);
   const [copiedTags, setCopiedTags] = useState(false);
   const [showStopModal, setShowStopModal] = useState(false);
+  
+  // AI Story Gen State
+  const [showStoryModal, setShowStoryModal] = useState(false);
+  const [storyTopic, setStoryTopic] = useState("");
+  const [storyTone, setStoryTone] = useState("Dramatic");
+  const [storyLength, setStoryLength] = useState("Short");
+  const [isStoryGen, setIsStoryGen] = useState(false);
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -416,6 +423,56 @@ export default function Home() {
   }, [chunksDone, chunksTotal]);
 
 
+
+  const handleStoryGenerate = async () => {
+    if (!storyTopic.trim() || !kaggleUsername || !kaggleKey) return;
+    setIsStoryGen(true);
+    
+    const prompt = `Write a ${storyLength} story about ${storyTopic} with a ${storyTone} tone. The story MUST be written as a spoken script for a single narrator. CRITICAL: You must include vocal expressions like (laugh), (sigh), (clears throat), or (cough) naturally throughout the script to add emotion. Do NOT output any title, markdown formatting, or introductory text. Just the script.`;
+    
+    try {
+      const res = await fetch('/api/story', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, username: kaggleUsername, key: kaggleKey })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      const kernelSlug = data.kernel;
+      
+      const pollStory = async () => {
+        try {
+          const sRes = await fetch('/api/storyStatus', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: kaggleUsername, key: kaggleKey, kernel: kernelSlug })
+          });
+          const sData = await sRes.json();
+          if (sData.status === "complete" && sData.story) {
+            setText(sData.story);
+            setIsStoryGen(false);
+            setShowStoryModal(false);
+            setStoryTopic("");
+          } else if (sData.status === "error") {
+            setIsStoryGen(false);
+            alert("Story generation failed: " + sData.error);
+          } else {
+            setTimeout(pollStory, 10000);
+          }
+        } catch (e) {
+          setIsStoryGen(false);
+          alert("Polling failed");
+        }
+      };
+      
+      setTimeout(pollStory, 20000); // Wait 20s before polling
+      
+    } catch (e: any) {
+      setIsStoryGen(false);
+      alert("Failed to start story generation: " + e.message);
+    }
+  };
 
   const handleGenerate = async (overrideText?: string | React.MouseEvent) => {
     const textToUse = typeof overrideText === 'string' ? overrideText : text;
@@ -1434,14 +1491,23 @@ export default function Home() {
                   </button>
                 ) : (
                   !isEditorOpen && (
-                    <button
-                      id="main-generate-btn"
-                      onClick={handleGenerate}
-                      disabled={isGen || !text.trim()}
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                    >
-                      Generate Speech
-                    </button>
+                    <>
+                      <button
+                        onClick={() => setShowStoryModal(true)}
+                        disabled={isGen || isStoryGen}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                      >
+                        {isStoryGen ? <Loader2 size={16} className="animate-spin" /> : "✨ AI Write Story"}
+                      </button>
+                      <button
+                        id="main-generate-btn"
+                        onClick={handleGenerate}
+                        disabled={isGen || isStoryGen || !text.trim()}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                      >
+                        Generate Speech
+                      </button>
+                    </>
                   )
                 )}
               </div>
