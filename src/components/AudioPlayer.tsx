@@ -6,9 +6,10 @@ import { Play, Pause, Download } from 'lucide-react';
 interface AudioPlayerProps {
   src: string;
   name: string;
+  transcript?: string;
 }
 
-export function AudioPlayer({ src, name }: AudioPlayerProps) {
+export function AudioPlayer({ src, name, transcript }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -55,7 +56,8 @@ export function AudioPlayer({ src, name }: AudioPlayerProps) {
   const currentTime = audioRef.current ? audioRef.current.currentTime : 0;
 
   return (
-    <div className="flex items-center gap-4 bg-bg-panel border border-border-color rounded-xl p-3 shadow-sm w-full">
+    <div className="w-full flex flex-col">
+      <div className="flex items-center gap-4 bg-bg-panel border border-border-color rounded-xl p-3 shadow-sm w-full">
       <audio
         ref={audioRef}
         src={src}
@@ -115,6 +117,29 @@ export function AudioPlayer({ src, name }: AudioPlayerProps) {
           <Download size={16} />
         </a>
       </div>
+    </div>
+    
+    {/* Running Captions */}
+    {transcript && duration > 0 && (
+      <div className="mt-2 px-3 py-2 bg-bg-panel border border-border-color rounded-xl text-[13px] text-text-secondary leading-relaxed font-medium">
+        {transcript.split(' ').map((word, i, arr) => {
+          const activeIndex = Math.floor(
+            Math.min(0.999, (audioRef.current?.currentTime ?? 0) / (audioRef.current?.duration || 1)) * arr.length
+          );
+          const isActive = isPlaying && i === activeIndex;
+          return (
+            <span
+              key={i}
+              className={`transition-colors duration-200 ${
+                isActive ? "text-accent-text bg-accent-bg rounded px-0.5" : ""
+              }`}
+            >
+              {word}{" "}
+            </span>
+          );
+        })}
+      </div>
+    )}
     </div>
   );
 }

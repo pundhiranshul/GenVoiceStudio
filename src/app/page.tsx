@@ -1196,9 +1196,9 @@ export default function Home() {
                           <span>Stitching audio chunks...</span>
                         </div>
                       ) : stitchedAudioUrl ? (
-                        <AudioPlayer src={stitchedAudioUrl} name="stitched_output.wav" />
+                        <AudioPlayer src={stitchedAudioUrl} name="stitched_output.wav" transcript={text} />
                       ) : finalAudios.map((a, i) => (
-                        <AudioPlayer key={i} src={a.data} name={a.name} />
+                        <AudioPlayer key={i} src={a.data} name={a.name} transcript={text} />
                       ))}
                     </div>
 
@@ -1260,7 +1260,7 @@ export default function Home() {
                               </button>
                             </div>
                             {chunkAudios.map((a, i) => (
-                              <AudioPlayer key={i} src={a.data} name={a.name} />
+                              <AudioPlayer key={i} src={a.data} name={a.name} transcript={chunks[i]} />
                             ))}
                           </div>
                         </div>
