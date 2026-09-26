@@ -276,6 +276,16 @@ export default function Home() {
   const [customLength, setCustomLength] = useState("");
   const [isStoryGen, setIsStoryGen] = useState(false);
 
+  // AI Optimize State
+  const [showOptimizeModal, setShowOptimizeModal] = useState(false);
+  const [optimizeInstruction, setOptimizeInstruction] = useState("");
+  const [isOptimizing, setIsOptimizing] = useState(false);
+
+  // AI Recommend Voices State
+  const [showRecommendModal, setShowRecommendModal] = useState(false);
+  const [recommendedVoices, setRecommendedVoices] = useState<{id: string, name: string, reason: string}[]>([]);
+  const [isRecommending, setIsRecommending] = useState(false);
+
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -431,6 +441,79 @@ export default function Home() {
   }, [chunksDone, chunksTotal]);
 
 
+
+  const handleOptimizeScript = async () => {
+    if (!text.trim() || (!password && (!kaggleUsername || !kaggleKey))) return;
+    setIsOptimizing(true);
+    try {
+      const res = await fetch('/api/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          text, 
+          instruction: optimizeInstruction,
+          password,
+          username: kaggleUsername, 
+          key: kaggleKey,
+          modelProxyKey,
+          modelProxyExpiresAt
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      if (data.success && data.optimizedText) {
+        setText(data.optimizedText);
+        setShowOptimizeModal(false);
+        setOptimizeInstruction("");
+        if (data.modelProxyKey && data.modelProxyExpiresAt) {
+          setModelProxyKey(data.modelProxyKey);
+          setModelProxyExpiresAt(data.modelProxyExpiresAt);
+          localStorage.setItem('modelProxyKey', data.modelProxyKey);
+          localStorage.setItem('modelProxyExpiresAt', data.modelProxyExpiresAt);
+        }
+      }
+    } catch (e: any) {
+      alert("Failed to optimize script: " + e.message);
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
+  const handleRecommendVoices = async () => {
+    if (!text.trim() || (!password && (!kaggleUsername || !kaggleKey))) return;
+    setIsRecommending(true);
+    try {
+      const res = await fetch('/api/voicerecommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          text, 
+          voices: allVoices,
+          password,
+          username: kaggleUsername, 
+          key: kaggleKey,
+          modelProxyKey,
+          modelProxyExpiresAt
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      if (data.success && data.recommendations) {
+        setRecommendedVoices(data.recommendations);
+        setShowRecommendModal(true);
+        if (data.modelProxyKey && data.modelProxyExpiresAt) {
+          setModelProxyKey(data.modelProxyKey);
+          setModelProxyExpiresAt(data.modelProxyExpiresAt);
+          localStorage.setItem('modelProxyKey', data.modelProxyKey);
+          localStorage.setItem('modelProxyExpiresAt', data.modelProxyExpiresAt);
+        }
+      }
+    } catch (e: any) {
+      alert("Failed to get recommendations: " + e.message);
+    } finally {
+      setIsRecommending(false);
+    }
+  };
 
   const handleStoryGenerate = async () => {
     if (!storyTopic.trim() || (!password && (!kaggleUsername || !kaggleKey))) return;
@@ -1587,10 +1670,17 @@ export default function Home() {
                       <>
                         <button
                           onClick={() => setShowStoryModal(true)}
-                          disabled={isGen || isStoryGen}
+                          disabled={isGen || isStoryGen || isOptimizing}
                           className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                         >
                           {isStoryGen ? <Loader2 size={16} className="animate-spin" /> : "✨ AI Write Story"}
+                        </button>
+                        <button
+                          onClick={() => setShowOptimizeModal(true)}
+                          disabled={isGen || isStoryGen || isOptimizing || !text.trim()}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                        >
+                          {isOptimizing ? <Loader2 size={16} className="animate-spin" /> : "✨ Optimize Script"}
                         </button>
                         <button
                           id="main-generate-btn"
@@ -1647,6 +1737,13 @@ export default function Home() {
                   onUploadClick={() => setShowUpload(true)} 
                   onDeleteVoice={handleDeleteVoice}
                 />
+                <button
+                  onClick={handleRecommendVoices}
+                  disabled={isRecommending || !text.trim()}
+                  className="mt-1 flex items-center justify-center gap-2 w-full px-3 py-2 text-xs font-medium bg-bg-panel text-text-secondary border border-border-color rounded-lg hover:bg-bg-hover hover:text-text-primary transition-all disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                >
+                  {isRecommending ? <Loader2 size={14} className="animate-spin" /> : "✨ AI Recommend Voice"}
+                </button>
               </div>
             )}
             
@@ -2105,6 +2202,121 @@ export default function Home() {
                 ) : (
                   "Generate Script"
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Optimize Modal */}
+      {showOptimizeModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-200">
+          <div className="bg-bg-panel border border-border-color rounded-2xl w-full max-w-lg shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-border-subtle bg-bg-base/50">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-accent-bg/10 flex items-center justify-center text-accent-text">
+                  <Wand2 size={16} />
+                </div>
+                <h2 className="text-sm font-semibold text-text-primary tracking-wide">Optimize Script</h2>
+              </div>
+              <button 
+                onClick={() => setShowOptimizeModal(false)}
+                className="p-1.5 rounded-full hover:bg-bg-hover text-text-muted transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="p-6 flex flex-col gap-6 bg-bg-panel overflow-y-auto max-h-[60vh]">
+              <div className="flex flex-col gap-2">
+                <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
+                  Instructions (Optional)
+                </label>
+                <textarea
+                  value={optimizeInstruction}
+                  onChange={(e) => setOptimizeInstruction(e.target.value)}
+                  placeholder="e.g. Add commas, breathing marks (sigh), or make the tone more enthusiastic."
+                  rows={3}
+                  className="w-full px-3 py-2 bg-bg-input text-text-primary text-sm rounded-lg border border-border-color placeholder-text-muted outline-none focus:border-ring-color transition-colors resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-border-subtle bg-bg-base flex gap-3">
+              <button
+                onClick={() => setShowOptimizeModal(false)}
+                disabled={isOptimizing}
+                className="flex-1 px-4 py-2.5 bg-bg-input text-text-primary text-sm font-medium rounded-xl text-center transition-colors hover:bg-bg-hover disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleOptimizeScript}
+                disabled={isOptimizing}
+                className="flex-1 px-4 py-2.5 bg-accent-bg text-accent-text text-sm font-medium rounded-xl text-center transition-colors hover:bg-accent-bg/90 disabled:opacity-50 flex justify-center items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              >
+                {isOptimizing ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Optimizing...
+                  </>
+                ) : (
+                  "Optimize"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Voice Recommend Modal */}
+      {showRecommendModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 md:p-6 animate-in fade-in duration-200">
+          <div className="bg-bg-panel border border-border-color rounded-2xl w-full max-w-lg shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-border-subtle bg-bg-base/50">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-accent-bg/10 flex items-center justify-center text-accent-text">
+                  <Sparkles size={16} />
+                </div>
+                <h2 className="text-sm font-semibold text-text-primary tracking-wide">Recommended Voices</h2>
+              </div>
+              <button 
+                onClick={() => setShowRecommendModal(false)}
+                className="p-1.5 rounded-full hover:bg-bg-hover text-text-muted transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="p-6 flex flex-col gap-4 bg-bg-panel overflow-y-auto max-h-[60vh]">
+              {recommendedVoices.length > 0 ? (
+                recommendedVoices.map((voice, idx) => (
+                  <div key={idx} className="flex flex-col gap-2 p-4 border border-border-color rounded-xl bg-bg-base/50 hover:border-accent-bg/30 transition-colors">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-text-primary">{voice.name || allVoices.find(v => v.id === voice.id)?.name || voice.id}</span>
+                      <button 
+                        onClick={() => {
+                          setSelectedVoiceId(voice.id);
+                          setShowRecommendModal(false);
+                        }}
+                        className="px-3 py-1 bg-accent-bg text-accent-text text-xs rounded-lg font-medium hover:bg-accent-bg/90"
+                      >
+                        Select
+                      </button>
+                    </div>
+                    <span className="text-xs text-text-secondary leading-relaxed">{voice.reason}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-text-secondary text-center py-6">No recommendations found.</div>
+              )}
+            </div>
+            <div className="p-4 border-t border-border-subtle bg-bg-base flex justify-end">
+              <button
+                onClick={() => setShowRecommendModal(false)}
+                className="px-4 py-2.5 bg-bg-input text-text-primary text-sm font-medium rounded-xl text-center transition-colors hover:bg-bg-hover outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              >
+                Close
               </button>
             </div>
           </div>
