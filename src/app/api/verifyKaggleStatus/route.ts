@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       authHeader = 'Bearer ' + cleanToken;
     }
 
-    const statusRes = await fetch(`https://www.kaggle.com/api/v1/kernels/status?kernelRef=${encodeURIComponent(ref)}`, {
+    const statusRes = await fetch(`https://www.kaggle.com/api/v1/kernels/status?kernelRef=${ref}`, {
       headers: { 'Authorization': authHeader }
     });
     
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     }
 
     // It's complete or error. Let's fetch output.
-    const outRes = await fetch(`https://www.kaggle.com/api/v1/kernels/output?kernelRef=${encodeURIComponent(ref)}`, {
+    const outRes = await fetch(`https://www.kaggle.com/api/v1/kernels/output?kernelRef=${ref}`, {
       headers: { 'Authorization': authHeader }
     });
 
