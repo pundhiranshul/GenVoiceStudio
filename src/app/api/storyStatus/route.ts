@@ -36,10 +36,13 @@ export async function POST(req: Request) {
     if (logData.status === "complete") {
       const storyFile = logData.files?.find((f: any) => f.fileName === "story.txt");
       if (storyFile && storyFile.url) {
-        const storyRes = await fetch(storyFile.url);
+        const fetchHeaders = storyFile.url.includes('kaggle.com') ? { 'Authorization': authHeader } : undefined;
+        const storyRes = await fetch(storyFile.url, { headers: fetchHeaders });
         if (storyRes.ok) {
           const story = await storyRes.text();
           return NextResponse.json({ status: "complete", story: story.trim() });
+        } else {
+          console.error("Failed to fetch story.txt from URL:", storyFile.url, storyRes.status);
         }
       }
       return NextResponse.json({ status: "error", error: "Story not found in logs or files." });

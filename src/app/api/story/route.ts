@@ -27,7 +27,7 @@ export async function POST(req: Request) {
             "def generate(llm):\n",
             "    response = llm.prompt(PROMPT)\n",
             "    with open('story.txt', 'w', encoding='utf-8') as f:\n",
-            "        f.write(response)\n",
+            "        f.write(str(response))\n",
             "\n",
             "_ = generate.run(kbench.llm)\n"
           ]
