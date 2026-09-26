@@ -415,6 +415,8 @@ export default function Home() {
     setEta(fmtEta((elapsed / chunksDone) * (chunksTotal - chunksDone)));
   }, [chunksDone, chunksTotal]);
 
+
+
   const handleGenerate = async (overrideText?: string | React.MouseEvent) => {
     const textToUse = typeof overrideText === 'string' ? overrideText : text;
     if ((!password && (!kaggleUsername || !kaggleKey)) || !textToUse) {
@@ -555,6 +557,20 @@ export default function Home() {
   };
 
   const isGen      = status === "generating";
+  
+  // Simulated cell progress since Kaggle API doesn't expose live notebook stdout
+  useEffect(() => {
+    if (isGen && cellsTotal > 0 && cellsDone < cellsTotal - 1) {
+      // Setup cells usually take ~90 seconds total, we slowly simulate progress
+      const timer = setInterval(() => {
+        setCellsDone(prev => {
+          if (prev < cellsTotal - 1.5) return prev + 0.2;
+          return prev;
+        });
+      }, 3000);
+      return () => clearInterval(timer);
+    }
+  }, [isGen, cellsTotal, cellsDone]);
   const refAudios  = audios.filter(a => getCategory(a.name) === "reference");
   const finalAudios = audios.filter(a => getCategory(a.name) === "final");
   const chunkAudios = audios
