@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef } from 'react';
 import { Play, Pause, Download } from 'lucide-react';
 
 interface AudioPlayerProps {
@@ -54,24 +54,6 @@ export function AudioPlayer({ src, name, transcript }: AudioPlayerProps) {
   };
 
   const currentTime = audioRef.current ? audioRef.current.currentTime : 0;
-
-  const { words, wordWeights, totalWeight } = useMemo(() => {
-    if (!transcript) return { words: [], wordWeights: [], totalWeight: 0 };
-    const w = transcript.split(' ');
-    let currentWeight = 0;
-    const weights = w.map(word => {
-      // Base weight is approximated by word length, assuming longer words take more time to say
-      let weight = Math.max(1, word.length * 0.25); 
-      // Add artificial pause duration for punctuation
-      if (word.match(/[.!?]$/)) weight += 3;
-      else if (word.match(/[,;:]$/)) weight += 1.5;
-      else if (word.match(/^\(.*\)$/)) weight += 2; // e.g. (laugh)
-      
-      currentWeight += weight;
-      return currentWeight;
-    });
-    return { words: w, wordWeights: weights, totalWeight: currentWeight };
-  }, [transcript]);
 
   return (
     <div className="w-full flex flex-col">
@@ -137,26 +119,10 @@ export function AudioPlayer({ src, name, transcript }: AudioPlayerProps) {
       </div>
     </div>
     
-    {/* Running Captions */}
-    {transcript && duration > 0 && (
+    {/* Transcript */}
+    {transcript && (
       <div className="mt-2 px-3 py-2 bg-bg-panel border border-border-color rounded-xl text-[13px] text-text-secondary leading-relaxed font-medium">
-        {words.map((word, i) => {
-          const targetWeight = (currentTime / (duration || 1)) * totalWeight;
-          let activeIndex = wordWeights.findIndex(w => w >= targetWeight);
-          if (activeIndex === -1) activeIndex = words.length - 1;
-          
-          const isActive = isPlaying && i === activeIndex;
-          return (
-            <span
-              key={i}
-              className={`transition-colors duration-200 ${
-                isActive ? "text-accent-text bg-accent-bg rounded px-0.5" : ""
-              }`}
-            >
-              {word}{" "}
-            </span>
-          );
-        })}
+        {transcript}
       </div>
     )}
     </div>
