@@ -1178,9 +1178,9 @@ export default function Home() {
             </div>
 
             {/* Editor Footer (Actions & Status) */}
-            <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-end justify-between border-t border-border-color pt-6 gap-6 sm:gap-4 shrink-0">
+            <div className="mt-8 flex flex-col lg:flex-row items-stretch lg:items-end justify-between border-t border-border-color pt-6 gap-6 shrink-0">
               
-              <div className="flex-1 max-w-xl">
+              <div className="flex-1 w-full min-w-0 lg:pr-8">
                 {(status === "idle" || (status === "error" && message.includes("Voice Design Instruction"))) && finalAudios.length === 0 && (
                   <div className="flex items-center gap-2 text-text-muted text-sm">
                     <Wand2 size={16} />
@@ -1239,9 +1239,15 @@ export default function Home() {
                           </span>
                         </summary>
                         <div className="p-4 pt-0 flex flex-col gap-4 border-t border-border-subtle/50 mt-2">
-                          <p className="text-xs text-text-muted mb-2">
-                            Adjust the crossfade (trim) between individual chunks. Changes apply instantly to the stitched output above.
-                          </p>
+                          <div className="bg-bg-input/30 border border-border-subtle rounded-xl p-3 mb-2 flex items-start gap-3 mt-4">
+                            <div className="w-5 h-5 rounded-full border border-border-color flex items-center justify-center text-[10px] font-bold text-text-muted shrink-0 mt-0.5">
+                              i
+                            </div>
+                            <div className="text-xs text-text-secondary leading-relaxed">
+                              <strong className="text-text-primary block mb-1">Crossfade vs Trim</strong>
+                              <strong>Crossfade</strong> smoothly blends the overlap between this chunk and the next. <strong>Trim</strong> performs a hard cut, removing the specified duration from the end of the chunk without blending. Changes apply instantly to the stitched output above.
+                            </div>
+                          </div>
 
                           <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-2 pb-2">
                             <div className="flex justify-between items-center sticky top-0 bg-bg-base/90 py-1 z-10 backdrop-blur-sm -mx-2 px-2">
@@ -1291,15 +1297,6 @@ export default function Home() {
                                           >
                                             Trim
                                           </button>
-                                        </div>
-                                        <div className="group relative flex items-center justify-center cursor-help">
-                                          <div className="w-5 h-5 rounded-full border border-border-color flex items-center justify-center text-[10px] font-bold text-text-muted hover:bg-bg-hover transition-colors">
-                                            i
-                                          </div>
-                                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-3 bg-bg-panel border border-border-color shadow-lg rounded-xl text-xs text-text-secondary opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 pointer-events-none">
-                                            <strong className="block text-text-primary mb-1">Crossfade vs Trim</strong>
-                                            <strong>Crossfade</strong> smoothly blends the overlap between this chunk and the next. <strong>Trim</strong> performs a hard cut, removing the specified duration from the end of this chunk without blending.
-                                          </div>
                                         </div>
                                       </div>
 
