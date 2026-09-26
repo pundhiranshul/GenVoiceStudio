@@ -305,7 +305,7 @@ export async function POST(req: Request) {
     const chunks = needsChunking ? finalChunks : [];
 
     console.log(`[DEBUG] Final actualKernelRef: ${actualKernelRef}`);
-    return NextResponse.json({ status: 'queued', kernel: actualKernelRef, rawResponse: kaggleData, charCount, isLong: needsChunking, chunks });
+    return NextResponse.json({ status: 'queued', kernel: actualKernelRef, rawResponse: kaggleData, charCount, isLong: needsChunking, chunks, cellsTotal: totalCodeCells });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
