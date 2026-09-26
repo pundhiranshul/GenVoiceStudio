@@ -1244,7 +1244,7 @@ export default function Home() {
         
         {/* Center Canvas */}
         <main className="flex-1 flex flex-col min-w-0 bg-bg-base shrink-0 md:shrink md:overflow-y-auto">
-          <div className="flex-1 flex flex-col max-w-5xl w-full mx-auto p-6 md:p-10 relative min-h-0">
+          <div className={`flex-1 flex flex-col w-full mx-auto p-6 md:p-10 relative min-h-0 ${isEditorOpen ? 'max-w-7xl' : 'max-w-5xl'}`}>
             
             <div className="relative flex-1 w-full min-h-0 md:overflow-y-auto pr-14">
               {text.length === 0 && (
@@ -1549,48 +1549,30 @@ export default function Home() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-3 ml-0 sm:ml-6 shrink-0 w-full sm:w-auto">
+              {!isEditorOpen && (
+                <div className="flex items-center gap-3 ml-0 sm:ml-6 shrink-0 w-full sm:w-auto">
 
-                {isGen ? (
-                  <button
-                    onClick={stopRun}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-input text-text-primary hover:bg-bg-hover-strong border border-border-color font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                  >
-                    <Square size={16} className="fill-current text-text-secondary" />
-                    Stop
-                  </button>
-                ) : (status === "complete" && (finalAudios.length > 0 || chunkAudios.length > 0)) ? (
-                  <>
+                  {isGen ? (
                     <button
-                      onClick={handleNewScript}
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                      onClick={stopRun}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-input text-text-primary hover:bg-bg-hover-strong border border-border-color font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                     >
-                      New Script
+                      <Square size={16} className="fill-current text-text-secondary" />
+                      Stop
                     </button>
-                    <button
-                      onClick={() => { setAudios([]); setStitchedAudioUrl(null); setStatus("idle"); }}
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                    >
-                      Edit Script
-                    </button>
-                    <button
-                      id="main-generate-btn"
-                      onClick={handleGenerate}
-                      disabled={isGen || isStoryGen || !text.trim()}
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                    >
-                      Retry Generation
-                    </button>
-                  </>
-                ) : (
-                  !isEditorOpen && (
+                  ) : (status === "complete" && (finalAudios.length > 0 || chunkAudios.length > 0)) ? (
                     <>
                       <button
-                        onClick={() => setShowStoryModal(true)}
-                        disabled={isGen || isStoryGen}
+                        onClick={handleNewScript}
                         className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                       >
-                        {isStoryGen ? <Loader2 size={16} className="animate-spin" /> : "✨ AI Write Story"}
+                        New Script
+                      </button>
+                      <button
+                        onClick={() => { setAudios([]); setStitchedAudioUrl(null); setStatus("idle"); }}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                      >
+                        Edit Script
                       </button>
                       <button
                         id="main-generate-btn"
@@ -1598,12 +1580,30 @@ export default function Home() {
                         disabled={isGen || isStoryGen || !text.trim()}
                         className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                       >
-                        Generate Speech
+                        Retry Generation
                       </button>
                     </>
-                  )
-                )}
-              </div>
+                  ) : (
+                      <>
+                        <button
+                          onClick={() => setShowStoryModal(true)}
+                          disabled={isGen || isStoryGen}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                        >
+                          {isStoryGen ? <Loader2 size={16} className="animate-spin" /> : "✨ AI Write Story"}
+                        </button>
+                        <button
+                          id="main-generate-btn"
+                          onClick={handleGenerate}
+                          disabled={isGen || isStoryGen || !text.trim()}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                        >
+                          Generate Speech
+                        </button>
+                      </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </main>
