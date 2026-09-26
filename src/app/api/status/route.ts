@@ -186,6 +186,8 @@ export async function GET(req: Request) {
     // 3. Not complete — return status with best-effort partial log info
     let chunksCurrent = 0;
     let chunksTotal = 0;
+    let cellsCurrent = 0;
+    let cellsTotal = 0;
     const newAudios: { name: string; data: string }[] = [];
 
     try {
@@ -200,11 +202,19 @@ export async function GET(req: Request) {
       try { logData = JSON.parse(logText); } catch (_) { /* ignore non-JSON */ }
 
       const partialLog: string = logData.log || '';
-      const matches = [...partialLog.matchAll(/Generating (\d+)\/(\d+)/g)];
-      if (matches.length > 0) {
-        const last = matches[matches.length - 1];
+      
+      const chunkMatches = [...partialLog.matchAll(/Generating (\d+)\/(\d+)/g)];
+      if (chunkMatches.length > 0) {
+        const last = chunkMatches[chunkMatches.length - 1];
         chunksCurrent = parseInt(last[1], 10);
         chunksTotal = parseInt(last[2], 10);
+      }
+
+      const cellMatches = [...partialLog.matchAll(/CELL_PROGRESS: (\d+)\/(\d+)/g)];
+      if (cellMatches.length > 0) {
+        const last = cellMatches[cellMatches.length - 1];
+        cellsCurrent = parseInt(last[1], 10);
+        cellsTotal = parseInt(last[2], 10);
       }
 
       const existingAudiosStr = searchParams.get('existingAudios') || '';
@@ -230,8 +240,8 @@ export async function GET(req: Request) {
       console.warn('[STATUS API] Partial log fetch failed (non-fatal):', partialErr?.message);
     }
 
-    console.log(`[STATUS API] Returning status=${currentStatus}, chunks=${chunksCurrent}/${chunksTotal}`);
-    return NextResponse.json({ status: currentStatus, chunksCurrent, chunksTotal, newAudios });
+    console.log(`[STATUS API] Returning status=${currentStatus}, cells=${cellsCurrent}/${cellsTotal}, chunks=${chunksCurrent}/${chunksTotal}`);
+    return NextResponse.json({ status: currentStatus, chunksCurrent, chunksTotal, cellsCurrent, cellsTotal, newAudios });
 
   } catch (topLevelErr: any) {
     console.error('[STATUS API] Unhandled top-level error:', topLevelErr);

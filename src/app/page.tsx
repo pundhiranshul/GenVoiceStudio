@@ -235,6 +235,8 @@ export default function Home() {
   const [chunks, setChunks]         = useState<string[]>([]);
   const [chunksDone, setChunksDone] = useState(0);
   const [chunksTotal, setChunksTotal] = useState(0);
+  const [cellsDone, setCellsDone]   = useState(0);
+  const [cellsTotal, setCellsTotal] = useState(0);
   const [isLongMode, setIsLongMode] = useState(false);
   const [eta, setEta]               = useState("");
   const [chunkTrims, setChunkTrims] = useState<number[]>([]);
@@ -430,7 +432,7 @@ export default function Home() {
     setIsVoiceSaved(false);
     setStatus("generating"); setMessage("Submitting…");
     setAudios([]); audiosRef.current = []; setLogs([]); setChunks([]);
-    setChunksDone(0); setChunksTotal(0); setEta(""); setIsLongMode(false);
+    setChunksDone(0); setChunksTotal(0); setCellsDone(0); setCellsTotal(0); setEta(""); setIsLongMode(false);
     startRef.current = Date.now(); firstChunkRef.current = null;
     addLog("Initializing…");
     try {
@@ -509,6 +511,7 @@ export default function Home() {
           setStatus("complete"); setMessage("Generation complete!");
           setAudios(data.audios);
           if (isLongMode) setChunksDone(chunksTotal);
+          setCellsDone(cellsTotal || 1);
           addLog(`${data.audios.length} audio files ready.`);
         } else {
           setStatus("error"); setMessage("No audio in output."); addLog("ERROR: No audio.");
@@ -525,6 +528,21 @@ export default function Home() {
           setAudios(newMerged);
         }
         if (data.chunksTotal > 0) { setChunksTotal(data.chunksTotal); setChunksDone(data.chunksCurrent); }
+        if (data.cellsTotal > 0) { setCellsTotal(data.cellsTotal); setCellsDone(data.cellsCurrent); }
+        
+        let isFullyDone = false;
+        if (data.chunksTotal > 0 && data.chunksCurrent === data.chunksTotal) isFullyDone = true;
+        else if (!isLongMode && audiosRef.current.some(a => a.name.includes('single.wav'))) isFullyDone = true;
+
+        if (isFullyDone) {
+          setStatus("complete");
+          setMessage("Generation complete!");
+          if (isLongMode) setChunksDone(data.chunksTotal || chunksTotal);
+          setCellsDone(data.cellsTotal || cellsTotal || 1);
+          addLog(`Early completion detected! Stopping polling.`);
+          return;
+        }
+
         const info = data.chunksTotal > 0 ? ` (${data.chunksCurrent}/${data.chunksTotal})` : "";
         setMessage(`Generating${info}...`);
         addLog(`${(data.status || "unknown").toUpperCase()}${info}`);
@@ -1351,15 +1369,15 @@ export default function Home() {
                       <span>{message}</span>
                       {eta && <span className="text-text-muted tabular-nums">ETA: {eta}</span>}
                     </div>
-                    {isLongMode && chunksTotal > 0 && (
+                    {cellsTotal > 0 && (
                       <div className="w-full max-w-md h-1.5 bg-accent-bg/10 rounded-full overflow-hidden mt-1 relative">
                         <div 
                           className="h-full bg-accent-bg" 
                           style={{ 
-                            width: `${Math.min(100, ((chunksDone + 0.9) / chunksTotal) * 100)}%`,
+                            width: `${Math.min(100, ((cellsDone + 0.5) / cellsTotal) * 100)}%`,
                             transitionProperty: 'width',
-                            transitionDuration: '15s',
-                            transitionTimingFunction: 'cubic-bezier(0.1, 0.7, 0.1, 1)'
+                            transitionDuration: '5s',
+                            transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
                           }}
                         />
                       </div>

@@ -216,6 +216,18 @@ export async function POST(req: Request) {
       });
     }
 
+    // Inject cell progress trackers
+    const codeCells = notebook.cells.filter((c: any) => c.cell_type === 'code');
+    const totalCodeCells = codeCells.length;
+    codeCells.forEach((cell: any, index: number) => {
+      const printStmt = `\nprint("CELL_PROGRESS: ${index + 1}/${totalCodeCells}")\n`;
+      if (Array.isArray(cell.source)) {
+        cell.source.push(printStmt);
+      } else {
+        cell.source += printStmt;
+      }
+    });
+
     const payload = {
       slug: `${username}/${slug}`,
       newTitle: slug,
