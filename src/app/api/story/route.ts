@@ -18,7 +18,7 @@ export async function POST(req: Request) {
           execution_count: null,
           metadata: {},
           source: [
-            "!pip install --upgrade protobuf kaggle-benchmarks -q\n",
+            "!pip install --upgrade protobuf kaggle-benchmarks jupyter_bokeh -q\n",
             "import kaggle_benchmarks as kbench\n",
             "\n",
             `PROMPT = """${prompt.replace(/"/g, '\\"')}"""\n`,
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
             "    print(response)\n",
             "    print(\"---STORY_END---\\n\")\n",
             "\n",
-            "generate.run(kbench.llm)\n"
+            "_ = generate.run(kbench.llm)\n"
           ]
         }
       ],
