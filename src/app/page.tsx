@@ -259,26 +259,6 @@ export default function Home() {
   const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isStoppedRef = useRef(false);
 
-  const stopRun = async () => {
-    isStoppedRef.current = true;
-    if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
-    setStatus("idle");
-    setMessage("Stopping run on Kaggle...");
-    addLog("Stop requested by user.");
-    try {
-      const res = await fetch("/api/stop", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password, kaggleUsername, kaggleKey })
-      });
-      if (!res.ok) throw new Error(await res.text());
-      setMessage("Run successfully stopped.");
-      addLog("Kernel session cancelled via dummy push.");
-    } catch (e: any) {
-      addLog(`Stop failed: ${e.message}`);
-      setMessage("Failed to stop run.");
-    }
-  };
 
   const insertTag = (tag: string) => {
     if (!textAreaRef.current) return;
@@ -1319,11 +1299,11 @@ export default function Home() {
 
                 {isGen ? (
                   <button
-                    onClick={stopRun}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-input text-text-primary hover:bg-bg-hover-strong border border-border-color font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                    disabled
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-input text-text-muted border border-border-color font-medium text-sm transition-all outline-none cursor-not-allowed"
                   >
-                    <Square size={16} className="fill-current text-text-secondary" />
-                    Stop
+                    <Loader2 size={16} className="animate-spin text-text-muted" />
+                    Generating...
                   </button>
                 ) : (
                   <button
