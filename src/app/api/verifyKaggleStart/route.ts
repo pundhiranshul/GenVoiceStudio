@@ -18,11 +18,47 @@ export async function POST(req: Request) {
       authHeader = 'Bearer ' + cleanToken;
     }
 
-    // Push a tiny dummy script that requests internet access
+    const scriptCode = `
+import urllib.request
+import json
+import traceback
+
+results = {"internet": False, "gpu": False, "error": None}
+
+# Check Internet
+try:
+    urllib.request.urlopen("https://github.com", timeout=10)
+    results["internet"] = True
+    print("INTERNET: SUCCESS")
+except Exception as e:
+    results["internet"] = False
+    results["error"] = f"Internet failed: {e}"
+    print(f"INTERNET: FAILED - {e}")
+
+# Check GPU
+try:
+    import torch
+    if torch.cuda.is_available():
+        results["gpu"] = True
+        print("GPU: SUCCESS")
+    else:
+        results["gpu"] = False
+        results["error"] = "CUDA is not available. GPU allocation failed."
+        print("GPU: FAILED - CUDA not available")
+except Exception as e:
+    results["gpu"] = False
+    print(f"GPU: FAILED - {e}")
+
+with open("/kaggle/working/verify_results.json", "w") as f:
+    json.dump(results, f)
+
+print(f"FINAL_RESULT: {json.dumps(results)}")
+`;
+
     const payload = {
       slug: `${cleanUsername}/genvoice-verify`,
       newTitle: "GenVoice Verify",
-      text: "print('Verification successful.')",
+      text: scriptCode,
       language: "python",
       kernelType: "script",
       isPrivate: true,
@@ -70,7 +106,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Kaggle Push Error: ${errorMsg}` }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true });
+    let actualKernelRef = `${cleanUsername}/genvoice-verify`;
+    if (parsedData.ref) {
+      actualKernelRef = parsedData.ref.replace(/^\/code\//, '');
+    } else if (parsedData.url) {
+      const urlParts = parsedData.url.split('/');
+      actualKernelRef = `${urlParts[urlParts.length - 2]}/${urlParts[urlParts.length - 1]}`;
+    }
+
+    return NextResponse.json({ success: true, ref: actualKernelRef });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'An unexpected error occurred' }, { status: 500 });
   }

@@ -207,6 +207,9 @@ export default function Home() {
   const [hasCredentials, setHasCredentials] = useState(false);
   const [authMode, setAuthMode]   = useState<'byok' | 'admin'>('byok');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyScreen, setVerifyScreen] = useState(false);
+  const [verifyStatus, setVerifyStatus] = useState<'pending' | 'internet' | 'gpu' | 'success' | 'error'>('pending');
+  const [verifyError, setVerifyError] = useState("");
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   
   const [password, setPassword]   = useState("");
@@ -682,6 +685,65 @@ export default function Home() {
   }
 
   if (!hasCredentials) {
+    if (verifyScreen) {
+      return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-6 animate-in fade-in duration-500 overflow-y-auto">
+          <div className="max-w-xl w-full bg-bg-panel border border-border-color rounded-3xl p-8 sm:p-10 shadow-xl my-auto flex flex-col gap-6">
+            <div className="flex flex-col items-center gap-3 mb-4">
+              <GenVoiceLogo size={48} animate={verifyStatus === 'pending' || verifyStatus === 'internet' || verifyStatus === 'gpu'} />
+              <h1 className="text-xl font-semibold tracking-tight mt-2">Verifying Kaggle Environment</h1>
+              <p className="text-sm text-text-muted text-center leading-relaxed">This takes about 30-60 seconds as a test kernel is provisioned.</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-bg-input rounded-xl border border-border-color">
+                <span className="font-medium text-sm text-text-primary">Outbound Internet Access</span>
+                {verifyStatus === 'pending' || verifyStatus === 'internet' ? (
+                  <Loader2 size={16} className="animate-spin text-text-muted" />
+                ) : verifyStatus === 'gpu' || verifyStatus === 'success' ? (
+                  <Check size={16} className="text-green-500" />
+                ) : (
+                  <X size={16} className="text-red-500" />
+                )}
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-bg-input rounded-xl border border-border-color">
+                <span className="font-medium text-sm text-text-primary">GPU Allocation (Quota & T4)</span>
+                {verifyStatus === 'pending' || verifyStatus === 'internet' ? (
+                   <span className="text-text-muted text-xs">Waiting...</span>
+                ) : verifyStatus === 'gpu' ? (
+                  <Loader2 size={16} className="animate-spin text-text-muted" />
+                ) : verifyStatus === 'success' ? (
+                  <Check size={16} className="text-green-500" />
+                ) : (
+                  <X size={16} className="text-red-500" />
+                )}
+              </div>
+            </div>
+
+            {verifyStatus === 'error' && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
+                <strong className="font-semibold">Verification Failed: </strong>
+                {verifyError}
+              </div>
+            )}
+            
+            {verifyStatus === 'error' && (
+              <button 
+                onClick={() => {
+                  setVerifyScreen(false);
+                  setIsVerifying(false);
+                }}
+                className="w-full mt-2 bg-bg-input text-text-primary font-medium py-3.5 rounded-xl hover:bg-bg-hover transition-all shadow-sm flex items-center justify-center gap-2 border border-border-color"
+              >
+                Go Back
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-6 animate-in fade-in duration-500 overflow-y-auto">
         <div className={`max-w-xl w-full bg-bg-panel border border-border-color rounded-3xl p-8 sm:p-10 shadow-xl my-auto ${status === 'error' ? 'animate-shake' : ''}`}>
@@ -761,30 +823,71 @@ export default function Home() {
             onClick={async () => {
               if (authMode === 'byok' && kaggleUsername && kaggleKey) {
                 setIsVerifying(true);
+                setVerifyScreen(true);
+                setVerifyStatus('pending');
+                setVerifyError("");
+                
                 try {
-                  const res = await fetch('/api/verifyKaggle', {
+                  const startRes = await fetch('/api/verifyKaggleStart', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ kaggleUsername, kaggleKey })
                   });
-                  const data = await res.json();
-                  if (!res.ok) {
-                    throw new Error(data.error || "Failed to verify Kaggle credentials");
+                  const startData = await startRes.json();
+                  
+                  if (!startRes.ok) {
+                    throw new Error(startData.error || "Failed to start verification process.");
                   }
-                  localStorage.setItem('kaggleUsername', kaggleUsername);
-                  localStorage.setItem('kaggleKey', kaggleKey);
-                  localStorage.removeItem('appPassword');
-                  setPassword('');
-                  setHasCredentials(true);
-                  setStatus("idle");
-                  setMessage("");
+                  
+                  setVerifyStatus('internet');
+                  const ref = startData.ref;
+                  
+                  // Start polling
+                  let polling = true;
+                  while (polling) {
+                    const statusRes = await fetch('/api/verifyKaggleStatus', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ kaggleUsername, kaggleKey, ref })
+                    });
+                    
+                    const statusData = await statusRes.json();
+                    
+                    if (statusData.status === 'running') {
+                      await new Promise(r => setTimeout(r, 4000));
+                    } else if (statusData.status === 'complete') {
+                      polling = false;
+                      const results = statusData.results;
+                      if (results.internet) {
+                        setVerifyStatus('gpu');
+                      }
+                      
+                      if (results.internet && results.gpu) {
+                        setVerifyStatus('success');
+                        setTimeout(() => {
+                          setVerifyScreen(false);
+                          setIsVerifying(false);
+                          localStorage.setItem('kaggleUsername', kaggleUsername);
+                          localStorage.setItem('kaggleKey', kaggleKey);
+                          localStorage.removeItem('appPassword');
+                          setPassword('');
+                          setHasCredentials(true);
+                          setStatus("idle");
+                          setMessage("");
+                        }, 1000);
+                      } else {
+                        setVerifyStatus('error');
+                        setVerifyError(results.error || "Verification failed. Internet or GPU not available.");
+                      }
+                    } else {
+                      polling = false;
+                      setVerifyStatus('error');
+                      setVerifyError(statusData.error || "Failed to complete verification.");
+                    }
+                  }
                 } catch (e: any) {
-                  setMessage(e.message);
-                  setStatus("error");
-                  // Make error message persistent slightly longer for reading
-                  setTimeout(() => setStatus("idle"), 6000);
-                } finally {
-                  setIsVerifying(false);
+                  setVerifyStatus('error');
+                  setVerifyError(e.message);
                 }
               } else if (authMode === 'admin' && password) {
                 setIsVerifying(true);
