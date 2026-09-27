@@ -17,7 +17,7 @@ export const VOCAL_TAGS = [
   {
     category: "Throat & Mouth",
     colorClass: "text-orange-500",
-    tags: ["(clear throat)", "(clears throat)", "(cough)", "(sniffs)", "(smacks lips)", "(yawns)", "(burp)", "(burps)", "(gulps)"]
+    tags: ["(clears throat)", "(cough)", "(sniffs)", "(smacks lips)", "(yawns)", "(burp)", "(burps)", "(gulps)"]
   },
   {
     category: "Vocalization",
