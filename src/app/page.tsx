@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { get, set } from "idb-keyval";
-import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User, ArrowLeft, Mic } from 'lucide-react';
+import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User, ArrowLeft, Mic, ChevronDown } from 'lucide-react';
 import { VoiceSelector, Voice } from "@/components/VoiceSelector";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { stitchChunks } from "@/utils/audioEditor";
@@ -78,16 +78,6 @@ const GenVoiceLogo = ({ size = 24, className = "", animate = false }) => {
 const CHUNK_THRESHOLD = 600;
 
 const AVAILABLE_AI_MODELS = [
-  'anthropic/claude-haiku-4-5@20251001',
-  'anthropic/claude-opus-4-1@20250805',
-  'anthropic/claude-opus-4-5@20251101',
-  'anthropic/claude-opus-4-6@default',
-  'anthropic/claude-opus-4-7@default',
-  'anthropic/claude-opus-4-8@default',
-  'anthropic/claude-opus-5@default',
-  'anthropic/claude-sonnet-4-5@20250929',
-  'anthropic/claude-sonnet-4-6@default',
-  'anthropic/claude-sonnet-4@20250514',
   'anthropic/claude-sonnet-5@default',
   'deepseek-ai/deepseek-r1-0528',
   'google/gemini-3-flash-preview',
@@ -98,8 +88,6 @@ const AVAILABLE_AI_MODELS = [
   'google/gemini-3.6-flash',
   'google/gemini-3.7-flash',
   'google/gemini-3.8-flash',
-  'google/gemma-4-26b-a4b',
-  'google/gemma-4-31b',
   'openai/gpt-5.4-2026-03-05',
   'openai/gpt-5.4-mini-2026-03-17',
   'openai/gpt-5.4-nano-2026-03-17',
@@ -111,13 +99,7 @@ const AVAILABLE_AI_MODELS = [
   'openai/gpt-oss-20b',
   'qwen/qwen3-235b-a22b-instruct-2507',
   'qwen/qwen3-coder-480b-a35b-instruct',
-  'qwen/qwen3-next-80b-a3b-instruct',
-  'qwen/qwen3-next-80b-a3b-thinking',
-  'xai/grok-4.20-0309-non-reasoning',
-  'xai/grok-4.20-0309-reasoning',
-  'xai/grok-4.5-0708',
-  'xai/grok-4.6',
-  'zai/glm-5'
+  'qwen/qwen3-next-80b-a3b-instruct'
 ];
 
 type AppStatus = "idle" | "generating" | "complete" | "error";
@@ -231,6 +213,50 @@ const DEFAULT_WELCOME_MESSAGES = [
   "Welcome! What are we working on?",
   "Greetings! What text should I read?"
 ];
+
+// ── Custom Model Select Component ─────────────────────────────────
+const CustomModelSelect = ({ value, onChange, options, className = "" }: { value: string, onChange: (val: string) => void, options: string[], className?: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className={`relative inline-block text-left ${className}`} ref={containerRef}>
+      <button 
+        type="button" 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between gap-2 w-full bg-transparent text-text-primary px-2 py-1 rounded outline-none focus:ring-2 focus:ring-ring-color border border-transparent hover:border-border-color transition-colors"
+      >
+        <span className="truncate font-medium text-xs">{value.split('/').pop()}</span>
+        <ChevronDown size={12} className={`transition-transform ${isOpen ? 'rotate-180' : ''} text-text-muted`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-[100] mt-1 max-h-60 w-48 right-0 overflow-auto rounded-lg bg-bg-panel border border-border-color shadow-xl py-1 animate-in fade-in zoom-in-95 duration-100">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              className={`w-full text-left px-3 py-2 text-xs transition-colors hover:bg-bg-hover ${opt === value ? 'bg-accent-bg/10 text-accent-bg font-semibold' : 'text-text-secondary'}`}
+              onClick={() => { onChange(opt); setIsOpen(false); }}
+            >
+              {opt.split('/').pop()}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ── main ───────────────────────────────────────────────────────────
 export default function Home() {
@@ -1323,16 +1349,15 @@ export default function Home() {
 
           <div className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border-color bg-bg-panel/50">
             <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">AI Model:</span>
-            <select
+            <CustomModelSelect
               value={aiModel}
-              onChange={(e) => {
-                setAiModel(e.target.value);
-                localStorage.setItem('aiModel', e.target.value);
+              onChange={(val) => {
+                setAiModel(val);
+                localStorage.setItem('aiModel', val);
               }}
-              className="bg-transparent text-xs font-medium text-text-primary outline-none focus:ring-0 w-[140px] truncate cursor-pointer appearance-none"
-            >
-              {AVAILABLE_AI_MODELS.map(m => <option key={m} value={m}>{m.split('/').pop()}</option>)}
-            </select>
+              options={AVAILABLE_AI_MODELS}
+              className="w-[140px]"
+            />
           </div>
 
           <button
@@ -1806,13 +1831,12 @@ export default function Home() {
                     <div className="text-red-500 text-xs px-1 break-words">{recommendError}</div>
                     <div className="flex items-center gap-2 p-2 bg-red-500/5 border border-red-500/10 rounded-md">
                       <label className="text-[10px] font-bold text-text-primary uppercase tracking-wider">Change Model:</label>
-                      <select 
+                      <CustomModelSelect 
                         value={aiModel} 
-                        onChange={e => { setAiModel(e.target.value); localStorage.setItem('aiModel', e.target.value); }}
-                        className="flex-1 bg-bg-base border border-border-color rounded px-1.5 py-1 text-[10px] text-text-primary outline-none focus:border-red-500/50 appearance-none"
-                      >
-                        {AVAILABLE_AI_MODELS.map(m => <option key={m} value={m}>{m.split('/').pop()}</option>)}
-                      </select>
+                        onChange={val => { setAiModel(val); localStorage.setItem('aiModel', val); }}
+                        options={AVAILABLE_AI_MODELS}
+                        className="flex-1"
+                      />
                     </div>
                   </div>
                 )}
@@ -2263,13 +2287,12 @@ export default function Home() {
                     <span>{storyError}</span>
                     <div className="flex items-center gap-2 p-2 bg-bg-panel border border-border-color rounded-md mt-1">
                       <label className="text-xs font-semibold text-text-primary">Change Model:</label>
-                      <select 
+                      <CustomModelSelect 
                         value={aiModel} 
-                        onChange={e => { setAiModel(e.target.value); localStorage.setItem('aiModel', e.target.value); }}
-                        className="flex-1 bg-bg-base border border-border-color rounded px-2 py-1 text-xs text-text-primary outline-none focus:border-red-500/50"
-                      >
-                        {AVAILABLE_AI_MODELS.map(m => <option key={m} value={m}>{m.split('/').pop()}</option>)}
-                      </select>
+                        onChange={val => { setAiModel(val); localStorage.setItem('aiModel', val); }}
+                        options={AVAILABLE_AI_MODELS}
+                        className="flex-1"
+                      />
                     </div>
                   </div>
                 </div>
@@ -2345,13 +2368,12 @@ export default function Home() {
                     <span>{optimizeError}</span>
                     <div className="flex items-center gap-2 p-2 bg-bg-panel border border-border-color rounded-md mt-1">
                       <label className="text-xs font-semibold text-text-primary">Change Model:</label>
-                      <select 
+                      <CustomModelSelect 
                         value={aiModel} 
-                        onChange={e => { setAiModel(e.target.value); localStorage.setItem('aiModel', e.target.value); }}
-                        className="flex-1 bg-bg-base border border-border-color rounded px-2 py-1 text-xs text-text-primary outline-none focus:border-red-500/50"
-                      >
-                        {AVAILABLE_AI_MODELS.map(m => <option key={m} value={m}>{m.split('/').pop()}</option>)}
-                      </select>
+                        onChange={val => { setAiModel(val); localStorage.setItem('aiModel', val); }}
+                        options={AVAILABLE_AI_MODELS}
+                        className="flex-1"
+                      />
                     </div>
                   </div>
                 </div>
