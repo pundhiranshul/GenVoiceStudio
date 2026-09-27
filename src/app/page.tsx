@@ -2041,7 +2041,7 @@ export default function Home() {
                   <div className="w-1.5 h-1.5 rounded-full bg-accent-bg" /> API & Middleware
                 </h4>
                 <p>
-                  Next.js Serverless API routes act as the secure middleware and job orchestrator. It manages secure dispatch, long-polling for generation status, and asynchronous data fetching. This completely shields the client from underlying infrastructure details and secures API endpoints.
+                  Next.js Serverless API routes act as secure middleware and job orchestrators. They manage secure dispatch and long-polling for audio generation. Additionally, they interface with Kaggle's OpenAI-compatible Model Proxy (<code>mp-staging.kaggle.net</code>) to route prompts for Script Optimization, Story Generation, and Voice Recommendation, securely minting and rotating temporary JWTs using user credentials.
                 </p>
               </section>
 
@@ -2050,7 +2050,7 @@ export default function Home() {
                   <div className="w-1.5 h-1.5 rounded-full bg-accent-bg" /> Inference & Compute Engine
                 </h4>
                 <p>
-                  The core AI Voice Cloning model is powered by <strong>Breeze-TTS 2</strong>. Model inference runs on a scalable, cloud-hosted <strong>T4 GPU cluster</strong> through an asynchronous task queue. A custom Python backend processes jobs in isolated kernels to ensure privacy. 
+                  The core AI Voice generation is powered by <strong>Breeze-TTS 2</strong>, running on a scalable, cloud-hosted <strong>T4 GPU cluster</strong> through an asynchronous task queue via Kaggle Notebooks. For textual AI features, the system dynamically connects to dozens of state-of-the-art LLMs (including DeepSeek R1, Gemini 3, and GPT variants) allowing zero-latency model switching.
                 </p>
               </section>
 
@@ -2061,7 +2061,8 @@ export default function Home() {
                 <ul className="list-disc pl-5 space-y-1 mt-1">
                   <li><strong>Intelligent Chunking:</strong> Large text payloads are algorithmically split at sentence boundaries to bypass model memory limits and prevent GPU out-of-memory (OOM) errors.</li>
                   <li><strong>Progressive Streaming:</strong> The frontend tracks generation progress chunk-by-chunk and dynamically stitches the resulting audio blobs in the browser to maintain ultra-low perceived latency.</li>
-                  <li><strong>Persistent State:</strong> User settings, configurations, and reference voice models are securely cached locally using IndexedDB (<code>idb-keyval</code>).</li>
+                  <li><strong>Resilient AI Routing:</strong> Global dynamic model selection allows instant failover. If an LLM provider hits rate limits or heavy load, users can instantly swap to another model directly from the error modal and retry without losing context.</li>
+                  <li><strong>Persistent State:</strong> User settings, configurations, and reference voice models are securely cached locally using IndexedDB (<code>idb-keyval</code>) and <code>localStorage</code>.</li>
                 </ul>
               </section>
 
