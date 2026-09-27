@@ -258,16 +258,21 @@ export default function Home() {
   const [storyLength, setStoryLength] = useState("Short (~100 words)");
   const [customLength, setCustomLength] = useState("");
   const [isStoryGen, setIsStoryGen] = useState(false);
+  const [storyError, setStoryError] = useState("");
 
   // AI Optimize State
   const [showOptimizeModal, setShowOptimizeModal] = useState(false);
   const [optimizeInstruction, setOptimizeInstruction] = useState("");
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizeError, setOptimizeError] = useState("");
 
   // AI Recommend Voices State
   const [showRecommendModal, setShowRecommendModal] = useState(false);
   const [recommendedVoices, setRecommendedVoices] = useState<{id: string, name: string, reason: string}[]>([]);
   const [isRecommending, setIsRecommending] = useState(false);
+  const [recommendError, setRecommendError] = useState("");
+  
+  const [uploadError, setUploadError] = useState("");
 
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -325,6 +330,7 @@ export default function Home() {
       setNewVoiceText(generatedPreviewText || text);
       const activePrompt = generationMode === "design" ? designPrompt : instructions;
       setNewVoiceName(activePrompt ? activePrompt.substring(0, 30) + "..." : "New Custom Voice"); 
+      setUploadError("");
       setShowUpload(true);
     } catch (e) {
       console.error("Failed to save voice:", e);
@@ -428,6 +434,7 @@ export default function Home() {
   const handleOptimizeScript = async () => {
     if (!text.trim() || (!password && (!kaggleUsername || !kaggleKey))) return;
     setIsOptimizing(true);
+    setOptimizeError("");
     try {
       const res = await fetch('/api/optimize', {
         method: 'POST',
@@ -456,7 +463,7 @@ export default function Home() {
         }
       }
     } catch (e: any) {
-      alert("Failed to optimize script: " + e.message);
+      setOptimizeError("Failed to optimize script: " + e.message);
     } finally {
       setIsOptimizing(false);
     }
@@ -465,6 +472,7 @@ export default function Home() {
   const handleRecommendVoices = async () => {
     if (!text.trim() || (!password && (!kaggleUsername || !kaggleKey))) return;
     setIsRecommending(true);
+    setRecommendError("");
     try {
       const res = await fetch('/api/voicerecommend', {
         method: 'POST',
@@ -492,7 +500,7 @@ export default function Home() {
         }
       }
     } catch (e: any) {
-      alert("Failed to get recommendations: " + e.message);
+      setRecommendError("Failed to get recommendations: " + e.message);
     } finally {
       setIsRecommending(false);
     }
@@ -501,6 +509,7 @@ export default function Home() {
   const handleStoryGenerate = async () => {
     if (!storyTopic.trim() || (!password && (!kaggleUsername || !kaggleKey))) return;
     setIsStoryGen(true);
+    setStoryError("");
     
     const finalLength = storyLength === "Custom" ? customLength : storyLength;
     const finalTone = storyTone === "Custom" ? customTone : storyTone;
@@ -542,7 +551,7 @@ export default function Home() {
       
     } catch (e: any) {
       setIsStoryGen(false);
-      alert("Failed to start story generation: " + e.message);
+      setStoryError("Failed to start story generation: " + e.message);
     }
   };
 
@@ -1654,14 +1663,14 @@ export default function Home() {
                   ) : (
                       <>
                         <button
-                          onClick={() => setShowStoryModal(true)}
+                          onClick={() => { setShowStoryModal(true); setStoryError(""); }}
                           disabled={isGen || isStoryGen || isOptimizing}
                           className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                         >
                           {isStoryGen ? <Loader2 size={16} className="animate-spin" /> : <><Sparkles size={16} /> AI Write Story</>}
                         </button>
                         <button
-                          onClick={() => setShowOptimizeModal(true)}
+                          onClick={() => { setShowOptimizeModal(true); setOptimizeError(""); }}
                           disabled={isGen || isStoryGen || isOptimizing || !text.trim()}
                           className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -1719,7 +1728,7 @@ export default function Home() {
                   voices={allVoices} 
                   selectedId={selectedVoiceId} 
                   onSelect={setSelectedVoiceId} 
-                  onUploadClick={() => setShowUpload(true)} 
+                  onUploadClick={() => { setShowUpload(true); setUploadError(""); }} 
                   onDeleteVoice={handleDeleteVoice}
                 />
                 <button
@@ -1729,6 +1738,7 @@ export default function Home() {
                 >
                   {isRecommending ? <Loader2 size={14} className="animate-spin" /> : <><Mic size={14} /> AI Recommend Voice</>}
                 </button>
+                {recommendError && <div className="text-red-500 text-xs px-1">{recommendError}</div>}
               </div>
             )}
             
@@ -2015,10 +2025,12 @@ export default function Home() {
               <textarea value={newVoiceText} onChange={e => setNewVoiceText(e.target.value)} placeholder="Transcript of the audio file..." rows={3} className="w-full bg-bg-input border border-border-color rounded-lg px-3 py-2 text-sm text-text-primary outline-none resize-none focus:border-border-color" />
             </div>
 
-            <div className="flex justify-end gap-3 mt-2">
+            <div className="flex justify-end gap-3 mt-2 items-center">
+              {uploadError && <span className="text-red-500 text-xs mr-auto">{uploadError}</span>}
               <button onClick={() => setShowUpload(false)} className="px-4 py-2 rounded-full text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">Cancel</button>
               <button onClick={() => {
-                if (!newVoiceName || !newVoiceText || !newVoiceFile) return alert("Fill all fields");
+                if (!newVoiceName || !newVoiceText || !newVoiceFile) return setUploadError("Fill all fields");
+                setUploadError("");
                 const reader = new FileReader();
                 reader.onload = async () => {
                   const data = reader.result as string;
@@ -2166,6 +2178,15 @@ export default function Home() {
               </div>
             </div>
 
+            {storyError && (
+              <div className="px-6 pb-4">
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm flex items-start gap-2">
+                  <div className="mt-0.5"><Shield size={16} /></div>
+                  <div className="break-words">{storyError}</div>
+                </div>
+              </div>
+            )}
+
             <div className="p-4 border-t border-border-subtle bg-bg-base flex gap-3">
               <button
                 onClick={() => setShowStoryModal(false)}
@@ -2226,6 +2247,15 @@ export default function Home() {
                 />
               </div>
             </div>
+
+            {optimizeError && (
+              <div className="px-6 pb-4">
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm flex items-start gap-2">
+                  <div className="mt-0.5"><Shield size={16} /></div>
+                  <div className="break-words">{optimizeError}</div>
+                </div>
+              </div>
+            )}
 
             <div className="p-4 border-t border-border-subtle bg-bg-base flex gap-3">
               <button
