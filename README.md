@@ -14,6 +14,28 @@ GenVoice Studio lets you clone a voice or design a new one and synthesize any te
 
 ---
 
+<div align="center">
+
+## 💸 **The Ultimate Free Alternative to ElevenLabs**
+
+# **GenVoice Studio is an entirely FREE, practically UNLIMITED voice cloning, text-to-speech, and AI story writing studio.**
+
+Unlike **ElevenLabs** and other corporate TTS services that trap you behind:<br>
+❌ Pay-per-character pricing tiers<br>
+❌ Strict token quotas and rate limits<br>
+❌ Expensive proprietary subscriptions<br>
+
+**GenVoice Studio** bypasses the paywalls completely by tapping into **Kaggle's Free GPU and AI Credits**. By simply linking a free Kaggle account, you unlock:<br>
+✅ **100% Free** broadcast-quality voice cloning and TTS generation<br>
+✅ **Practically Unlimited** characters (up to 30 free T4 GPU hours per week!)<br>
+✅ **Free AI Story Generation & Script Optimization** using 20+ state-of-the-art LLMs (DeepSeek R1, Gemini 3, GPTs, Claude)<br>
+✅ **Zero-Cost Operation** — host the front-end for free on Vercel and let Kaggle handle the heavy GPU lifting!
+
+</div>
+
+---
+
+
 ## 🌟 Key Features
 
 - **Voice Clone & Voice Design**
