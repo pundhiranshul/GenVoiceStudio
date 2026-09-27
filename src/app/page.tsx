@@ -90,8 +90,6 @@ const AVAILABLE_AI_MODELS = [
   'anthropic/claude-sonnet-4@20250514',
   'anthropic/claude-sonnet-5@default',
   'deepseek-ai/deepseek-r1-0528',
-  'google/gemini-2.5-flash',
-  'google/gemini-2.5-pro',
   'google/gemini-3-flash-preview',
   'google/gemini-3.1-flash-lite-preview',
   'google/gemini-3.1-pro-preview',
