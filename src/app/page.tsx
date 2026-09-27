@@ -78,28 +78,35 @@ const GenVoiceLogo = ({ size = 24, className = "", animate = false }) => {
 const CHUNK_THRESHOLD = 600;
 
 const AVAILABLE_AI_MODELS = [
-  'anthropic/claude-sonnet-5@default',
-  'deepseek-ai/deepseek-r1-0528',
-  'google/gemini-3-flash-preview',
-  'google/gemini-3.1-flash-lite-preview',
-  'google/gemini-3.1-pro-preview',
-  'google/gemini-3.5-flash',
+  // Low Cost / Fast
   'google/gemini-3.5-flash-lite',
+  'google/gemini-3.1-flash-lite-preview',
+  'openai/gpt-5.4-nano-2026-03-17',
+  'openai/gpt-5.4-mini-2026-03-17',
+  'openai/gpt-oss-20b',
+
+  // Medium Cost / Balanced
+  'google/gemini-3.5-flash',
   'google/gemini-3.6-flash',
   'google/gemini-3.7-flash',
   'google/gemini-3.8-flash',
-  'openai/gpt-5.4-2026-03-05',
-  'openai/gpt-5.4-mini-2026-03-17',
-  'openai/gpt-5.4-nano-2026-03-17',
-  'openai/gpt-5.5-2026-04-23',
-  'openai/gpt-5.6-luna',
-  'openai/gpt-5.6-terra',
-  'openai/gpt-6-astra',
+  'google/gemini-3-flash-preview',
+  'qwen/qwen3-next-80b-a3b-instruct',
   'openai/gpt-oss-120b',
-  'openai/gpt-oss-20b',
+
+  // Higher Cost / Powerful
   'qwen/qwen3-235b-a22b-instruct-2507',
   'qwen/qwen3-coder-480b-a35b-instruct',
-  'qwen/qwen3-next-80b-a3b-instruct'
+  'openai/gpt-5.4-2026-03-05',
+  'openai/gpt-5.5-2026-04-23',
+  'openai/gpt-5.6-luna',
+
+  // Highest Cost / Reasoning & Pro
+  'openai/gpt-5.6-terra',
+  'openai/gpt-6-astra',
+  'google/gemini-3.1-pro-preview',
+  'anthropic/claude-sonnet-5@default',
+  'deepseek-ai/deepseek-r1-0528'
 ];
 
 type AppStatus = "idle" | "generating" | "complete" | "error";
@@ -241,7 +248,10 @@ const CustomModelSelect = ({ value, onChange, options, className = "" }: { value
       </button>
 
       {isOpen && (
-        <div className="absolute z-[100] mt-1 max-h-64 w-48 right-0 overflow-y-auto overflow-x-hidden overscroll-contain rounded-lg bg-bg-panel border border-border-color shadow-xl py-1 animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute z-[100] mt-1 max-h-64 w-56 right-0 overflow-y-auto overflow-x-hidden overscroll-contain rounded-lg bg-bg-panel border border-border-color shadow-xl py-1 animate-in fade-in zoom-in-95 duration-100">
+          <div className="px-3 py-1.5 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border-subtle mb-1 bg-bg-panel sticky top-0 z-10">
+            Sorted: Lowest to Highest Cost
+          </div>
           {options.map((opt) => (
             <button
               key={opt}
