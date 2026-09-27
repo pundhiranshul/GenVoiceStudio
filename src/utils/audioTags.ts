@@ -2,7 +2,7 @@ export const VOCAL_TAGS = [
   {
     category: "Laughter",
     colorClass: "text-yellow-500",
-    tags: ["(laugh)", "(laughs)", "(chuckles)", "(giggles)"]
+    tags: ["(laughs)", "(chuckles)", "(giggles)"]
   },
   {
     category: "Crying & Emotion",
