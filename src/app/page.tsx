@@ -1328,7 +1328,7 @@ export default function Home() {
     <div className="flex flex-col min-h-[100dvh] md:h-screen md:overflow-hidden bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary animate-in fade-in duration-700">
 
       {/* ── Top Header ────────────────────────────────────────────── */}
-      <header className="h-16 px-6 flex items-center justify-between border-b border-border-color shrink-0 relative">
+      <header className="h-16 px-6 flex items-center justify-between border-b border-border-color shrink-0 relative z-50">
         <div className="flex items-center gap-6 z-10">
           <a href="/" className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
             <GenVoiceLogo size={48} className="text-text-primary" />
