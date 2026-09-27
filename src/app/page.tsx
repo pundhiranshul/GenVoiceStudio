@@ -79,7 +79,6 @@ const CHUNK_THRESHOLD = 600;
 
 const AVAILABLE_AI_MODELS = [
   // Low Cost / Fast
-  'openai/gpt-oss-20b',
   'openai/gpt-5.4-nano-2026-03-17',
   'google/gemini-3.1-flash-lite-preview',
   'google/gemini-3.5-flash-lite',
