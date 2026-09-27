@@ -241,7 +241,7 @@ const CustomModelSelect = ({ value, onChange, options, className = "" }: { value
       </button>
 
       {isOpen && (
-        <div className="absolute z-[100] mt-1 max-h-60 w-48 right-0 overflow-auto rounded-lg bg-bg-panel border border-border-color shadow-xl py-1 animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute z-[100] mt-1 max-h-64 w-48 right-0 overflow-y-auto overflow-x-hidden overscroll-contain rounded-lg bg-bg-panel border border-border-color shadow-xl py-1 animate-in fade-in zoom-in-95 duration-100">
           {options.map((opt) => (
             <button
               key={opt}
