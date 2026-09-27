@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sanitizeText } from '@/utils/sanitizeText';
+import { AUDIO_TAGS_STRING } from '@/utils/audioTags';
 
 const KAGGLE_PROXY_MINT_URL = 'https://www.kaggle.com/api/v1/models.ModelProxyApiService/CreateDefaultModelProxyToken';
 
@@ -39,7 +40,7 @@ async function optimizeText(token: string, baseUri: string, text: string, instru
   const prompt = `You are a helpful AI assistant for optimizing and formatting text meant for text-to-speech generation. 
 You are given a script or story.
 Please optimize the script, ensuring it flows well, and place appropriate punctuation/tags where suitable.
-CRITICAL: The ONLY valid emotion/action tags you are allowed to use are "(laugh)", "(sigh)", "(clears throat)", and "(cough)". Do NOT invent any other tags.
+CRITICAL: The ONLY valid emotion/action tags you are allowed to use are: ${AUDIO_TAGS_STRING}. Do NOT invent any other tags.
 ${instruction ? `User's specific instruction: ${instruction}\n` : ''}
 Return ONLY the optimized text, nothing else.
 

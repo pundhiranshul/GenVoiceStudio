@@ -121,7 +121,7 @@
     },
     {
       "cell_type": "markdown",
-      "source": "## 5. Generate the paragraph\n\nOne shot, whole paragraph, cloned voice from step 4. Edit `paragraph` below to whatever text you want spoken. Paralinguistic tags use parentheses in English: `(laugh)`, `(sigh)`, `(cough)`, `(clears throat)`.\n",
+      "source": "## 5. Generate the paragraph\n\nOne shot, whole paragraph, cloned voice from step 4. Edit `paragraph` below to whatever text you want spoken. Paralinguistic tags use parentheses in English (e.g., `(laugh)`, `(sigh)`, `(cough)`, etc. — see the UI for the full list).\n",
       "metadata": {}
     },
     {

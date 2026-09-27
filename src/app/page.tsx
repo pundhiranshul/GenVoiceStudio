@@ -6,24 +6,7 @@ import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Su
 import { VoiceSelector, Voice } from "@/components/VoiceSelector";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { stitchChunks } from "@/utils/audioEditor";
-
-const VOCAL_TAGS = [
-  {
-    category: "Laughter",
-    colorClass: "text-yellow-500",
-    tags: ["(laugh)"]
-  },
-  {
-    category: "Breathing",
-    colorClass: "text-teal-500",
-    tags: ["(sigh)"]
-  },
-  {
-    category: "Throat & nose",
-    colorClass: "text-orange-500",
-    tags: ["(clears throat)", "(cough)"]
-  }
-];
+import { VOCAL_TAGS, AUDIO_TAGS_STRING } from "@/utils/audioTags";
 
 const GenVoiceLogo = ({ size = 24, className = "", animate = false }) => {
   const getEqClass = (y: number) => {
@@ -522,7 +505,7 @@ export default function Home() {
     const finalLength = storyLength === "Custom" ? customLength : storyLength;
     const finalTone = storyTone === "Custom" ? customTone : storyTone;
     
-    const prompt = `Write a ${finalLength} story about ${storyTopic} with a ${finalTone} tone. The story MUST be written as a spoken script for a single narrator. CRITICAL: You must include vocal expressions like (laugh), (sigh), (clears throat), or (cough) naturally throughout the script to add emotion. Do NOT output any title, markdown formatting, or introductory text. Just the script.`;
+    const prompt = `Write a ${finalLength} story about ${storyTopic} with a ${finalTone} tone. The story MUST be written as a spoken script for a single narrator. CRITICAL: You must include vocal expressions naturally throughout the script to add emotion. Valid tags are: ${AUDIO_TAGS_STRING}. Do NOT output any title, markdown formatting, or introductory text. Just the script.`;
     
     try {
       const res = await fetch('/api/story', {
