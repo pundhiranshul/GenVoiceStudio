@@ -1305,21 +1305,20 @@ export default function Home() {
 
       {/* ── Top Header ────────────────────────────────────────────── */}
       <header className="h-16 px-6 flex items-center justify-between border-b border-border-color shrink-0 relative">
-        <a href="/" className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity z-10">
-          <GenVoiceLogo size={48} className="text-text-primary" />
-          <span className="font-semibold text-lg tracking-tight">GenVoice Studio</span>
-        </a>
-        
-        {/* Center Salutation */}
-        <div 
-          className={`absolute inset-0 pointer-events-none flex items-center justify-center transition-all duration-700 ease-in-out ${
-            text.length > 0 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
-          }`}
-        >
-          <span className="hidden md:flex items-center gap-2 text-sm font-light text-text-secondary tracking-wide">
+        <div className="flex items-center gap-6 z-10">
+          <a href="/" className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+            <GenVoiceLogo size={48} className="text-text-primary" />
+            <span className="font-semibold text-lg tracking-tight hidden sm:block">GenVoice Studio</span>
+          </a>
+          
+          <div 
+            className={`hidden xl:flex items-center gap-2 text-sm font-light text-text-secondary tracking-wide transition-all duration-700 ease-in-out ${
+              text.length > 0 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+            }`}
+          >
             <User size={14} className="opacity-50" />
             Welcome back, <span className="font-medium text-text-primary">{kaggleUsername || 'Studio User'}</span>
-          </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-4 z-10">
