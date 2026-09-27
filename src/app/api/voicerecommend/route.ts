@@ -31,7 +31,7 @@ async function mintProxyToken(username: string | null, key: string) {
   };
 }
 
-async function recommendVoices(token: string, baseUri: string, text: string, voices: any[]) {
+async function recommendVoices(token: string, baseUri: string, text: string, voices: any[], model: string = 'google/gemini-3.7-flash') {
   const cleanBaseUri = baseUri.replace(/\/$/, '');
   const url = `${cleanBaseUri}/openapi/chat/completions`;
   
@@ -57,7 +57,7 @@ ${text}`;
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'google/gemini-3.7-flash', 
+      model: model, 
       messages: [{ role: 'user', content: prompt }]
     })
   });
@@ -84,7 +84,7 @@ ${text}`;
 
 export async function POST(req: Request) {
   try {
-    const { text, voices, password, username: reqUsername, key: reqKey, modelProxyKey, modelProxyExpiresAt } = await req.json();
+    const { text, voices, password, username: reqUsername, key: reqKey, modelProxyKey, modelProxyExpiresAt, aiModel } = await req.json();
 
     if (!text) {
       return NextResponse.json({ error: 'Missing text' }, { status: 400 });
@@ -138,7 +138,7 @@ export async function POST(req: Request) {
 
     let recommendations = [];
     try {
-      recommendations = await recommendVoices(currentToken, currentBaseUri, text, voices);
+      recommendations = await recommendVoices(currentToken, currentBaseUri, text, voices, aiModel);
     } catch (e: any) {
       if (!didJustMint && (e.message.includes('Model proxy error (401)') || e.message.includes('Model proxy error (403)'))) {
         const mintRes = await mintProxyToken(username, key);
@@ -146,7 +146,7 @@ export async function POST(req: Request) {
         currentExpiry = mintRes.expiryTime;
         currentBaseUri = mintRes.baseUri;
         
-        recommendations = await recommendVoices(currentToken, currentBaseUri, text, voices);
+        recommendations = await recommendVoices(currentToken, currentBaseUri, text, voices, aiModel);
       } else {
         throw e;
       }

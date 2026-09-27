@@ -33,7 +33,7 @@ async function mintProxyToken(username: string | null, key: string) {
   };
 }
 
-async function optimizeText(token: string, baseUri: string, text: string, instruction: string) {
+async function optimizeText(token: string, baseUri: string, text: string, instruction: string, model: string = 'google/gemini-3.7-flash') {
   const cleanBaseUri = baseUri.replace(/\/$/, '');
   const url = `${cleanBaseUri}/openapi/chat/completions`;
   
@@ -54,7 +54,7 @@ ${text}`;
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'google/gemini-3.7-flash', 
+      model: model, 
       messages: [{ role: 'user', content: prompt }]
     })
   });
@@ -73,7 +73,7 @@ ${text}`;
 
 export async function POST(req: Request) {
   try {
-    const { text, instruction, password, username: reqUsername, key: reqKey, modelProxyKey, modelProxyExpiresAt } = await req.json();
+    const { text, instruction, password, username: reqUsername, key: reqKey, modelProxyKey, modelProxyExpiresAt, aiModel } = await req.json();
 
     if (!text) {
       return NextResponse.json({ error: 'Missing text' }, { status: 400 });
@@ -124,7 +124,7 @@ export async function POST(req: Request) {
 
     let optimizedText = '';
     try {
-      optimizedText = await optimizeText(currentToken, currentBaseUri, text, instruction);
+      optimizedText = await optimizeText(currentToken, currentBaseUri, text, instruction, aiModel);
     } catch (e: any) {
       if (!didJustMint && (e.message.includes('Model proxy error (401)') || e.message.includes('Model proxy error (403)'))) {
         const mintRes = await mintProxyToken(username, key);
@@ -132,7 +132,7 @@ export async function POST(req: Request) {
         currentExpiry = mintRes.expiryTime;
         currentBaseUri = mintRes.baseUri;
         
-        optimizedText = await optimizeText(currentToken, currentBaseUri, text, instruction);
+        optimizedText = await optimizeText(currentToken, currentBaseUri, text, instruction, aiModel);
       } else {
         throw e;
       }

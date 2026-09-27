@@ -32,7 +32,7 @@ async function mintProxyToken(username: string | null, key: string) {
   };
 }
 
-async function generateStory(token: string, baseUri: string, prompt: string) {
+async function generateStory(token: string, baseUri: string, prompt: string, model: string = 'google/gemini-3.7-flash') {
   // Model Proxy URL formatting:
   // We append /openapi/chat/completions to the baseUri (e.g., https://mp-staging.kaggle.net/models)
   // This endpoint is an OpenAI-compatible REST API.
@@ -53,7 +53,7 @@ async function generateStory(token: string, baseUri: string, prompt: string) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'google/gemini-3.7-flash', // Confirmed supported model
+      model: model, 
       messages: [{ role: 'user', content: prompt }]
     })
   });
@@ -72,7 +72,7 @@ async function generateStory(token: string, baseUri: string, prompt: string) {
 
 export async function POST(req: Request) {
   try {
-    const { prompt, password, username: reqUsername, key: reqKey, modelProxyKey, modelProxyExpiresAt } = await req.json();
+    const { prompt, password, username: reqUsername, key: reqKey, modelProxyKey, modelProxyExpiresAt, aiModel } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
@@ -126,7 +126,7 @@ export async function POST(req: Request) {
     let storyText = '';
     try {
       console.log("[Story API] Requesting story generation...");
-      storyText = await generateStory(currentToken, currentBaseUri, prompt);
+      storyText = await generateStory(currentToken, currentBaseUri, prompt, aiModel);
     } catch (e: any) {
       // If we failed with an auth error and didn't just mint, try minting once
       if (!didJustMint && (e.message.includes('Model proxy error (401)') || e.message.includes('Model proxy error (403)'))) {
@@ -136,7 +136,7 @@ export async function POST(req: Request) {
         currentExpiry = mintRes.expiryTime;
         currentBaseUri = mintRes.baseUri;
         
-        storyText = await generateStory(currentToken, currentBaseUri, prompt);
+        storyText = await generateStory(currentToken, currentBaseUri, prompt, aiModel);
       } else {
         throw e;
       }

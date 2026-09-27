@@ -77,6 +77,51 @@ const GenVoiceLogo = ({ size = 24, className = "", animate = false }) => {
 // ── constants & helpers ────────────────────────────────────────────
 const CHUNK_THRESHOLD = 600;
 
+const AVAILABLE_AI_MODELS = [
+  'anthropic/claude-haiku-4-5@20251001',
+  'anthropic/claude-opus-4-1@20250805',
+  'anthropic/claude-opus-4-5@20251101',
+  'anthropic/claude-opus-4-6@default',
+  'anthropic/claude-opus-4-7@default',
+  'anthropic/claude-opus-4-8@default',
+  'anthropic/claude-opus-5@default',
+  'anthropic/claude-sonnet-4-5@20250929',
+  'anthropic/claude-sonnet-4-6@default',
+  'anthropic/claude-sonnet-4@20250514',
+  'anthropic/claude-sonnet-5@default',
+  'deepseek-ai/deepseek-r1-0528',
+  'google/gemini-2.5-flash',
+  'google/gemini-2.5-pro',
+  'google/gemini-3-flash-preview',
+  'google/gemini-3.1-flash-lite-preview',
+  'google/gemini-3.1-pro-preview',
+  'google/gemini-3.5-flash',
+  'google/gemini-3.5-flash-lite',
+  'google/gemini-3.6-flash',
+  'google/gemini-3.7-flash',
+  'google/gemini-3.8-flash',
+  'google/gemma-4-26b-a4b',
+  'google/gemma-4-31b',
+  'openai/gpt-5.4-2026-03-05',
+  'openai/gpt-5.4-mini-2026-03-17',
+  'openai/gpt-5.4-nano-2026-03-17',
+  'openai/gpt-5.5-2026-04-23',
+  'openai/gpt-5.6-luna',
+  'openai/gpt-5.6-terra',
+  'openai/gpt-6-astra',
+  'openai/gpt-oss-120b',
+  'openai/gpt-oss-20b',
+  'qwen/qwen3-235b-a22b-instruct-2507',
+  'qwen/qwen3-coder-480b-a35b-instruct',
+  'qwen/qwen3-next-80b-a3b-instruct',
+  'qwen/qwen3-next-80b-a3b-thinking',
+  'xai/grok-4.20-0309-non-reasoning',
+  'xai/grok-4.20-0309-reasoning',
+  'xai/grok-4.5-0708',
+  'xai/grok-4.6',
+  'zai/glm-5'
+];
+
 type AppStatus = "idle" | "generating" | "complete" | "error";
 type AudioFile = { name: string; data: string };
 type CustomVoice = { id: string; name: string; data: string; transcript: string; isPreset?: boolean; };
@@ -266,6 +311,8 @@ export default function Home() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizeError, setOptimizeError] = useState("");
 
+  const [aiModel, setAiModel] = useState("google/gemini-3.7-flash");
+
   // AI Recommend Voices State
   const [showRecommendModal, setShowRecommendModal] = useState(false);
   const [recommendedVoices, setRecommendedVoices] = useState<{id: string, name: string, reason: string}[]>([]);
@@ -356,12 +403,14 @@ export default function Home() {
     const storedPass = localStorage.getItem('appPassword');
     const storedProxyKey = localStorage.getItem('modelProxyKey');
     const storedProxyExpires = localStorage.getItem('modelProxyExpiresAt');
+    const storedAiModel = localStorage.getItem('aiModel');
     
     if (storedUsername) setKaggleUsername(storedUsername);
     if (storedKey) setKaggleKey(storedKey);
     if (storedPass) setPassword(storedPass);
     if (storedProxyKey) setModelProxyKey(storedProxyKey);
     if (storedProxyExpires) setModelProxyExpiresAt(storedProxyExpires);
+    if (storedAiModel && AVAILABLE_AI_MODELS.includes(storedAiModel)) setAiModel(storedAiModel);
 
     if ((storedUsername && storedKey) || storedPass) {
       setHasCredentials(true);
@@ -446,7 +495,8 @@ export default function Home() {
           username: kaggleUsername, 
           key: kaggleKey,
           modelProxyKey,
-          modelProxyExpiresAt
+          modelProxyExpiresAt,
+          aiModel
         })
       });
       const data = await res.json();
@@ -484,7 +534,8 @@ export default function Home() {
           username: kaggleUsername, 
           key: kaggleKey,
           modelProxyKey,
-          modelProxyExpiresAt
+          modelProxyExpiresAt,
+          aiModel
         })
       });
       const data = await res.json();
@@ -526,7 +577,8 @@ export default function Home() {
           username: kaggleUsername, 
           key: kaggleKey,
           modelProxyKey,
-          modelProxyExpiresAt
+          modelProxyExpiresAt,
+          aiModel
         })
       });
       const data = await res.json();
@@ -1272,6 +1324,20 @@ export default function Home() {
 
         <div className="flex items-center gap-4 z-10">
 
+          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border-color bg-bg-panel/50">
+            <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">AI Model:</span>
+            <select
+              value={aiModel}
+              onChange={(e) => {
+                setAiModel(e.target.value);
+                localStorage.setItem('aiModel', e.target.value);
+              }}
+              className="bg-transparent text-xs font-medium text-text-primary outline-none focus:ring-0 w-[140px] truncate cursor-pointer appearance-none"
+            >
+              {AVAILABLE_AI_MODELS.map(m => <option key={m} value={m}>{m.split('/').pop()}</option>)}
+            </select>
+          </div>
+
           <button
             onClick={() => setShowAbout(true)}
             className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
@@ -1738,7 +1804,21 @@ export default function Home() {
                 >
                   {isRecommending ? <Loader2 size={14} className="animate-spin" /> : <><Mic size={14} /> AI Recommend Voice</>}
                 </button>
-                {recommendError && <div className="text-red-500 text-xs px-1">{recommendError}</div>}
+                {recommendError && (
+                  <div className="flex flex-col gap-2 mt-1">
+                    <div className="text-red-500 text-xs px-1 break-words">{recommendError}</div>
+                    <div className="flex items-center gap-2 p-2 bg-red-500/5 border border-red-500/10 rounded-md">
+                      <label className="text-[10px] font-bold text-text-primary uppercase tracking-wider">Change Model:</label>
+                      <select 
+                        value={aiModel} 
+                        onChange={e => { setAiModel(e.target.value); localStorage.setItem('aiModel', e.target.value); }}
+                        className="flex-1 bg-bg-base border border-border-color rounded px-1.5 py-1 text-[10px] text-text-primary outline-none focus:border-red-500/50 appearance-none"
+                      >
+                        {AVAILABLE_AI_MODELS.map(m => <option key={m} value={m}>{m.split('/').pop()}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             
@@ -2182,7 +2262,19 @@ export default function Home() {
               <div className="px-6 pb-4">
                 <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm flex items-start gap-2">
                   <div className="mt-0.5"><Shield size={16} /></div>
-                  <div className="break-words">{storyError}</div>
+                  <div className="break-words w-full flex flex-col gap-2">
+                    <span>{storyError}</span>
+                    <div className="flex items-center gap-2 p-2 bg-bg-panel border border-border-color rounded-md mt-1">
+                      <label className="text-xs font-semibold text-text-primary">Change Model:</label>
+                      <select 
+                        value={aiModel} 
+                        onChange={e => { setAiModel(e.target.value); localStorage.setItem('aiModel', e.target.value); }}
+                        className="flex-1 bg-bg-base border border-border-color rounded px-2 py-1 text-xs text-text-primary outline-none focus:border-red-500/50"
+                      >
+                        {AVAILABLE_AI_MODELS.map(m => <option key={m} value={m}>{m.split('/').pop()}</option>)}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -2252,7 +2344,19 @@ export default function Home() {
               <div className="px-6 pb-4">
                 <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm flex items-start gap-2">
                   <div className="mt-0.5"><Shield size={16} /></div>
-                  <div className="break-words">{optimizeError}</div>
+                  <div className="break-words w-full flex flex-col gap-2">
+                    <span>{optimizeError}</span>
+                    <div className="flex items-center gap-2 p-2 bg-bg-panel border border-border-color rounded-md mt-1">
+                      <label className="text-xs font-semibold text-text-primary">Change Model:</label>
+                      <select 
+                        value={aiModel} 
+                        onChange={e => { setAiModel(e.target.value); localStorage.setItem('aiModel', e.target.value); }}
+                        className="flex-1 bg-bg-base border border-border-color rounded px-2 py-1 text-xs text-text-primary outline-none focus:border-red-500/50"
+                      >
+                        {AVAILABLE_AI_MODELS.map(m => <option key={m} value={m}>{m.split('/').pop()}</option>)}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
