@@ -12,6 +12,10 @@ GenVoice Studio lets you clone a voice or design a new one and synthesize any te
 
 <p align="center">Powered by <a href="https://huggingface.co/BreezeBlue/Breeze-TTS-2">Breeze TTS 2</a>.</p>
 
+<h3 align="center">
+  <a href="https://gen-voice-eight.vercel.app/">🔥 Try GenVoice Studio Live Now! 🔥</a>
+</h3>
+
 ---
 
 <div align="center">
