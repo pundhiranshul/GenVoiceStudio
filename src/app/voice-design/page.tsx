@@ -1494,35 +1494,36 @@ export default function Home() {
 
           {/* Voice Design Instruction */}
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
-                Voice Design Instruction
-              </label>
-              <div className="flex items-center gap-2">
+            <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
+              Voice Design Instruction
+            </label>
+            <div className="bg-bg-panel border border-border-color rounded-2xl p-4 shadow-sm focus-within:ring-2 ring-ring-color transition-all">
+              <textarea
+                value={designPrompt}
+                onChange={(e) => setDesignPrompt(e.target.value)}
+                placeholder={"e.g., A raspy old man with a British accent..."}
+                className="w-full h-28 bg-transparent resize-none outline-none text-sm leading-relaxed placeholder:text-text-muted text-text-primary"
+              />
+              <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border-color/50">
+                {optimizeDesignError && <p className="text-xs text-red-500 flex-1">{optimizeDesignError}</p>}
                 <button
                   onClick={() => { setShowWriteDesignModal(true); setWriteDesignError(""); }}
                   disabled={status !== "idle" && status !== "complete" && status !== "error"}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-primary bg-bg-input border border-border-color hover:bg-bg-hover transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-base border border-border-color rounded-xl text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none"
                 >
-                  <Sparkles size={12} className="text-accent-bg" /> AI Write
+                  <Sparkles size={16} className="text-accent-bg" />
+                  AI Write
                 </button>
                 <button
                   onClick={handleOptimizeDesignPrompt}
                   disabled={isOptimizingDesign || !designPrompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-primary bg-bg-input border border-border-color hover:bg-bg-hover transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-base border border-border-color rounded-xl text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none"
                 >
-                  {isOptimizingDesign ? <Loader2 size={12} className="animate-spin text-accent-bg" /> : <Wand2 size={12} className="text-accent-bg" />}
+                  {isOptimizingDesign ? <Loader2 size={16} className="animate-spin text-accent-bg" /> : <Wand2 size={16} className="text-accent-bg" />}
                   AI Optimize
                 </button>
               </div>
             </div>
-            {optimizeDesignError && <p className="text-xs text-red-500">{optimizeDesignError}</p>}
-            <textarea
-              value={designPrompt}
-              onChange={(e) => setDesignPrompt(e.target.value)}
-              placeholder={"e.g., A raspy old man with a British accent..."}
-              className="w-full h-28 p-3 bg-bg-input border border-border-color rounded-xl text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-ring-color transition-all"
-            />
           </div>
 
           {/* Guidance Scale */}
