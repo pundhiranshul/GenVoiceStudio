@@ -828,7 +828,6 @@ export default function Home() {
 
   const isGen      = status === "generating";
   const finalAudios = audios.filter(a => getCategory(a.name) === "final");
-  const chunkAudios = audios.filter(a => getCategory(a.name) === "chunk" || a.name.includes("chunk"));
   const isAudioShown = (chunksTotal > 0 && chunksDone === chunksTotal) || (!isLongMode && !!stitchedAudioUrl) || (!isLongMode && finalAudios.some(a => a.name.includes('single.wav')));
 
   const handleNewScript = () => {
