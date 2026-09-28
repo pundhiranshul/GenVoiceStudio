@@ -1351,7 +1351,7 @@ export default function Home() {
                 localStorage.setItem('aiModel', val);
               }}
               options={AVAILABLE_AI_MODELS}
-              className="w-[140px]"
+              className="w-[180px]"
             />
           </div>
 

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Sparkles, Loader2, Download, Terminal, X, Key, Wand2, AudioLines } from "lucide-react";
 import { AudioPlayer } from "@/components/AudioPlayer";
-
+import { CustomModelSelect, AVAILABLE_AI_MODELS } from "@/components/CustomModelSelect";
 type Status = "idle" | "pushing" | "generating" | "downloading" | "complete" | "error";
 
 export default function SFXStudio() {
@@ -12,7 +12,8 @@ export default function SFXStudio() {
   const [status, setStatus] = useState<Status>("idle");
   const [audioUrl, setAudioUrl] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-  
+  const [aiModel, setAiModel] = useState("google/gemini-3.7-flash");
+
   const [kaggleUsername, setKaggleUsername] = useState("");
   const [kaggleKey, setKaggleKey] = useState("");
   const [hasCredentials, setHasCredentials] = useState(false);
@@ -58,6 +59,9 @@ export default function SFXStudio() {
     } else {
       setShowAuth(true);
     }
+    
+    const storedAiModel = localStorage.getItem('aiModel');
+    if (storedAiModel && AVAILABLE_AI_MODELS.includes(storedAiModel)) setAiModel(storedAiModel);
   }, []);
   
   useEffect(() => {
@@ -86,7 +90,7 @@ export default function SFXStudio() {
       const payload: any = {
         text: prompt,
         instruction: "Optimize this prompt for Stable Audio Open 1.0 sound effect generation. Enhance it by adding descriptive words about the acoustic environment, tone, and texture. Keep it under 2 sentences.",
-        aiModel: "google/gemini-3.7-flash"
+        aiModel: aiModel
       };
 
       const pass = localStorage.getItem('appPassword');
@@ -136,7 +140,7 @@ export default function SFXStudio() {
       const payload: any = {
         text: writeTopic,
         instruction: "You are an expert sound designer. Write a highly detailed, cinematic prompt for Stable Audio Open 1.0 based on the user's premise. Describe the acoustic environment, tone, and texture. Just output the prompt itself, nothing else. Keep it under 2 sentences.",
-        aiModel: "google/gemini-3.7-flash"
+        aiModel: aiModel
       };
 
       const pass = localStorage.getItem('appPassword');
@@ -289,6 +293,20 @@ export default function SFXStudio() {
       {/* ── Top Header ────────────────────────────────────────────── */}
       <header className="h-16 px-6 flex items-center justify-end border-b border-border-color shrink-0 relative z-50">
         <div className="flex items-center gap-4 z-10">
+
+          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border-color bg-bg-panel/50">
+            <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">AI Model:</span>
+            <CustomModelSelect
+              value={aiModel}
+              onChange={(val) => {
+                setAiModel(val);
+                localStorage.setItem('aiModel', val);
+              }}
+              options={AVAILABLE_AI_MODELS}
+              className="w-[180px]"
+            />
+          </div>
+
           <button
             onClick={() => {
               setHasCredentials(false);
