@@ -21,7 +21,12 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Missing required params: kernel, username, key' }, { status: 400 });
     }
 
-    const authHeader = 'Basic ' + Buffer.from(`${username}:${key}`).toString('base64');
+    const cleanUsername = username.trim();
+    const cleanKey = key.trim();
+    const authHeader = 
+      cleanKey.length === 32 && /^[0-9a-f]+$/i.test(cleanKey)
+        ? 'Basic ' + Buffer.from(`${cleanUsername}:${cleanKey}`).toString('base64')
+        : 'Bearer ' + cleanKey;
 
     // Split username/slug and encode separately
     const [ownerSlug, kernelSlug] = kernel.split('/');

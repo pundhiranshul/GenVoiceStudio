@@ -16,7 +16,12 @@ export async function GET(req: Request) {
   }
 
   const kaggleUrl = `https://www.kaggle.com/api/v1/kernels/output/${username}/${slug}?file=${encodeURIComponent(file)}`;
-  const authHeader = 'Basic ' + btoa(`${username}:${key}`);
+  const cleanUsername = username.trim();
+  const cleanKey = key.trim();
+  const authHeader = 
+    cleanKey.length === 32 && /^[0-9a-f]+$/i.test(cleanKey)
+      ? 'Basic ' + btoa(`${cleanUsername}:${cleanKey}`)
+      : 'Bearer ' + cleanKey;
 
   let kaggleRes: Response;
   try {
