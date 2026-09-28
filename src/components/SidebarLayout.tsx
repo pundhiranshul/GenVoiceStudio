@@ -88,19 +88,6 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
-        {/* User Greeting */}
-        <div className={`p-4 border-b border-border-color/50 flex items-center gap-3 overflow-hidden ${isCollapsed ? 'justify-center' : ''}`}>
-          <div className="w-8 h-8 rounded-full bg-accent-bg/10 flex items-center justify-center shrink-0">
-            <User size={16} className="text-accent-bg" />
-          </div>
-          {!isCollapsed && (
-            <div className="flex flex-col truncate">
-              <span className="text-[10px] text-text-muted uppercase font-bold tracking-wider">Welcome</span>
-              <span className="text-sm font-medium text-text-primary truncate">{username || 'Studio User'}</span>
-            </div>
-          )}
-        </div>
-
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 flex flex-col gap-1 px-3">
           {navItems.map((item) => {
@@ -154,6 +141,19 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
               </button>
             );
           })}
+        </div>
+
+        {/* User Profile */}
+        <div className={`p-4 border-t border-border-color bg-bg-panel/50 flex items-center gap-3 overflow-hidden ${isCollapsed ? 'justify-center' : ''}`}>
+          <div className="w-8 h-8 rounded-lg bg-border-color/30 flex items-center justify-center shrink-0 border border-border-color/50">
+            <User size={15} className="text-text-secondary" />
+          </div>
+          {!isCollapsed && (
+            <div className="flex flex-col truncate">
+              <span className="text-xs font-semibold text-text-primary truncate leading-tight">{username || 'Studio User'}</span>
+              <span className="text-[10px] text-text-muted font-medium tracking-wide">Kaggle Authenticated</span>
+            </div>
+          )}
         </div>
 
         {/* Collapse Toggle (Desktop only) */}
