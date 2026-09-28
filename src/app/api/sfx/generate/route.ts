@@ -54,6 +54,7 @@ def generate_sfx():
         local_files_only=True
     )
     pipe = pipe.to("cuda")
+    pipe.set_progress_bar_config(disable=True)
 
     print(f"Generating SFX for prompt: '{PROMPT}'")
     audio = pipe(

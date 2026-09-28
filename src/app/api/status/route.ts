@@ -179,7 +179,8 @@ export async function GET(req: Request) {
           return a.name.localeCompare(b.name);
         });
         console.log(`[STATUS API] Returning complete with ${audios.length} audios`);
-        return NextResponse.json({ status: 'complete', audios, log: logData });
+        const safeLogData = logData.length > 50000 ? logData.substring(logData.length - 50000) : logData;
+        return NextResponse.json({ status: 'complete', audios, log: safeLogData });
       } else {
         console.warn('[STATUS API] Complete but no wav files found');
         return NextResponse.json({
@@ -260,7 +261,8 @@ export async function GET(req: Request) {
     }
 
     console.log(`[STATUS API] Returning status=${currentStatus}, cells=${cellsCurrent}/${cellsTotal}, chunks=${chunksCurrent}/${chunksTotal}`);
-    return NextResponse.json({ status: currentStatus, chunksCurrent, chunksTotal, cellsCurrent, cellsTotal, newAudios, log: partialLog });
+    const safePartialLog = partialLog.length > 50000 ? partialLog.substring(partialLog.length - 50000) : partialLog;
+    return NextResponse.json({ status: currentStatus, chunksCurrent, chunksTotal, cellsCurrent, cellsTotal, newAudios, log: safePartialLog });
 
   } catch (topLevelErr: any) {
     console.error('[STATUS API] Unhandled top-level error:', topLevelErr);
