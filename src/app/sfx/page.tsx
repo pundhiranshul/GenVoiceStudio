@@ -58,6 +58,7 @@ export default function SFXStudio() {
   const [kaggleKey, setKaggleKey] = useState("");
   const [hasCredentials, setHasCredentials] = useState(false);
   const [canCancelAuth, setCanCancelAuth] = useState(false);
+  const [copiedText, setCopiedText] = useState(false);
   const [authMode, setAuthMode]   = useState<'byok' | 'admin'>('byok');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyScreen, setVerifyScreen] = useState(false);
@@ -786,14 +787,15 @@ export default function SFXStudio() {
                 onClick={() => {
                   if (prompt) {
                     navigator.clipboard.writeText(prompt);
-                    addLog("Prompt copied to clipboard!");
+                    setCopiedText(true);
+                    setTimeout(() => setCopiedText(false), 2000);
                   }
                 }}
                 disabled={!prompt}
                 className="p-1.5 hover:bg-bg-hover rounded-md transition-colors outline-none disabled:opacity-50"
                 title="Copy prompt"
               >
-                <Copy size={14} />
+                {copiedText ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
               </button>
             </div>
             
@@ -879,17 +881,9 @@ export default function SFXStudio() {
                 <div className="flex-1 w-full">
                   <AudioPlayer
                     src={audioUrl}
-                    name="SFX_Output.wav"
+                    name={`sfx_${prompt.substring(0, 15).replace(/[^a-z0-9]/gi, '_').toLowerCase()}.wav`}
                   />
                 </div>
-                <a
-                  href={audioUrl}
-                  download={`sfx_${prompt.substring(0, 15).replace(/[^a-z0-9]/gi, '_').toLowerCase()}.wav`}
-                  className="flex items-center justify-center gap-2 px-4 py-3 sm:py-0 h-12 w-full sm:w-auto shrink-0 bg-bg-base border border-border-color rounded-xl hover:bg-bg-hover hover:text-text-primary transition-colors outline-none font-medium text-sm"
-                >
-                  <Download size={16} />
-                  Download
-                </a>
               </div>
             </div>
           )}
