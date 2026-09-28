@@ -19,7 +19,14 @@ export default function SFXStudio() {
   const [showAuth, setShowAuth] = useState(false);
   
   const [showLogs, setShowLogs] = useState(false);
-  const [logs, setLogs] = useState<string[]>([]);
+  const [logs, setLogs] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("sfx_logs");
+      if (saved) return JSON.parse(saved);
+    }
+    return [];
+  });
+  useEffect(() => { sessionStorage.setItem("sfx_logs", JSON.stringify(logs)); }, [logs]);
   const logsEndRef = useRef<HTMLDivElement>(null);
   
   const [showStopModal, setShowStopModal] = useState(false);
@@ -104,6 +111,8 @@ export default function SFXStudio() {
       });
       
       const data = await res.json();
+      const info = data.chunksTotal > 0 ? ` (${data.chunksCurrent}/${data.chunksTotal})` : "";
+      addLog(`${(data.status || "unknown").toUpperCase()}${info}`);
       if (!res.ok) throw new Error(data.error || "Failed to optimize prompt");
       
       if (data.modelProxyKey && data.modelProxyExpiresAt) {
@@ -225,7 +234,6 @@ export default function SFXStudio() {
       url.searchParams.append('kaggleUsername', kaggleUsername);
       url.searchParams.append('kaggleKey', kaggleKey);
 
-      addLog("Polling status...");
       const res = await fetch(url.toString());
       const data = await res.json();
       

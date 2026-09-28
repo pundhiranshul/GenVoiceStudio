@@ -65,7 +65,7 @@ def generate_sfx():
     output = audio[0].T.cpu().numpy()
     
     print(f"Saving to {OUTPUT_PATH}")
-    sf.write(OUTPUT_PATH, output.astype('float32'), pipe.vae.sampling_rate)
+    sf.write(OUTPUT_PATH, output.astype('float32'), pipe.vae.sampling_rate, subtype='PCM_16')
     print("DONE")
 
 if __name__ == "__main__":
