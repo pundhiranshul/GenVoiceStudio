@@ -270,7 +270,7 @@ const CustomModelSelect = ({ value, onChange, options, className = "" }: { value
 // ── main ───────────────────────────────────────────────────────────
 export default function Home() {
   const [isDark, setIsDark]         = useState(true);
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(false);
   const [hasCredentials, setHasCredentials] = useState(false);
   const [canCancelAuth, setCanCancelAuth] = useState(false);
   const [authMode, setAuthMode]   = useState<'byok' | 'admin'>('byok');
@@ -455,14 +455,12 @@ export default function Home() {
       setHasCredentials(true);
     }
 
-    // Splash screen timer
-    const t = setTimeout(() => setShowSplash(false), 2200);
+    // Splash screen removed — navigation is now instant
     
     // Initialize theme based on document class
     setIsDark(document.documentElement.classList.contains('dark'));
     
     return () => {
-      clearTimeout(t);
     };
   }, []);
 
