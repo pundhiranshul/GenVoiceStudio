@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { get, set } from "idb-keyval";
-import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User, ArrowLeft, Mic, ChevronDown } from 'lucide-react';
+import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User, ArrowLeft, Mic, ChevronDown, Menu, AudioLines, LayoutTemplate } from 'lucide-react';
 import { VoiceSelector, Voice } from "@/components/VoiceSelector";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { stitchChunks } from "@/utils/audioEditor";
@@ -455,7 +455,13 @@ export default function Home() {
     // Initialize theme based on document class
     setIsDark(document.documentElement.classList.contains('dark'));
     
-    return () => clearTimeout(t);
+    const handleOpenArch = () => setShowAbout(true);
+    window.addEventListener('open-architecture', handleOpenArch);
+
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('open-architecture', handleOpenArch);
+    };
   }, []);
 
   useEffect(() => {
@@ -1337,23 +1343,7 @@ export default function Home() {
     <div className="flex flex-col min-h-[100dvh] md:h-screen md:overflow-hidden bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary animate-in fade-in duration-700">
 
       {/* ── Top Header ────────────────────────────────────────────── */}
-      <header className="h-16 px-6 flex items-center justify-between border-b border-border-color shrink-0 relative z-50">
-        <div className="flex items-center gap-6 z-10">
-          <a href="/" className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
-            <GenVoiceLogo size={48} className="text-text-primary" />
-            <span className="font-semibold text-lg tracking-tight hidden sm:block">GenVoice Studio</span>
-          </a>
-          
-          <div 
-            className={`hidden xl:flex items-center gap-2 text-sm font-light text-text-secondary tracking-wide transition-all duration-700 ease-in-out ${
-              text.length > 0 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
-            }`}
-          >
-            <User size={14} className="opacity-50" />
-            Welcome back, <span className="font-medium text-text-primary">{kaggleUsername || 'Studio User'}</span>
-          </div>
-        </div>
-
+      <header className="h-16 px-6 flex items-center justify-end border-b border-border-color shrink-0 relative z-50">
         <div className="flex items-center gap-4 z-10">
 
           <div className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border-color bg-bg-panel/50">
@@ -1368,26 +1358,6 @@ export default function Home() {
               className="w-[140px]"
             />
           </div>
-
-          <button
-            onClick={() => setShowAbout(true)}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-            aria-label="About Architecture"
-          >
-            <Info size={14} />
-            <span>Architecture</span>
-          </button>
-
-          <a
-            href="https://github.com/pundhiranshul/GenVoiceStudio/issues/new"
-            target="_blank"
-            rel="noreferrer"
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-            aria-label="Report Bug"
-          >
-            <Bug size={14} />
-            <span>Report Bug</span>
-          </a>
 
           <button
             onClick={toggleTheme}
