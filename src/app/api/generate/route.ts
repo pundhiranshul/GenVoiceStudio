@@ -219,7 +219,7 @@ export async function POST(req: Request) {
       isPrivate:  true,
       enableGpu:  true,
       enableInternet: true,
-      datasetDataSources: [],
+      datasetDataSources: ['daijizaiten/genvoice-voice-generation'],
       competitionDataSources: [],
       kernelDataSources: [],
       modelDataSources: [],
