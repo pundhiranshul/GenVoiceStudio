@@ -38,7 +38,7 @@ subprocess.check_call([sys.executable, "-m", "pip", "install", "torchsde", "-q"]
 
 from diffusers import StableAudioPipeline
 
-PROMPT = json.loads('''${JSON.stringify(prompt || 'Cinematic explosion')}''')
+PROMPT = ${JSON.stringify(prompt || 'Cinematic explosion')}
 OUTPUT_PATH = "/kaggle/working/sfx_output.wav"
 
 def find_dataset_path(base_dir):
