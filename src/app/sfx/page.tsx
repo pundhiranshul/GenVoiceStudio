@@ -67,6 +67,7 @@ export default function SFXStudio() {
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
+    (window as any).isGenerating = (status !== "idle" && status !== "complete" && status !== "error");
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [status]);
 
@@ -178,7 +179,7 @@ export default function SFXStudio() {
     setStatus("pushing");
     setErrorMsg("");
     setAudioUrl("");
-    setLogs([]);
+    setLogs([]); addLog("Initializing...");
     setChunksCurrent(0);
     setChunksTotal(0);
     isStoppedRef.current = false;
@@ -198,6 +199,7 @@ export default function SFXStudio() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
+      addLog(`Kernel: ${data.kernel}`);
       kernelRef.current = data.kernel;
       setStatus("generating");
       pollStatus();
@@ -206,6 +208,11 @@ export default function SFXStudio() {
       setStatus("error");
       setErrorMsg(err.message);
     }
+  };
+
+  const addLog = (msg: string) => {
+    const time = new Date().toLocaleTimeString([], { hour12: false });
+    setLogs(prev => [...prev, `[${time}] ${msg}`]);
   };
 
   const pollStatus = async () => {
@@ -218,12 +225,11 @@ export default function SFXStudio() {
       url.searchParams.append('kaggleUsername', kaggleUsername);
       url.searchParams.append('kaggleKey', kaggleKey);
 
+      addLog("Polling status...");
       const res = await fetch(url.toString());
       const data = await res.json();
       
-      if (data.log) {
-        setLogs(data.log.split('\\n'));
-      }
+      
       
       if (data.chunksTotal > 0) {
         setChunksCurrent(data.chunksCurrent);
@@ -231,9 +237,11 @@ export default function SFXStudio() {
       }
 
       if (data.status === 'complete') {
+        addLog("Complete! Fetching audio...");
         setStatus("downloading");
         if (data.audios && data.audios.length > 0) {
           setAudioUrl(data.audios[0].data);
+          addLog("Audio ready.");
           setStatus("complete");
         } else {
           throw new Error("No audio returned from Kaggle.");
@@ -247,6 +255,7 @@ export default function SFXStudio() {
       }
     } catch (err: any) {
       if (!isStoppedRef.current) {
+        addLog(`ERROR: ${err.message}`);
         setStatus("error");
         setErrorMsg(err.message);
       }

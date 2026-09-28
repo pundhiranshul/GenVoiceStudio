@@ -83,7 +83,15 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
       >
         {/* Logo Area */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-border-color shrink-0">
-          <Link href="/" className="flex items-center gap-3 overflow-hidden" onClick={() => setIsMobileOpen(false)}>
+          <Link href="/" className="flex items-center gap-3 overflow-hidden" onClick={(e) => {
+            if (typeof window !== "undefined" && (window as any).isGenerating) {
+              if (!confirm("You have an active generation running. Are you sure you want to navigate away? Progress will be lost.")) {
+                e.preventDefault();
+                return;
+              }
+            }
+            setIsMobileOpen(false);
+          }}>
             <GenVoiceLogo size={32} className="shrink-0 text-text-primary" />
             {!isCollapsed && <span className="font-semibold text-lg tracking-tight whitespace-nowrap text-text-primary">GenVoice Studio</span>}
           </Link>
@@ -105,7 +113,15 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setIsMobileOpen(false)}
+                onClick={(e) => {
+                  if (typeof window !== "undefined" && (window as any).isGenerating) {
+                    if (!confirm("You have an active generation running. Are you sure you want to navigate away? Progress will be lost.")) {
+                      e.preventDefault();
+                      return;
+                    }
+                  }
+                  setIsMobileOpen(false);
+                }}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors outline-none
                   ${isActive 
                     ? "bg-accent-bg text-accent-text font-medium shadow-sm" 
