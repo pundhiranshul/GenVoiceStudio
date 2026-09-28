@@ -1430,7 +1430,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col min-h-[100dvh] md:h-screen md:overflow-hidden bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary animate-in fade-in duration-700">
+    <div className="flex flex-col min-h-[100dvh] md:h-screen md:overflow-hidden bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary">
 
       {/* ── Top Header ────────────────────────────────────────────── */}
       <header className="h-16 px-6 flex items-center justify-end border-b border-border-color shrink-0 relative z-50">
