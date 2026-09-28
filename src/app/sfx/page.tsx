@@ -1,10 +1,77 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Sparkles, Loader2, Download, Terminal, X, Key, Wand2, AudioLines } from "lucide-react";
+import { Sparkles, Loader2, Download, Terminal, X, Key, Wand2, AudioLines, Shield, Info, Check } from "lucide-react";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { CustomModelSelect, AVAILABLE_AI_MODELS } from "@/components/CustomModelSelect";
 type Status = "idle" | "pushing" | "generating" | "downloading" | "complete" | "error";
+
+
+const GenVoiceLogo = ({ size = 24, className = "", animate = false }) => {
+  const getEqClass = (y: number) => {
+    if (!animate) return "";
+    if (y <= 26) return "animate-eq-5";
+    if (y <= 36) return "animate-eq-4";
+    if (y <= 46) return "animate-eq-3";
+    if (y <= 56) return "animate-eq-2";
+    if (y <= 66) return "animate-eq-1";
+    return "";
+  };
+
+  const getDelay = (x: number, y: number) => {
+    return `${((x * 13 + y * 17) % 10) * 0.1}s`;
+  };
+
+  const Block = ({ x, y, w, h, fill }: { x: number, y: number, w: number, h: number, fill: string }) => (
+    <rect 
+      x={x} y={y} width={w} height={h} rx="4" fill={fill}
+      className={getEqClass(y)} 
+      style={animate ? { animationDelay: getDelay(x, y) } : {}} 
+    />
+  );
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className={className}>
+      <rect x="2" y="2" width="96" height="96" rx="16" fill="#F8F3E9" stroke="#C2BFD0" strokeWidth="4" />
+      
+      {/* Wavy animated background lines */}
+      <g className={animate ? "animate-wave-1" : ""}>
+        <path d="M 2 70 Q 20 50, 40 70 T 70 70 T 98 70" stroke="#FDE39A" strokeWidth="0.5" fill="none" opacity="0.8" />
+      </g>
+      <g className={animate ? "animate-wave-2" : ""}>
+        <path d="M 2 60 Q 30 30, 50 70 T 80 50 T 98 60" stroke="#99D6F3" strokeWidth="0.5" fill="none" opacity="0.6" />
+      </g>
+      <g className={animate ? "animate-wave-3" : ""}>
+        <path d="M 2 50 Q 20 80, 50 40 T 90 70 T 98 50" stroke="#F89397" strokeWidth="0.5" fill="none" opacity="0.4" />
+      </g>
+      <g className={animate ? "animate-wave-4" : ""}>
+        <path d="M 2 65 Q 15 45, 30 65 T 60 45 T 98 65" stroke="#AFAAB9" strokeWidth="0.5" fill="none" opacity="0.5" />
+      </g>
+
+      {/* Left Column (Straight) */}
+      <Block x={22} y={36} w={14} h={8} fill="#A6C1A9" />
+      <Block x={22} y={46} w={14} h={8} fill="#ACDEB8" />
+      <Block x={22} y={56} w={14} h={8} fill="#CFE98F" />
+      <Block x={22} y={66} w={14} h={8} fill="#A5D6EE" />
+      <Block x={22} y={76} w={14} h={8} fill="#8FBEEC" />
+
+      {/* Center Column */}
+      <Block x={43} y={26} w={14} h={8} fill="#D78B95" />
+      <Block x={43} y={36} w={14} h={8} fill="#E1A2AA" />
+      <Block x={43} y={46} w={14} h={8} fill="#ECA194" />
+      <Block x={43} y={56} w={14} h={8} fill="#EEAF81" />
+      <Block x={43} y={66} w={14} h={8} fill="#F4CD83" />
+      <Block x={43} y={76} w={14} h={8} fill="#F9E493" />
+
+      {/* Right Column (Straight) */}
+      <Block x={64} y={36} w={14} h={8} fill="#A6C1A9" />
+      <Block x={64} y={46} w={14} h={8} fill="#ACDEB8" />
+      <Block x={64} y={56} w={14} h={8} fill="#CFE98F" />
+      <Block x={64} y={66} w={14} h={8} fill="#A5D6EE" />
+      <Block x={64} y={76} w={14} h={8} fill="#8FBEEC" />
+    </svg>
+  );
+};
 
 export default function SFXStudio() {
   const [prompt, setPrompt] = useState(() => typeof window !== "undefined" ? sessionStorage.getItem("sfx_prompt") || "" : "");
@@ -17,7 +84,14 @@ export default function SFXStudio() {
   const [kaggleUsername, setKaggleUsername] = useState("");
   const [kaggleKey, setKaggleKey] = useState("");
   const [hasCredentials, setHasCredentials] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
+  const [canCancelAuth, setCanCancelAuth] = useState(false);
+  const [authMode, setAuthMode]   = useState<'byok' | 'admin'>('byok');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyScreen, setVerifyScreen] = useState(false);
+  const [verifyStatus, setVerifyStatus] = useState<'pending' | 'internet' | 'gpu' | 'success' | 'error'>('pending');
+  const [verifyError, setVerifyError] = useState("");
+  const [isEditorOpen, setIsEditorOpen] = useState(false);  const [password, setPassword] = useState("");
+
   
   const [showLogs, setShowLogs] = useState(false);
   const [logs, setLogs] = useState<string[]>(() => {
@@ -56,8 +130,6 @@ export default function SFXStudio() {
 
     if ((storedUsername && storedKey) || storedPass) {
       setHasCredentials(true);
-    } else {
-      setShowAuth(true);
     }
     
     const storedAiModel = localStorage.getItem('aiModel');
@@ -185,7 +257,6 @@ export default function SFXStudio() {
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     if (!hasCredentials) {
-      setShowAuth(true);
       return;
     }
 
@@ -279,15 +350,6 @@ export default function SFXStudio() {
     setShowStopModal(true);
   };
 
-  const saveAuth = () => {
-    if (kaggleUsername && kaggleKey) {
-      localStorage.setItem('kaggleUsername', kaggleUsername);
-      localStorage.setItem('kaggleKey', kaggleKey);
-      setHasCredentials(true);
-      setShowAuth(false);
-    }
-  };
-
   return (
     <div className="flex flex-col h-[100dvh] md:h-screen bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary animate-in fade-in duration-700">
       
@@ -311,7 +373,7 @@ export default function SFXStudio() {
           <button
             onClick={() => {
               setHasCredentials(false);
-              setShowAuth(true);
+              setCanCancelAuth(true);
             }}
             className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
             aria-label="Change Credentials"
@@ -333,38 +395,6 @@ export default function SFXStudio() {
               <strong>Sound Effects Generation</strong> creates high-quality cinematic sound effects using Stable Audio Open 1.0, powered by zero-cost Kaggle GPUs. Describe an acoustic environment, tone, or texture.
             </span>
           </div>
-
-          {/* Auth Section */}
-          {showAuth && !hasCredentials && (
-            <div className="bg-bg-panel border border-border-color rounded-xl p-6 space-y-4">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
-                <Key size={18} className="text-accent-bg" /> Kaggle Authentication
-              </h3>
-              <p className="text-sm text-text-secondary">SFX Generation requires a Kaggle account to run inference for free.</p>
-              <div className="space-y-3">
-                <input
-                  type="text"
-                  placeholder="Kaggle Username"
-                  className="w-full bg-bg-base border border-border-color rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-ring-color outline-none"
-                  value={kaggleUsername}
-                  onChange={(e) => setKaggleUsername(e.target.value)}
-                />
-                <input
-                  type="password"
-                  placeholder="Kaggle API Key"
-                  className="w-full bg-bg-base border border-border-color rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-ring-color outline-none"
-                  value={kaggleKey}
-                  onChange={(e) => setKaggleKey(e.target.value)}
-                />
-                <button
-                  onClick={saveAuth}
-                  className="w-full bg-text-primary text-bg-base font-semibold py-2.5 rounded-lg hover:opacity-90 transition-opacity"
-                >
-                  Save Credentials
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Input Area */}
           <div className="bg-bg-panel border border-border-color rounded-2xl p-4 shadow-sm focus-within:ring-2 ring-ring-color transition-all">
