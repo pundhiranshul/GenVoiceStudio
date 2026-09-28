@@ -298,10 +298,6 @@ export default function SFXStudio() {
             </h1>
             <p className="text-text-secondary leading-relaxed">
               Generate high-quality cinematic sound effects using Stable Audio Open 1.0, powered by zero-cost Kaggle GPUs.
-              <br />
-              <span className="text-sm text-text-muted">
-                e.g., &quot;A distant cinematic explosion with sub-bass rumble&quot; or &quot;Birds chirping in a dense forest during spring&quot;
-              </span>
             </p>
           </div>
 
