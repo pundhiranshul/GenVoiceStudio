@@ -42,7 +42,12 @@
     },
     {
       "cell_type": "code",
-      "source": "import shutil, sys\\nshutil.copytree(\"/kaggle/input/genvoice-voice-generation/breeze-tts\", \"/kaggle/working/breeze-tts\")\\nsys.path.append(\"/kaggle/working/breeze-tts\")\\nprint(\"Codebase mounted.\")\\n",
+      "source": [
+        "import shutil, sys\n",
+        "shutil.copytree(\"/kaggle/input/genvoice-voice-generation/breeze-tts\", \"/kaggle/working/breeze-tts\")\n",
+        "sys.path.append(\"/kaggle/working/breeze-tts\")\n",
+        "print(\"Codebase mounted.\")\n"
+      ],
       "metadata": {
         "trusted": true
       },
