@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Sparkles, Loader2, Download, Terminal, X, Key, Wand2, AudioLines, Shield, Info, Check } from "lucide-react";
+import { Sparkles, Loader2, Download, Terminal, X, Key, Wand2, AudioLines, Shield, Info, Check, Sun, Moon } from "lucide-react";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { CustomModelSelect, AVAILABLE_AI_MODELS } from "@/components/CustomModelSelect";
 type Status = "idle" | "pushing" | "generating" | "downloading" | "complete" | "error";
@@ -118,6 +118,17 @@ export default function SFXStudio() {
   const [writeError, setWriteError] = useState("");
 
   const kernelRef = useRef<string | null>(null);
+  const [isDark, setIsDark] = useState(true);
+
+  const toggleTheme = () => {
+    if (document.documentElement.classList.contains('dark')) {
+      document.documentElement.classList.remove('dark');
+      setIsDark(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      setIsDark(true);
+    }
+  };
 
   useEffect(() => {
     const storedUsername = localStorage.getItem('kaggleUsername');
@@ -131,6 +142,8 @@ export default function SFXStudio() {
       setHasCredentials(true);
     } else {
     }
+    
+    setIsDark(document.documentElement.classList.contains('dark'));
     
     const storedAiModel = localStorage.getItem('aiModel');
     if (storedAiModel && AVAILABLE_AI_MODELS.includes(storedAiModel)) setAiModel(storedAiModel);
@@ -741,6 +754,14 @@ export default function SFXStudio() {
               className="w-[180px]"
             />
           </div>
+
+          <button
+            onClick={toggleTheme}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+            aria-label="Toggle Theme"
+          >
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
 
           <button
             onClick={() => {
