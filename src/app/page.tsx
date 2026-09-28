@@ -271,7 +271,6 @@ const CustomModelSelect = ({ value, onChange, options, className = "" }: { value
 export default function Home() {
   const [isDark, setIsDark]         = useState(true);
   const [showSplash, setShowSplash] = useState(true);
-  const [showAbout, setShowAbout]   = useState(false);
   const [hasCredentials, setHasCredentials] = useState(false);
   const [canCancelAuth, setCanCancelAuth] = useState(false);
   const [authMode, setAuthMode]   = useState<'byok' | 'admin'>('byok');
@@ -286,7 +285,8 @@ export default function Home() {
   const [kaggleKey, setKaggleKey] = useState("");
   const [modelProxyKey, setModelProxyKey] = useState("");
   const [modelProxyExpiresAt, setModelProxyExpiresAt] = useState("");
-  const [text, setText]           = useState("");
+  const [text, setText] = useState(() => typeof window !== "undefined" ? sessionStorage.getItem("voice_text") || "" : "");
+  useEffect(() => { sessionStorage.setItem("voice_text", text); }, [text]);
   const [status, setStatus]       = useState<AppStatus>("idle");
   const [message, setMessage]     = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState("What do you want to say?");
@@ -455,12 +455,8 @@ export default function Home() {
     // Initialize theme based on document class
     setIsDark(document.documentElement.classList.contains('dark'));
     
-    const handleOpenArch = () => setShowAbout(true);
-    window.addEventListener('open-architecture', handleOpenArch);
-
     return () => {
       clearTimeout(t);
-      window.removeEventListener('open-architecture', handleOpenArch);
     };
   }, []);
 
@@ -1989,100 +1985,6 @@ export default function Home() {
         </div>
       )}
       {/* ── Modals ────────────────────────────────────────────────── */}
-      {showAbout && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-base/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-2xl bg-bg-panel border border-border-color rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
-            <div className="p-4 border-b border-border-subtle flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Info size={18} className="text-text-primary" />
-                <h3 className="font-semibold text-text-primary tracking-tight">System Architecture</h3>
-              </div>
-              <button 
-                onClick={() => setShowAbout(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto flex flex-col gap-6 text-sm text-text-secondary leading-relaxed">
-              <section>
-                <h4 className="text-text-primary font-medium mb-2 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent-bg" /> Frontend (Studio UX)
-                </h4>
-                <p>
-                  Built entirely with <strong>Next.js 16 (App Router)</strong>, <strong>React 19</strong>, and <strong>Tailwind CSS v4</strong>. The UI implements a strict zero-accent monochrome design system, natively supporting both Day and Night modes via CSS variables. Extensive use of <code>lucide-react</code> for iconography. Audio synthesis and previews rely on hidden native <code>&lt;audio&gt;</code> elements with custom scrubbers for maximum accessibility and seamless cross-browser playback.
-                </p>
-              </section>
-
-              <section>
-                <h4 className="text-text-primary font-medium mb-2 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent-bg" /> API & Middleware
-                </h4>
-                <p>
-                  Next.js Serverless API routes act as secure middleware and job orchestrators. They manage secure dispatch and long-polling for audio generation. Additionally, they interface with Kaggle's OpenAI-compatible Model Proxy (<code>mp-staging.kaggle.net</code>) to route prompts for Script Optimization, Story Generation, and Voice Recommendation, securely minting and rotating temporary JWTs using user credentials.
-                </p>
-              </section>
-
-              <section>
-                <h4 className="text-text-primary font-medium mb-2 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent-bg" /> Inference & Compute Engine
-                </h4>
-                <p>
-                  The core AI Voice generation is powered by <strong>Breeze-TTS 2</strong>, running on a scalable, cloud-hosted <strong>T4 GPU cluster</strong> through an asynchronous task queue via Kaggle Notebooks. For textual AI features, the system dynamically connects to dozens of state-of-the-art LLMs (including DeepSeek R1, Gemini 3, and GPT variants) allowing zero-latency model switching.
-                </p>
-              </section>
-
-              <section>
-                <h4 className="text-text-primary font-medium mb-2 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent-bg" /> Pipeline & Optimizations
-                </h4>
-                <ul className="list-disc pl-5 space-y-1 mt-1">
-                  <li><strong>Intelligent Chunking:</strong> Large text payloads are algorithmically split at sentence boundaries to bypass model memory limits and prevent GPU out-of-memory (OOM) errors.</li>
-                  <li><strong>Progressive Streaming:</strong> The frontend tracks generation progress chunk-by-chunk and dynamically stitches the resulting audio blobs in the browser to maintain ultra-low perceived latency.</li>
-                  <li><strong>Resilient AI Routing:</strong> Global dynamic model selection allows instant failover. If an LLM provider hits rate limits or heavy load, users can instantly swap to another model directly from the error modal and retry without losing context.</li>
-                  <li><strong>Persistent State:</strong> User settings, configurations, and reference voice models are securely cached locally using IndexedDB (<code>idb-keyval</code>) and <code>localStorage</code>.</li>
-                </ul>
-              </section>
-
-              <section className="bg-bg-input/50 p-4 rounded-xl border border-border-subtle">
-                <h4 className="text-text-primary font-medium mb-3 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent-bg" /> GenVoice vs ElevenLabs
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <h5 className="font-medium text-text-primary mb-1">ElevenLabs</h5>
-                    <ul className="list-disc pl-4 space-y-1 text-xs text-text-muted">
-                      <li>Proprietary closed-source models</li>
-                      <li>Pay-per-character pricing</li>
-                      <li>Strict rate limits and token quotas</li>
-                      <li>Standard cloud-based REST APIs</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h5 className="font-medium text-text-primary mb-1">GenVoice Studio</h5>
-                    <ul className="list-disc pl-4 space-y-1 text-xs text-text-muted">
-                      <li>Free, open-architecture local inference</li>
-                      <li>Unlimited generation (Zero-cost compute)</li>
-                      <li>Isolated GPU kernel execution for privacy</li>
-                      <li>Custom chunking for infinite-length texts</li>
-                    </ul>
-                  </div>
-                </div>
-              </section>
-            </div>
-            
-            <div className="p-4 border-t border-border-subtle bg-bg-input flex justify-end">
-              <button 
-                onClick={() => setShowAbout(false)}
-                className="px-6 py-2 rounded-lg bg-accent-bg text-accent-text font-medium text-sm hover:bg-accent-bg/90 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Upload Modal (Custom Voice) */}
       {showUpload && (

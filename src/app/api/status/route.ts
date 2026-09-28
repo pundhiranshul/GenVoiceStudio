@@ -195,6 +195,7 @@ export async function GET(req: Request) {
     let chunksTotal = 0;
     let cellsCurrent = 0;
     let cellsTotal = 0;
+    let partialLog = '';
     const newAudios: { name: string; data: string }[] = [];
 
     try {
@@ -214,7 +215,7 @@ export async function GET(req: Request) {
         fs.writeFileSync('/home/ubuntu/genVoice/kaggle_debug.json', JSON.stringify(logData, null, 2));
       } catch(e) {}
 
-      const partialLog: string = logData.log || '';
+      partialLog = logData.log || '';
       
       const chunkMatches = [...partialLog.matchAll(/Generating (\d+)\/(\d+)/g)];
       if (chunkMatches.length > 0) {
@@ -259,7 +260,7 @@ export async function GET(req: Request) {
     }
 
     console.log(`[STATUS API] Returning status=${currentStatus}, cells=${cellsCurrent}/${cellsTotal}, chunks=${chunksCurrent}/${chunksTotal}`);
-    return NextResponse.json({ status: currentStatus, chunksCurrent, chunksTotal, cellsCurrent, cellsTotal, newAudios });
+    return NextResponse.json({ status: currentStatus, chunksCurrent, chunksTotal, cellsCurrent, cellsTotal, newAudios, log: partialLog });
 
   } catch (topLevelErr: any) {
     console.error('[STATUS API] Unhandled top-level error:', topLevelErr);

@@ -1,4 +1,5 @@
 "use client";
+import { AboutModal } from "@/components/AboutModal";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -31,7 +32,14 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [username, setUsername] = useState("");
+  const [showAbout, setShowAbout] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    const handleOpenAbout = () => setShowAbout(true);
+    window.addEventListener('open-architecture', handleOpenAbout);
+    return () => window.removeEventListener('open-architecture', handleOpenAbout);
+  }, []);
 
   useEffect(() => {
     const u = localStorage.getItem("kaggleUsername");
@@ -178,6 +186,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         </div>
         {children}
       </div>
+      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
     </div>
   );
 }

@@ -55,11 +55,16 @@ def generate_sfx():
     )
     pipe = pipe.to("cuda")
 
+    def progress_callback(pipe, step_index, timestep, callback_kwargs):
+        print(f"Generating {step_index + 1}/100", flush=True)
+        return callback_kwargs
+
     print(f"Generating SFX for prompt: '{PROMPT}'")
     audio = pipe(
         PROMPT,
         audio_end_in_s=8.0,
         num_inference_steps=100,
+        callback_on_step_end=progress_callback
     ).audios
 
     output = audio[0].T.cpu().numpy()
