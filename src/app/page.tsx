@@ -702,7 +702,7 @@ export default function Home() {
           // Chunked: build one URL per chunk file
           const chunkAudios = currentChunks.map((_, i) => ({
             name: `breeze_chunk_${i}.wav`,
-            url:  `/api/audio?username=${encodeURIComponent(user)}&slug=${encodeURIComponent(slugPart)}&file=${encodeURIComponent(`breeze_chunk_${i}.wav`)}&key=${encodeURIComponent(k)}`,
+            url:  `/api/audio?username=${encodeURIComponent(user)}&slug=${encodeURIComponent(slugPart)}&file=${encodeURIComponent(`breeze_chunk_${i}.wav`)}&key=${encodeURIComponent(k)}&t=${Date.now()}`,
           }));
           setStatus("complete"); setMessage("Generation complete!");
           setAudios(chunkAudios);
@@ -711,7 +711,7 @@ export default function Home() {
           addLog(`${chunkAudios.length} audio chunks ready.`);
           localStorage.removeItem('voice_kernel');
         } else {
-          const audioUrl = `/api/audio?username=${encodeURIComponent(user)}&slug=${encodeURIComponent(slugPart)}&file=breeze_paragraph_single.wav&key=${encodeURIComponent(k)}`;
+          const audioUrl = `/api/audio?username=${encodeURIComponent(user)}&slug=${encodeURIComponent(slugPart)}&file=breeze_paragraph_single.wav&key=${encodeURIComponent(k)}&t=${Date.now()}`;
           setStatus("complete"); setMessage("Generation complete!");
           setStitchedAudioUrl(audioUrl);
           setCellsDone(cellsTotal || 1);
