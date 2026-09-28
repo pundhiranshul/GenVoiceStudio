@@ -7,24 +7,24 @@ import { usePathname } from "next/navigation";
 import { Mic, AudioLines, Bug, Info, ChevronLeft, ChevronRight, Menu, X, User, Wand2 } from "lucide-react";
 
 const GenVoiceLogo = ({ size = 24, className = "" }) => (
-  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className={className}>
-    <rect x="2" y="2" width="96" height="96" rx="16" fill="#F8F3E9" stroke="#C2BFD0" strokeWidth="4" />
-    <rect x="22" y="36" width="14" height="8" rx="4" fill="#A6C1A9" />
-    <rect x="22" y="46" width="14" height="8" rx="4" fill="#ACDEB8" />
-    <rect x="22" y="56" width="14" height="8" rx="4" fill="#CFE98F" />
-    <rect x="22" y="66" width="14" height="8" rx="4" fill="#A5D6EE" />
-    <rect x="22" y="76" width="14" height="8" rx="4" fill="#8FBEEC" />
-    <rect x="43" y="26" width="14" height="8" rx="4" fill="#D78B95" />
-    <rect x="43" y="36" width="14" height="8" rx="4" fill="#E1A2AA" />
-    <rect x="43" y="46" width="14" height="8" rx="4" fill="#ECA194" />
-    <rect x="43" y="56" width="14" height="8" rx="4" fill="#EEAF81" />
-    <rect x="43" y="66" width="14" height="8" rx="4" fill="#F4CD83" />
-    <rect x="43" y="76" width="14" height="8" rx="4" fill="#F9E493" />
-    <rect x="64" y="36" width="14" height="8" rx="4" fill="#A6C1A9" />
-    <rect x="64" y="46" width="14" height="8" rx="4" fill="#ACDEB8" />
-    <rect x="64" y="56" width="14" height="8" rx="4" fill="#CFE98F" />
-    <rect x="64" y="66" width="14" height="8" rx="4" fill="#A5D6EE" />
-    <rect x="64" y="76" width="14" height="8" rx="4" fill="#8FBEEC" />
+  <svg width={size} height={size} viewBox="0 0 200 200" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="sl-bg" cx="50%" cy="38%" r="75%">
+        <stop offset="0%" stopColor="#232326"/>
+        <stop offset="100%" stopColor="#0A0A0B"/>
+      </radialGradient>
+      <linearGradient id="sl-bar" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor="#FFFFFF"/>
+        <stop offset="100%" stopColor="#C9C9CE"/>
+      </linearGradient>
+    </defs>
+    <rect x="0" y="0" width="200" height="200" rx="44" fill="url(#sl-bg)"/>
+    <rect x="1" y="1" width="198" height="198" rx="43" fill="none" stroke="#FFFFFF" strokeOpacity="0.07" strokeWidth="2"/>
+    <rect x="22"  y="75"  width="20" height="50"  rx="10" fill="url(#sl-bar)" opacity="0.55"/>
+    <rect x="56"  y="55"  width="20" height="90"  rx="10" fill="url(#sl-bar)" opacity="0.80"/>
+    <rect x="90"  y="35"  width="20" height="130" rx="10" fill="url(#sl-bar)" opacity="1"/>
+    <rect x="124" y="55"  width="20" height="90"  rx="10" fill="url(#sl-bar)" opacity="0.80"/>
+    <rect x="158" y="75"  width="20" height="50"  rx="10" fill="url(#sl-bar)" opacity="0.55"/>
   </svg>
 );
 

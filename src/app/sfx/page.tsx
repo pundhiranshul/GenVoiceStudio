@@ -8,70 +8,43 @@ type Status = "idle" | "pushing" | "generating" | "downloading" | "complete" | "
 
 
 const GenVoiceLogo = ({ size = 24, className = "", animate = false }) => {
-  const getEqClass = (y: number) => {
-    if (!animate) return "";
-    if (y <= 26) return "animate-eq-5";
-    if (y <= 36) return "animate-eq-4";
-    if (y <= 46) return "animate-eq-3";
-    if (y <= 56) return "animate-eq-2";
-    if (y <= 66) return "animate-eq-1";
-    return "";
-  };
-
-  const getDelay = (x: number, y: number) => {
-    return `${((x * 13 + y * 17) % 10) * 0.1}s`;
-  };
-
-  const Block = ({ x, y, w, h, fill }: { x: number, y: number, w: number, h: number, fill: string }) => (
-    <rect 
-      x={x} y={y} width={w} height={h} rx="4" fill={fill}
-      className={getEqClass(y)} 
-      style={animate ? { animationDelay: getDelay(x, y) } : {}} 
-    />
-  );
-
+  const delays = ["0s", "0.15s", "0.3s", "0.15s", "0s"];
+  const eqClasses = ["animate-eq-1", "animate-eq-2", "animate-eq-5", "animate-eq-3", "animate-eq-4"];
+  const bars = [
+    { x: 22,  y: 75,  h: 50,  opacity: 0.55 },
+    { x: 56,  y: 55,  h: 90,  opacity: 0.80 },
+    { x: 90,  y: 35,  h: 130, opacity: 1    },
+    { x: 124, y: 55,  h: 90,  opacity: 0.80 },
+    { x: 158, y: 75,  h: 50,  opacity: 0.55 },
+  ];
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className={className}>
-      <rect x="2" y="2" width="96" height="96" rx="16" fill="#F8F3E9" stroke="#C2BFD0" strokeWidth="4" />
-      
-      {/* Wavy animated background lines */}
-      <g className={animate ? "animate-wave-1" : ""}>
-        <path d="M 2 70 Q 20 50, 40 70 T 70 70 T 98 70" stroke="#FDE39A" strokeWidth="0.5" fill="none" opacity="0.8" />
-      </g>
-      <g className={animate ? "animate-wave-2" : ""}>
-        <path d="M 2 60 Q 30 30, 50 70 T 80 50 T 98 60" stroke="#99D6F3" strokeWidth="0.5" fill="none" opacity="0.6" />
-      </g>
-      <g className={animate ? "animate-wave-3" : ""}>
-        <path d="M 2 50 Q 20 80, 50 40 T 90 70 T 98 50" stroke="#F89397" strokeWidth="0.5" fill="none" opacity="0.4" />
-      </g>
-      <g className={animate ? "animate-wave-4" : ""}>
-        <path d="M 2 65 Q 15 45, 30 65 T 60 45 T 98 65" stroke="#AFAAB9" strokeWidth="0.5" fill="none" opacity="0.5" />
-      </g>
-
-      {/* Left Column (Straight) */}
-      <Block x={22} y={36} w={14} h={8} fill="#A6C1A9" />
-      <Block x={22} y={46} w={14} h={8} fill="#ACDEB8" />
-      <Block x={22} y={56} w={14} h={8} fill="#CFE98F" />
-      <Block x={22} y={66} w={14} h={8} fill="#A5D6EE" />
-      <Block x={22} y={76} w={14} h={8} fill="#8FBEEC" />
-
-      {/* Center Column */}
-      <Block x={43} y={26} w={14} h={8} fill="#D78B95" />
-      <Block x={43} y={36} w={14} h={8} fill="#E1A2AA" />
-      <Block x={43} y={46} w={14} h={8} fill="#ECA194" />
-      <Block x={43} y={56} w={14} h={8} fill="#EEAF81" />
-      <Block x={43} y={66} w={14} h={8} fill="#F4CD83" />
-      <Block x={43} y={76} w={14} h={8} fill="#F9E493" />
-
-      {/* Right Column (Straight) */}
-      <Block x={64} y={36} w={14} h={8} fill="#A6C1A9" />
-      <Block x={64} y={46} w={14} h={8} fill="#ACDEB8" />
-      <Block x={64} y={56} w={14} h={8} fill="#CFE98F" />
-      <Block x={64} y={66} w={14} h={8} fill="#A5D6EE" />
-      <Block x={64} y={76} w={14} h={8} fill="#8FBEEC" />
+    <svg width={size} height={size} viewBox="0 0 200 200" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id={`gvl-bg-${size}`} cx="50%" cy="38%" r="75%">
+          <stop offset="0%" stopColor="#232326"/>
+          <stop offset="100%" stopColor="#0A0A0B"/>
+        </radialGradient>
+        <linearGradient id={`gvl-bar-${size}`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FFFFFF"/>
+          <stop offset="100%" stopColor="#C9C9CE"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="200" height="200" rx="44" fill={`url(#gvl-bg-${size})`}/>
+      <rect x="1" y="1" width="198" height="198" rx="43" fill="none" stroke="#FFFFFF" strokeOpacity="0.07" strokeWidth="2"/>
+      {bars.map((b, i) => (
+        <rect
+          key={i}
+          x={b.x} y={b.y} width="20" height={b.h} rx="10"
+          fill={`url(#gvl-bar-${size})`}
+          opacity={b.opacity}
+          className={animate ? eqClasses[i] : ""}
+          style={animate ? { animationDelay: delays[i], transformOrigin: `${b.x + 10}px ${b.y + b.h / 2}px` } : {}}
+        />
+      ))}
     </svg>
   );
 };
+
 
 export default function SFXStudio() {
   const [prompt, setPrompt] = useState(() => typeof window !== "undefined" ? localStorage.getItem("sfx_prompt") || "" : "");
