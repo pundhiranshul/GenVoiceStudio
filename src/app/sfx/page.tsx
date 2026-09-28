@@ -74,8 +74,8 @@ const GenVoiceLogo = ({ size = 24, className = "", animate = false }) => {
 };
 
 export default function SFXStudio() {
-  const [prompt, setPrompt] = useState(() => typeof window !== "undefined" ? sessionStorage.getItem("sfx_prompt") || "" : "");
-  useEffect(() => { sessionStorage.setItem("sfx_prompt", prompt); }, [prompt]);
+  const [prompt, setPrompt] = useState(() => typeof window !== "undefined" ? localStorage.getItem("sfx_prompt") || "" : "");
+  useEffect(() => { localStorage.setItem("sfx_prompt", prompt); }, [prompt]);
   const [status, setStatus] = useState<Status>("idle");
   const [audioUrl, setAudioUrl] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -286,11 +286,7 @@ export default function SFXStudio() {
       const res = await fetch('/api/sfx/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt,
-          kaggleUsername,
-          kaggleKey
-        })
+        body: JSON.stringify({ prompt, kaggleUsername, kaggleKey })
       });
 
       const data = await res.json();
@@ -298,6 +294,7 @@ export default function SFXStudio() {
 
       addLog(`Kernel: ${data.kernel}`);
       kernelRef.current = data.kernel;
+      localStorage.setItem('sfx_kernel', data.kernel);
       setStatus("generating");
       pollStatus();
 
@@ -315,36 +312,31 @@ export default function SFXStudio() {
   const pollStatus = async () => {
     if (isStoppedRef.current) return;
     if (!kernelRef.current) return;
-    
+
     try {
       const url = new URL('/api/status', window.location.origin);
-      url.searchParams.append('kernel', kernelRef.current);
-      url.searchParams.append('kaggleUsername', kaggleUsername);
-      url.searchParams.append('kaggleKey', kaggleKey);
+      url.searchParams.append('kernel',   kernelRef.current);
+      url.searchParams.append('username', kaggleUsername);
+      url.searchParams.append('key',      kaggleKey);
 
-      const res = await fetch(url.toString());
+      const res  = await fetch(url.toString());
       const data = await res.json();
-      
+
       if (data.status) {
-        addLog(`Polling status: ${(data.status || "unknown").toUpperCase()}`);
-      }
-      if (data.chunksTotal > 0) {
-        setChunksCurrent(data.chunksCurrent);
-        setChunksTotal(data.chunksTotal);
+        addLog(`Polling status: ${(data.rawStatus || data.status || 'unknown').toUpperCase()}`);
       }
 
-      if (data.status === 'complete') {
-        addLog("Complete! Fetching audio...");
-        setStatus("downloading");
-        if (data.audios && data.audios.length > 0) {
-          setAudioUrl(data.audios[0].data);
-          addLog("Audio ready.");
-          setStatus("complete");
-        } else {
-          throw new Error("No audio returned from Kaggle.");
-        }
-      } else if (data.status === 'error' || data.error) {
-        throw new Error(data.error || "Generation failed on Kaggle.");
+      if (data.status === 'done') {
+        addLog('Complete! Building audio URL...');
+        setStatus('downloading');
+        // Build the edge-streaming URL – no bytes pass through Vercel
+        const audioStreamUrl = `/api/audio?username=${encodeURIComponent(kaggleUsername)}&slug=${encodeURIComponent(kernelRef.current.split('/')[1] || kernelRef.current)}&file=sfx_output.wav&key=${encodeURIComponent(kaggleKey)}`;
+        setAudioUrl(audioStreamUrl);
+        addLog('Audio ready.');
+        setStatus('complete');
+        localStorage.removeItem('sfx_kernel');
+      } else if (data.status === 'failed' || data.error) {
+        throw new Error(data.error || 'Generation failed.');
       } else {
         if (!isStoppedRef.current) {
           setTimeout(pollStatus, 8000);
@@ -353,7 +345,7 @@ export default function SFXStudio() {
     } catch (err: any) {
       if (!isStoppedRef.current) {
         addLog(`ERROR: ${err.message}`);
-        setStatus("error");
+        setStatus('error');
         setErrorMsg(err.message);
       }
     }
@@ -779,7 +771,7 @@ export default function SFXStudio() {
 
       {/* ── Main Canvas ─────────────────────────────────────────────── */}
       <main className="flex-1 flex flex-col min-w-0 md:overflow-y-auto">
-        <div className="w-full max-w-4xl mx-auto p-6 md:p-10 space-y-8">
+        <div className="w-full max-w-2xl mx-auto px-6 py-10 space-y-8">
           
           {/* Description Card */}
           <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-2xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">

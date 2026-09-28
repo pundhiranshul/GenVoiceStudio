@@ -109,7 +109,7 @@ const AVAILABLE_AI_MODELS = [
 ];
 
 type AppStatus = "idle" | "generating" | "complete" | "error";
-type AudioFile = { name: string; data: string };
+type AudioFile = { name: string; url: string };
 type CustomVoice = { id: string; name: string; data: string; transcript: string; isPreset?: boolean; };
 
 const PRESET_VOICES: CustomVoice[] = [
@@ -285,8 +285,8 @@ export default function Home() {
   const [kaggleKey, setKaggleKey] = useState("");
   const [modelProxyKey, setModelProxyKey] = useState("");
   const [modelProxyExpiresAt, setModelProxyExpiresAt] = useState("");
-  const [text, setText] = useState(() => typeof window !== "undefined" ? sessionStorage.getItem("voice_text") || "" : "");
-  useEffect(() => { sessionStorage.setItem("voice_text", text); }, [text]);
+  const [text, setText] = useState(() => typeof window !== "undefined" ? localStorage.getItem("voice_text") || "" : "");
+  useEffect(() => { localStorage.setItem("voice_text", text); }, [text]);
   const [status, setStatus]       = useState<AppStatus>("idle");
   const [message, setMessage]     = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState("What do you want to say?");
@@ -473,7 +473,7 @@ export default function Home() {
   };
 
   const startRef      = useRef<number | null>(null);
-  const firstChunkRef = useRef<number | null>(null);
+  const kernelRef = useRef<string | null>(null);
   const logsEndRef    = useRef<HTMLDivElement>(null);
 
   const addLog = (msg: string) =>
@@ -486,10 +486,12 @@ export default function Home() {
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
     const chunksToDownload = audiosRef.current.filter(a => a.name.includes("chunk"));
-    chunksToDownload.forEach(audio => {
-      const base64Data = audio.data.split(',')[1];
-      zip.file(audio.name, base64Data, { base64: true });
-    });
+    
+    await Promise.all(chunksToDownload.map(async (audio) => {
+      const res = await fetch(audio.url);
+      const blob = await res.blob();
+      zip.file(audio.name, blob);
+    }));
     const blob = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -500,13 +502,6 @@ export default function Home() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
-
-  useEffect(() => {
-    if (!chunksDone || !chunksTotal) return;
-    if (!firstChunkRef.current) firstChunkRef.current = Date.now();
-    const elapsed = (Date.now() - firstChunkRef.current) / 1000;
-    setEta(fmtEta((elapsed / chunksDone) * (chunksTotal - chunksDone)));
-  }, [chunksDone, chunksTotal]);
 
 
 
@@ -655,7 +650,7 @@ export default function Home() {
     setStatus("generating"); setMessage("Submitting…");
     setAudios([]); audiosRef.current = []; setLogs([]); setChunks([]);
     setChunksDone(0); setChunksTotal(0); setCellsDone(0); setCellsTotal(0); setEta(""); setIsLongMode(false);
-    startRef.current = Date.now(); firstChunkRef.current = null;
+    startRef.current = Date.now();
     addLog("Initializing…");
     try {
       let referenceAudio = "";
@@ -683,8 +678,7 @@ export default function Home() {
         }
       }
 
-      const runId = Math.random().toString(36).substring(2, 10);
-      const payload = { password, kaggleUsername, kaggleKey, text: textToUse, referenceAudio, referenceText, runId, instructions: activeInstructions, guidanceScale };
+      const payload = { password, kaggleUsername, kaggleKey, text: textToUse, referenceAudio, referenceText, instructions: activeInstructions, guidanceScale };
       const res  = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submit failed");
@@ -699,74 +693,64 @@ export default function Home() {
       } else {
         addLog(`Short text (${charCount} chars) — single-shot queued.`);
       }
+
+      kernelRef.current = kernel;
+      localStorage.setItem('voice_kernel', kernel);
+
       setMessage("Generating...");
       addLog(`Kernel: ${kernel}`);
-      pollTimeoutRef.current = setTimeout(() => pollStatus(kernel, runId), 15000);
+      pollTimeoutRef.current = setTimeout(() => pollStatus(kernel), 3000);
     } catch (e: any) {
       setStatus("error"); setMessage(e.message); addLog(`ERROR: ${e.message}`);
     }
   };
 
-  const pollStatus = async (kernel: string, runId: string) => {
+  const pollStatus = async (kernel: string) => {
     if (isStoppedRef.current) return;
     try {
       addLog("Polling status…");
       const url = new URL("/api/status", window.location.href);
-      url.searchParams.set("kernel", kernel);
-      url.searchParams.set("runId", runId);
-      if (kaggleUsername && kaggleKey) {
-        url.searchParams.set("kaggleUsername", kaggleUsername);
-        url.searchParams.set("kaggleKey", kaggleKey);
-      }
-      const existingAudios = audiosRef.current.map(a => a.name).join(',');
-      if (existingAudios) {
-        url.searchParams.set("existingAudios", existingAudios);
-      }
+      url.searchParams.set("kernel",   kernel);
+      url.searchParams.set("username", kaggleUsername || process.env.NEXT_PUBLIC_KAGGLE_USERNAME || '');
+      url.searchParams.set("key",      kaggleKey      || process.env.NEXT_PUBLIC_KAGGLE_KEY      || '');
+
       const res  = await fetch(url.toString());
-      const rawText = await res.text();
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch (e) {
-        throw new Error(`Server returned invalid JSON. Status: ${res.status}. Body: ${rawText.substring(0, 100)}`);
-      }
+      const data = await res.json();
+
       if (data.error) { setStatus("error"); setMessage(data.error); addLog(`ERROR: ${data.error}`); return; }
 
-      if (data.status === "complete") {
-        addLog("Complete! Fetching audio…");
-        if (data.audios?.length) {
+      if (data.status === "done") {
+        addLog("Complete! Building audio URL…");
+        const slugPart = kernel.split('/')[1] || kernel;
+        const user     = kaggleUsername;
+        const k        = kaggleKey;
+        if (isLongMode) {
+          // Chunked: build one URL per chunk file
+          const chunkAudios = chunks.map((_, i) => ({
+            name: `breeze_chunk_${i}.wav`,
+            url:  `/api/audio?username=${encodeURIComponent(user)}&slug=${encodeURIComponent(slugPart)}&file=${encodeURIComponent(`breeze_chunk_${i}.wav`)}&key=${encodeURIComponent(k)}`,
+          }));
           setStatus("complete"); setMessage("Generation complete!");
-          setAudios(data.audios);
-          if (isLongMode) setChunksDone(chunksTotal);
+          setAudios(chunkAudios);
+          setChunksDone(chunkAudios.length);
           setCellsDone(cellsTotal || 1);
-          addLog(`${data.audios.length} audio files ready.`);
+          addLog(`${chunkAudios.length} audio chunks ready.`);
+          localStorage.removeItem('voice_kernel');
         } else {
-          setStatus("error"); setMessage("No audio in output."); addLog("ERROR: No audio.");
+          const audioUrl = `/api/audio?username=${encodeURIComponent(user)}&slug=${encodeURIComponent(slugPart)}&file=breeze_paragraph_single.wav&key=${encodeURIComponent(k)}`;
+          setStatus("complete"); setMessage("Generation complete!");
+          setStitchedAudioUrl(audioUrl);
+          setCellsDone(cellsTotal || 1);
+          addLog(`Audio ready.`);
+          localStorage.removeItem('voice_kernel');
         }
-      } else if (data.status === "error") {
-        setStatus("error"); setMessage(`Kaggle Error`); addLog(`ERROR: ${data.status}`);
-      } else if (["cancel", "cancel_requested", "cancel_acknowledged"].includes(data.status)) {
-        setStatus("idle"); setMessage(`Generation cancelled.`); addLog(`CANCELLED: ${data.status}`);
-        isStoppedRef.current = true;
+      } else if (data.status === "failed") {
+        setStatus("error"); setMessage(`Generation failed`); addLog(`ERROR: ${data.error || 'Failed'}`);
       } else {
-        if (data.newAudios?.length > 0) {
-          const newMerged = [...audiosRef.current, ...data.newAudios];
-          audiosRef.current = newMerged;
-          setAudios(newMerged);
-        }
-        if (data.chunksTotal > 0) { setChunksTotal(data.chunksTotal); setChunksDone(data.chunksCurrent); }
-        if (data.cellsTotal > 0) { setCellsTotal(data.cellsTotal); }
-        
-        // We do NOT stop polling here when audio is found.
-        // We let it continue polling until Kaggle returns status === "complete" or "error".
-        if (data.chunksTotal > 0 && data.chunksCurrent === data.chunksTotal) {
-          if (isLongMode) setChunksDone(data.chunksTotal || chunksTotal);
-        }
-
-        const info = data.chunksTotal > 0 ? ` (${data.chunksCurrent}/${data.chunksTotal})` : "";
+        const info = ` (${data.rawStatus || data.status || 'polling'})`;
         setMessage(`Generating${info}...`);
-        addLog(`${(data.status || "unknown").toUpperCase()}${info}`);
-        pollTimeoutRef.current = setTimeout(() => pollStatus(kernel, runId), 10000);
+        addLog(`${(data.rawStatus || data.status || "unknown").toUpperCase()}`);
+        pollTimeoutRef.current = setTimeout(() => pollStatus(kernel), 10000);
       }
     } catch (e: any) {
       setStatus("error"); setMessage("Poll failed: " + e.message); addLog(`ERROR: ${e.message}`);
@@ -847,7 +831,7 @@ export default function Home() {
       const stitch = async () => {
         try {
           const blobs = await Promise.all(chunkAudios.map(async a => {
-            const res = await fetch(a.data);
+            const res = await fetch(a.url);
             return res.blob();
           }));
           const stitchedBlob = await stitchChunks(blobs, chunkTrims, chunkTrimModes);
@@ -1510,7 +1494,7 @@ export default function Home() {
                       ) : stitchedAudioUrl ? (
                         <AudioPlayer src={stitchedAudioUrl} name="GenVoice_Final.wav" />
                       ) : finalAudios.map((a, i) => (
-                        <AudioPlayer key={i} src={a.data} name={getDownloadFilename(a.name)} />
+                        <AudioPlayer key={i} src={a.url} name={getDownloadFilename(a.name)} />
                       ))}
                     </div>
 
@@ -1567,7 +1551,7 @@ export default function Home() {
                         <div className="flex flex-col gap-3 max-h-[700px] overflow-y-auto pr-2 pb-2">
                           {chunkAudios.map((a, i) => (
                               <div key={i}>
-                                <AudioPlayer src={a.data} name={getDownloadFilename(a.name)} transcript={chunks[i]} />
+                                <AudioPlayer src={a.url} name={getDownloadFilename(a.name)} transcript={chunks[i]} />
                                 {i < chunkAudios.length - 1 && (
                                   <div className="flex flex-col gap-3 bg-bg-input/20 p-4 rounded-xl border border-border-subtle ml-6 relative before:absolute before:left-[-12px] before:top-1/2 before:w-3 before:h-px before:bg-border-subtle">
                                     <div className="flex flex-wrap justify-between items-center gap-3">
@@ -1864,7 +1848,7 @@ export default function Home() {
                   {status === 'complete' && (stitchedAudioUrl || (finalAudios && finalAudios.length > 0)) && !isGen && (
                     <button
                       disabled={isVoiceSaved}
-                      onClick={() => handleSaveVoice(stitchedAudioUrl || finalAudios[0].data)}
+                      onClick={() => handleSaveVoice(stitchedAudioUrl || finalAudios[0].url)}
                       className="w-full py-2.5 rounded-lg text-sm font-medium bg-bg-input text-text-primary border border-border-color hover:bg-bg-hover disabled:opacity-50 disabled:hover:bg-bg-input transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
                     >
                       {isVoiceSaved ? "Saved to Custom Voices!" : "Save to Custom Voices"}

@@ -109,7 +109,7 @@ const AVAILABLE_AI_MODELS = [
 ];
 
 type AppStatus = "idle" | "generating" | "complete" | "error";
-type AudioFile = { name: string; data: string };
+type AudioFile = { name: string; url: string };
 type CustomVoice = { id: string; name: string; data: string; transcript: string; isPreset?: boolean; };
 
 const PRESET_VOICES: CustomVoice[] = [
@@ -285,8 +285,8 @@ export default function Home() {
   const [kaggleKey, setKaggleKey] = useState("");
   const [modelProxyKey, setModelProxyKey] = useState("");
   const [modelProxyExpiresAt, setModelProxyExpiresAt] = useState("");
-  const [text, setText] = useState(() => typeof window !== "undefined" ? sessionStorage.getItem("voice_text") || "" : "");
-  useEffect(() => { sessionStorage.setItem("voice_text", text); }, [text]);
+  const [text, setText] = useState(() => typeof window !== "undefined" ? localStorage.getItem("voice_text") || "" : "");
+  useEffect(() => { localStorage.setItem("voice_text", text); }, [text]);
   const [status, setStatus]       = useState<AppStatus>("idle");
   const [message, setMessage]     = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState("What do you want to say?");
@@ -309,8 +309,8 @@ export default function Home() {
   const [isStitching, setIsStitching] = useState(false);
 
   const [instructions, setInstructions] = useState("");
-  const [designPrompt, setDesignPrompt] = useState(() => typeof window !== "undefined" ? sessionStorage.getItem("voice_design_prompt") || "" : "");
-  useEffect(() => { sessionStorage.setItem("voice_design_prompt", designPrompt); }, [designPrompt]);
+  const [designPrompt, setDesignPrompt] = useState(() => typeof window !== "undefined" ? localStorage.getItem("voice_design_prompt") || "" : "");
+  useEffect(() => { localStorage.setItem("voice_design_prompt", designPrompt); }, [designPrompt]);
   const [generatedPreviewText, setGeneratedPreviewText] = useState("");
   const [isVoiceSaved, setIsVoiceSaved] = useState(false);
   const [guidanceScale, setGuidanceScale] = useState(2);
@@ -582,10 +582,11 @@ export default function Home() {
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
     const chunksToDownload = audiosRef.current.filter(a => a.name.includes("chunk"));
-    chunksToDownload.forEach(audio => {
-      const base64Data = audio.data.split(',')[1];
-      zip.file(audio.name, base64Data, { base64: true });
-    });
+    await Promise.all(chunksToDownload.map(async (audio) => {
+      const res = await fetch(audio.url);
+      const blob = await res.blob();
+      zip.file(audio.name, blob);
+    }));
     const blob = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -779,8 +780,7 @@ export default function Home() {
         }
       }
 
-      const runId = Math.random().toString(36).substring(2, 10);
-      const payload = { password, kaggleUsername, kaggleKey, text: textToUse, referenceAudio, referenceText, runId, instructions: activeInstructions, guidanceScale };
+      const payload = { password, kaggleUsername, kaggleKey, text: textToUse, referenceAudio, referenceText, instructions: activeInstructions, guidanceScale };
       const res  = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submit failed");
@@ -797,72 +797,56 @@ export default function Home() {
       }
       setMessage("Generating...");
       addLog(`Kernel: ${kernel}`);
-      pollTimeoutRef.current = setTimeout(() => pollStatus(kernel, runId), 15000);
+      pollTimeoutRef.current = setTimeout(() => pollStatus(kernel), 3000);
     } catch (e: any) {
       setStatus("error"); setMessage(e.message); addLog(`ERROR: ${e.message}`);
     }
   };
 
-  const pollStatus = async (kernel: string, runId: string) => {
+  const pollStatus = async (kernel: string) => {
     if (isStoppedRef.current) return;
     try {
       addLog("Polling status…");
       const url = new URL("/api/status", window.location.href);
-      url.searchParams.set("kernel", kernel);
-      url.searchParams.set("runId", runId);
-      if (kaggleUsername && kaggleKey) {
-        url.searchParams.set("kaggleUsername", kaggleUsername);
-        url.searchParams.set("kaggleKey", kaggleKey);
-      }
-      const existingAudios = audiosRef.current.map(a => a.name).join(',');
-      if (existingAudios) {
-        url.searchParams.set("existingAudios", existingAudios);
-      }
+      url.searchParams.set("kernel",   kernel);
+      url.searchParams.set("username", kaggleUsername);
+      url.searchParams.set("key",      kaggleKey);
+
       const res  = await fetch(url.toString());
-      const rawText = await res.text();
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch (e) {
-        throw new Error(`Server returned invalid JSON. Status: ${res.status}. Body: ${rawText.substring(0, 100)}`);
-      }
+      const data = await res.json();
+
       if (data.error) { setStatus("error"); setMessage(data.error); addLog(`ERROR: ${data.error}`); return; }
 
-      if (data.status === "complete") {
-        addLog("Complete! Fetching audio…");
-        if (data.audios?.length) {
+      if (data.status === "done") {
+        addLog("Complete! Building audio URL…");
+        const slugPart = kernel.split('/')[1] || kernel;
+        if (isLongMode) {
+          const chunkAudios = chunks.map((_, i) => ({
+            name: `breeze_chunk_${i}.wav`,
+            url:  `/api/audio?username=${encodeURIComponent(kaggleUsername)}&slug=${encodeURIComponent(slugPart)}&file=${encodeURIComponent(`breeze_chunk_${i}.wav`)}&key=${encodeURIComponent(kaggleKey)}`,
+          }));
           setStatus("complete"); setMessage("Generation complete!");
-          setAudios(data.audios);
+          setAudios(chunkAudios);
           if (isLongMode) setChunksDone(chunksTotal);
           setCellsDone(cellsTotal || 1);
-          addLog(`${data.audios.length} audio files ready.`);
+          addLog(`${chunkAudios.length} audio files ready.`);
         } else {
-          setStatus("error"); setMessage("No audio in output."); addLog("ERROR: No audio.");
+          const audioUrl = `/api/audio?username=${encodeURIComponent(kaggleUsername)}&slug=${encodeURIComponent(slugPart)}&file=breeze_paragraph_single.wav&key=${encodeURIComponent(kaggleKey)}`;
+          setStatus("complete"); setMessage("Generation complete!");
+          setStitchedAudioUrl(audioUrl);
+          setCellsDone(cellsTotal || 1);
+          addLog(`Audio ready.`);
         }
-      } else if (data.status === "error") {
-        setStatus("error"); setMessage(`Kaggle Error`); addLog(`ERROR: ${data.status}`);
-      } else if (["cancel", "cancel_requested", "cancel_acknowledged"].includes(data.status)) {
-        setStatus("idle"); setMessage(`Generation cancelled.`); addLog(`CANCELLED: ${data.status}`);
+      } else if (data.status === "failed") {
+        setStatus("error"); setMessage(`Kaggle Error`); addLog(`ERROR: ${data.error || 'Failed'}`);
+      } else if (["cancel", "cancel_requested", "cancel_acknowledged"].includes(data.rawStatus || '')) {
+        setStatus("idle"); setMessage(`Generation cancelled.`); addLog(`CANCELLED: ${data.rawStatus}`);
         isStoppedRef.current = true;
       } else {
-        if (data.newAudios?.length > 0) {
-          const newMerged = [...audiosRef.current, ...data.newAudios];
-          audiosRef.current = newMerged;
-          setAudios(newMerged);
-        }
-        if (data.chunksTotal > 0) { setChunksTotal(data.chunksTotal); setChunksDone(data.chunksCurrent); }
-        if (data.cellsTotal > 0) { setCellsTotal(data.cellsTotal); }
-        
-        // We do NOT stop polling here when audio is found.
-        // We let it continue polling until Kaggle returns status === "complete" or "error".
-        if (data.chunksTotal > 0 && data.chunksCurrent === data.chunksTotal) {
-          if (isLongMode) setChunksDone(data.chunksTotal || chunksTotal);
-        }
-
-        const info = data.chunksTotal > 0 ? ` (${data.chunksCurrent}/${data.chunksTotal})` : "";
+        const info = ` (${data.rawStatus || data.status || 'polling'})`;
         setMessage(`Generating${info}...`);
-        addLog(`${(data.status || "unknown").toUpperCase()}${info}`);
-        pollTimeoutRef.current = setTimeout(() => pollStatus(kernel, runId), 10000);
+        addLog(`${(data.rawStatus || data.status || "unknown").toUpperCase()}`);
+        pollTimeoutRef.current = setTimeout(() => pollStatus(kernel), 10000);
       }
     } catch (e: any) {
       setStatus("error"); setMessage("Poll failed: " + e.message); addLog(`ERROR: ${e.message}`);
@@ -943,7 +927,7 @@ export default function Home() {
       const stitch = async () => {
         try {
           const blobs = await Promise.all(chunkAudios.map(async a => {
-            const res = await fetch(a.data);
+            const res = await fetch(a.url);
             return res.blob();
           }));
           const stitchedBlob = await stitchChunks(blobs, chunkTrims, chunkTrimModes);
@@ -1504,25 +1488,6 @@ export default function Home() {
                 placeholder={"e.g., A raspy old man with a British accent..."}
                 className="w-full h-28 bg-transparent resize-none outline-none text-sm leading-relaxed placeholder:text-text-muted text-text-primary"
               />
-              <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border-color/50">
-                {optimizeDesignError && <p className="text-xs text-red-500 flex-1">{optimizeDesignError}</p>}
-                <button
-                  onClick={() => { setShowWriteDesignModal(true); setWriteDesignError(""); }}
-                  disabled={status !== "idle" && status !== "complete" && status !== "error"}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-base border border-border-color rounded-xl text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none"
-                >
-                  <Sparkles size={16} className="text-accent-bg" />
-                  AI Write
-                </button>
-                <button
-                  onClick={handleOptimizeDesignPrompt}
-                  disabled={isOptimizingDesign || !designPrompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-base border border-border-color rounded-xl text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none"
-                >
-                  {isOptimizingDesign ? <Loader2 size={16} className="animate-spin text-accent-bg" /> : <Wand2 size={16} className="text-accent-bg" />}
-                  AI Optimize
-                </button>
-              </div>
             </div>
           </div>
 
@@ -1552,29 +1517,60 @@ export default function Home() {
             </div>
           )}
 
-          {/* Generate & Save Buttons */}
+          {/* Controls & Generate Buttons */}
           <div className="flex flex-col gap-3">
-            <button
-              onClick={() => {
-                const randomPangram = PANGRAMS[Math.floor(Math.random() * PANGRAMS.length)];
-                const textToGen = text.trim() || randomPangram;
-                setGeneratedPreviewText(textToGen);
-                handleGenerate(textToGen);
-              }}
-              disabled={isGen || !designPrompt.trim()}
-              className="w-full py-3 rounded-xl text-sm font-semibold bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
-            >
-              {isGen ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 size={16} className="animate-spin" /> Generating Preview...
-                </span>
-              ) : "Generate Voice Preview"}
-            </button>
+            {optimizeDesignError && <p className="text-xs text-red-500">{optimizeDesignError}</p>}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              
+              {/* Left Controls (AI Write / Optimize) */}
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <button
+                  onClick={() => { setShowWriteDesignModal(true); setWriteDesignError(""); }}
+                  disabled={status !== "idle" && status !== "complete" && status !== "error"}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-base border border-border-color rounded-xl text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none w-full sm:w-auto"
+                >
+                  <Sparkles size={16} className="text-accent-bg" />
+                  AI Write
+                </button>
+                <button
+                  onClick={handleOptimizeDesignPrompt}
+                  disabled={isOptimizingDesign || !designPrompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-base border border-border-color rounded-xl text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none w-full sm:w-auto"
+                >
+                  {isOptimizingDesign ? <Loader2 size={16} className="animate-spin text-accent-bg" /> : <Wand2 size={16} className="text-accent-bg" />}
+                  AI Optimize
+                </button>
+              </div>
+
+              {/* Right Controls (Generate) */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  onClick={() => {
+                    const randomPangram = PANGRAMS[Math.floor(Math.random() * PANGRAMS.length)];
+                    const textToGen = text.trim() || randomPangram;
+                    setGeneratedPreviewText(textToGen);
+                    handleGenerate(textToGen);
+                  }}
+                  disabled={isGen || !designPrompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-text-primary text-bg-base hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 transition-all focus-visible:ring-2 focus-visible:ring-ring-color outline-none w-full sm:w-auto"
+                >
+                  {isGen ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 size={16} className="animate-spin" /> Generating...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <Sparkles size={16} /> Generate Preview
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
 
             {status === 'complete' && (stitchedAudioUrl || (finalAudios && finalAudios.length > 0)) && !isGen && (
               <button
                 disabled={isVoiceSaved}
-                onClick={() => handleSaveVoice(stitchedAudioUrl || finalAudios[0].data)}
+                onClick={() => handleSaveVoice(stitchedAudioUrl || finalAudios[0].url)}
                 className="w-full py-3 rounded-xl text-sm font-medium bg-bg-input text-text-primary border border-border-color hover:bg-bg-hover disabled:opacity-50 disabled:hover:bg-bg-input transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
               >
                 {isVoiceSaved ? "Saved to Custom Voices!" : "Save to Custom Voices"}
@@ -1586,7 +1582,7 @@ export default function Home() {
               <div className="mt-2">
                 <audio
                   controls
-                  src={stitchedAudioUrl || finalAudios[0].data}
+                  src={stitchedAudioUrl || finalAudios[0].url}
                   className="w-full"
                 />
               </div>
