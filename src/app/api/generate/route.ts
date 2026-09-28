@@ -111,7 +111,7 @@ export async function POST(req: Request) {
 
         // Inject instructions into the chunked generation cell
         if (src.includes('breeze_paragraph_chunked.wav') && src.includes('subprocess.run')) {
-          let inferArgs = `"python", "infer.py", "../breeze-tts-2"`;
+          let inferArgs = `"python", "infer.py", "/kaggle/input/genvoice-voice-generation/breeze-tts-2"`;
           if (referenceAudio) {
             inferArgs += `, "--ref-audio", "/kaggle/working/reference.wav", "--ref-text", reference_text`;
           }
