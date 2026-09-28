@@ -1483,16 +1483,14 @@ export default function Home() {
                   <div className="flex items-center gap-2 text-text-muted text-sm">
                     <Wand2 size={16} />
                     <span>
-                      {false 
-                        ? 'Provide a Voice Design Instruction and click Generate Voice Preview.' 
-                        : 'Select a voice and click Generate to begin.'}
+                      'Select a voice and click Generate to begin.'
                     </span>
                   </div>
                 )}
 
 
 
-                {status === "error" && !message.includes("Voice Design Instruction") && (
+                {status === "error" && (
                   <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
                     <strong className="font-semibold">Generation Failed: </strong>
                     {message}
@@ -1770,21 +1768,7 @@ export default function Home() {
                 <h2 className="font-medium text-[15px] tracking-tight">Settings</h2>
               </div>
               
-              {/* Generation Mode Toggle */}
-              <div className="flex bg-bg-input p-1 rounded-lg border border-border-color">
-                <button 
-                  onClick={() => { ; setGuidanceScale(2); }}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${true ? 'bg-bg-panel text-text-primary shadow-sm border border-border-color' : 'text-text-muted hover:text-text-secondary border border-transparent'}`}
-                >
-                  Voice Clone
-                </button>
-                <button 
-                  onClick={() => { ; setGuidanceScale(4); }}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${false ? 'bg-bg-panel text-text-primary shadow-sm border border-border-color' : 'text-text-muted hover:text-text-secondary border border-transparent'}`}
-                >
-                  Voice Design
-                </button>
-              </div>
+
             </div>
 
             {/* Voice Selection */}
@@ -1822,16 +1806,7 @@ export default function Home() {
               </div>
             )}
             
-            {false && (
-              <div className="flex flex-col gap-2.5">
-                <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">
-                  <Sparkles size={16} className="text-accent-bg shrink-0 mt-0.5" />
-                  <span>
-                    <strong>Voice Design</strong> creates an entirely new voice from scratch based purely on your <strong>Voice Design Instruction</strong> below. Describe the age, gender, accent, tone, and character.
-                  </span>
-                </div>
-              </div>
-            )}
+            
 
             {/* Divider */}
             <div className="h-px w-full bg-accent-bg/5" />
@@ -1847,12 +1822,12 @@ export default function Home() {
             {/* Instructions / Prompt */}
             <div className="flex flex-col gap-2.5">
               <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
-                {false ? 'Voice Design Instruction' : 'Performance Instructions'}
+                'Performance Instructions'
               </label>
               <textarea
-                value={false ? designPrompt : instructions}
-                onChange={(e) => false ? setDesignPrompt(e.target.value) : setInstructions(e.target.value)}
-                placeholder={false ? "e.g., A raspy old man with a British accent..." : "e.g., Say it whispering, very quiet and tense..."}
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                placeholder={"e.g., Say it whispering, very quiet and tense..."}
                 className="w-full h-24 p-3 bg-bg-input border border-border-color rounded-xl text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-ring-color transition-all"
               />
               <div className="flex justify-between items-center mt-2">
@@ -1867,7 +1842,7 @@ export default function Home() {
                 className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
               />
               <p className="text-[10px] text-text-muted mt-1 leading-relaxed">
-                Higher values strengthen guidance. Recommended: 4.0 for Voice Design, 1–3 for expressive cloning.
+                Higher values strengthen guidance. Recommended: 1–3 for expressive cloning.
               </p>
 
               {/* Generate & Save Buttons (Only in Design Mode) */}

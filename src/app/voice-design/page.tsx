@@ -1575,9 +1575,7 @@ export default function Home() {
                   <div className="flex items-center gap-2 text-text-muted text-sm">
                     <Wand2 size={16} />
                     <span>
-                      {true 
-                        ? 'Provide a Voice Design Instruction and click Generate Voice Preview.' 
-                        : 'Select a voice and click Generate to begin.'}
+                      'Provide a Voice Design Instruction and click Generate Voice Preview.'
                     </span>
                   </div>
                 )}
@@ -1862,21 +1860,7 @@ export default function Home() {
                 <h2 className="font-medium text-[15px] tracking-tight">Settings</h2>
               </div>
               
-              {/* Generation Mode Toggle */}
-              <div className="flex bg-bg-input p-1 rounded-lg border border-border-color">
-                <button 
-                  onClick={() => { setGenerationMode('clone'); setGuidanceScale(2); }}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${false ? 'bg-bg-panel text-text-primary shadow-sm border border-border-color' : 'text-text-muted hover:text-text-secondary border border-transparent'}`}
-                >
-                  Voice Clone
-                </button>
-                <button 
-                  onClick={() => { setGenerationMode('design'); setGuidanceScale(4); }}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${true ? 'bg-bg-panel text-text-primary shadow-sm border border-border-color' : 'text-text-muted hover:text-text-secondary border border-transparent'}`}
-                >
-                  Voice Design
-                </button>
-              </div>
+
             </div>
 
             {/* Voice Selection */}
@@ -1963,9 +1947,9 @@ export default function Home() {
               {optimizeDesignError && <p className="text-xs text-red-500">{optimizeDesignError}</p>}
 
               <textarea
-                value={true ? designPrompt : instructions}
-                onChange={(e) => true ? setDesignPrompt(e.target.value) : setInstructions(e.target.value)}
-                placeholder={true ? "e.g., A raspy old man with a British accent..." : "e.g., Say it whispering, very quiet and tense..."}
+                value={designPrompt}
+                onChange={(e) => setDesignPrompt(e.target.value)}
+                placeholder={"e.g., A raspy old man with a British accent..."}
                 className="w-full h-24 p-3 bg-bg-input border border-border-color rounded-xl text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-ring-color transition-all"
               />
               <div className="flex justify-between items-center mt-2">
