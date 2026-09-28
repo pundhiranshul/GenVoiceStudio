@@ -23,6 +23,12 @@ export async function POST(req: Request) {
     // Prepare Python script for SFX generation
     const pythonScript = `
 import os
+import sys
+import subprocess
+
+# Stable Audio Open requires torchsde for the DPM-Solver
+subprocess.check_call([sys.executable, "-m", "pip", "install", "torchsde", "-q"])
+
 import glob
 import torch
 import soundfile as sf
@@ -74,7 +80,7 @@ if __name__ == "__main__":
       kernelType: "script",
       isPrivate: true,
       enableGpu: true,
-      enableInternet: false,
+      enableInternet: true,
       datasetDataSources: ["daijizaiten/stable-audio-open-1-0"],
       competitionDataSources: [],
       kernelDataSources: [],
