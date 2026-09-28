@@ -303,7 +303,18 @@ export default function SFXStudio() {
         addLog('Complete! Building audio URL...');
         setStatus('downloading');
         // Build the edge-streaming URL – no bytes pass through Vercel
-        const audioStreamUrl = `/api/audio?username=${encodeURIComponent(kaggleUsername)}&slug=${encodeURIComponent(kernelRef.current.split('/')[1] || kernelRef.current)}&file=sfx_output.wav&key=${encodeURIComponent(kaggleKey)}&t=${Date.now()}`;
+        const signRes = await fetch('/api/sign-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: kaggleUsername,
+            slug: kernelRef.current.split('/')[1] || kernelRef.current,
+            file: 'sfx_output.wav',
+            key: kaggleKey
+          })
+        });
+        const { token } = await signRes.json();
+        const audioStreamUrl = `/api/audio?token=${token}&t=${Date.now()}`;
         setAudioUrl(audioStreamUrl);
         addLog('Audio ready.');
         setStatus('complete');

@@ -794,9 +794,18 @@ export default function Home() {
         addLog("Complete! Building audio URL…");
         const slugPart = kernel.split('/')[1] || kernel;
         if (isLong) {
-          const chunkAudios = currentChunks.map((_, i) => ({
-            name: `breeze_chunk_${i}.wav`,
-            url:  `/api/audio?username=${encodeURIComponent(kaggleUsername)}&slug=${encodeURIComponent(slugPart)}&file=${encodeURIComponent(`breeze_chunk_${i}.wav`)}&key=${encodeURIComponent(kaggleKey)}&t=${Date.now()}`,
+          const chunkAudios = await Promise.all(currentChunks.map(async (_, i) => {
+            const fileName = `breeze_chunk_${i}.wav`;
+            const signRes = await fetch('/api/sign-url', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: kaggleUsername, slug: slugPart, file: fileName, key: kaggleKey })
+            });
+            const { token } = await signRes.json();
+            return {
+              name: fileName,
+              url: `/api/audio?token=${token}&t=${Date.now()}`
+            };
           }));
           setStatus("complete"); setMessage("Generation complete!");
           setAudios(chunkAudios);
@@ -804,7 +813,13 @@ export default function Home() {
           setCellsDone(cellsTotal || 1);
           addLog(`${chunkAudios.length} audio files ready.`);
         } else {
-          const audioUrl = `/api/audio?username=${encodeURIComponent(kaggleUsername)}&slug=${encodeURIComponent(slugPart)}&file=breeze_paragraph_single.wav&key=${encodeURIComponent(kaggleKey)}&t=${Date.now()}`;
+          const signRes = await fetch('/api/sign-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: kaggleUsername, slug: slugPart, file: 'breeze_paragraph_single.wav', key: kaggleKey })
+          });
+          const { token } = await signRes.json();
+          const audioUrl = `/api/audio?token=${token}&t=${Date.now()}`;
           setStatus("complete"); setMessage("Generation complete!");
           setStitchedAudioUrl(audioUrl);
           setCellsDone(cellsTotal || 1);

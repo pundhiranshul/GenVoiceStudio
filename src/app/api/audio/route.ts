@@ -1,15 +1,32 @@
-// Node.js runtime: supports ReadableStream piping with no Vercel payload size limit
+import { decryptPayload } from '@/lib/crypto';
+
 export const runtime = 'nodejs';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const username = searchParams.get('username');
-  const slug     = searchParams.get('slug');
-  const file     = searchParams.get('file');
-  const key      = searchParams.get('key');
+  const token = searchParams.get('token');
+  
+  let username, slug, file, key;
+  
+  if (token) {
+    try {
+      const payload = decryptPayload(token);
+      username = payload.username;
+      slug = payload.slug;
+      file = payload.file;
+      key = payload.key;
+    } catch (e: any) {
+      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+    }
+  } else {
+    username = searchParams.get('username');
+    slug     = searchParams.get('slug');
+    file     = searchParams.get('file');
+    key      = searchParams.get('key');
+  }
 
   if (!username || !slug || !file || !key) {
-    return new Response(JSON.stringify({ error: 'Missing required params: username, slug, file, key' }), {
+    return new Response(JSON.stringify({ error: 'Missing required params' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
