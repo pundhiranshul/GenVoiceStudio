@@ -996,7 +996,7 @@ export default function Home() {
               <div className="flex items-center justify-between p-4 bg-bg-input rounded-xl border border-border-color">
                 <span className="font-medium text-sm text-text-primary">GPU Allocation (Quota & T4)</span>
                 {verifyStatus === 'pending' || verifyStatus === 'internet' ? (
-                   <span className="text-text-muted text-xs">Waiting...</span>
+                   <Loader2 size={16} className="animate-spin text-text-muted" />
                 ) : verifyStatus === 'gpu' ? (
                   <Loader2 size={16} className="animate-spin text-text-muted" />
                 ) : verifyStatus === 'success' ? (
