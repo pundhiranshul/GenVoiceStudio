@@ -22,6 +22,8 @@ export async function POST(req: Request) {
 
     // Prepare Python script for SFX generation
     const pythonScript = `
+import os
+import glob
 import torch
 import soundfile as sf
 from diffusers import StableAudioPipeline
@@ -29,7 +31,14 @@ import json
 
 PROMPT = json.loads('''${JSON.stringify(prompt || 'Cinematic explosion')}''')
 OUTPUT_PATH = "/kaggle/working/sfx_output.wav"
-DATASET_PATH = "/kaggle/input/stable-audio-open-1-0"
+
+def find_dataset_path(base_dir):
+    paths = glob.glob(f"{base_dir}/**/model_index.json", recursive=True)
+    if paths:
+        return os.path.dirname(paths[0])
+    return base_dir
+
+DATASET_PATH = find_dataset_path("/kaggle/input")
 
 def generate_sfx():
     print(f"Loading model offline from {DATASET_PATH}...")
