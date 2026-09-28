@@ -81,7 +81,7 @@ if __name__ == "__main__":
       isPrivate: true,
       enableGpu: true,
       enableInternet: true,
-      datasetDataSources: ["daijizaiten/stable-audio-open-1-0"],
+      datasetDataSources: ["daijizaiten/voicegen-sound-effect"],
       competitionDataSources: [],
       kernelDataSources: [],
       modelDataSources: [],
