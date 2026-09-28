@@ -1473,589 +1473,132 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ── Main Studio Split ─────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row flex-1 min-h-0 md:overflow-hidden">
-        
-        {/* Center Canvas */}
-        <main className="flex-1 flex flex-col min-w-0 bg-bg-base shrink-0 md:shrink md:overflow-y-auto">
-          <div className={`flex-1 flex flex-col w-full mx-auto p-6 md:p-10 relative min-h-0 ${isEditorOpen ? 'max-w-7xl' : 'max-w-5xl'}`}>
-            
-            <div className="relative flex-1 w-full min-h-0 flex flex-col">
-              {text.length === 0 && (
-                <div className="absolute top-0 left-0 text-text-muted pointer-events-none select-none text-2xl font-light tracking-tight">
-                  {welcomeMessage}
-                </div>
-              )}
-              
-              {text.length > 0 && (
-                <button
-                  onClick={copyText}
-                  className="absolute top-0 right-4 z-20 flex items-center justify-center p-2 rounded-lg bg-bg-panel border border-border-color shadow-sm text-text-muted hover:text-text-primary hover:bg-bg-hover transition-all"
-                  title="Copy text"
-                >
-                  {copiedText ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
-                </button>
-              )}
-              
-              <div className="flex-1 w-full min-h-0 md:overflow-y-auto pr-14">
-            {!isEditorOpen && (
-              status === "complete" && (finalAudios.length > 0 || chunkAudios.length > 0) ? (
-                <div className="w-full text-text-primary whitespace-pre-wrap break-words pb-12"
-                  style={{
-                    fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
-                    fontSize: '1.5rem',
-                    fontWeight: 300,
-                    lineHeight: 1.625,
-                    letterSpacing: 'normal',
-                    fontKerning: 'none',
-                    fontVariantLigatures: 'none',
-                  }}
-                >
-                  {renderHighlightedText(text)}
-                </div>
-              ) : (
-                <div className="relative w-full min-h-full pb-12">
-                  <div 
-                    aria-hidden="true"
-                    className="text-text-primary whitespace-pre-wrap break-words pointer-events-none p-0 m-0 border-0"
-                    style={{
-                      fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
-                      fontSize: '1.5rem',
-                      fontWeight: 300,
-                      lineHeight: 1.625,
-                      letterSpacing: 'normal',
-                      fontKerning: 'none',
-                      fontVariantLigatures: 'none',
-                    }}
-                  >
-                    {renderHighlightedText(text)}
-                    {text.endsWith('\n') ? <br /> : null}
-                  </div>
-                  
-                  <textarea
-                    ref={textAreaRef}
-                    value={text}
-                    onChange={e => setText(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    onDoubleClick={handleDoubleClick}
-                    placeholder=""
-                    className="custom-highlight absolute inset-0 z-10 w-full h-full bg-transparent text-transparent outline-none resize-none caret-text-primary p-0 m-0 border-0 overflow-hidden whitespace-pre-wrap break-words"
-                    style={{
-                      fontFamily: 'var(--font-inter), ui-sans-serif, system-ui, sans-serif',
-                      fontSize: '1.5rem',
-                      fontWeight: 300,
-                      lineHeight: 1.625,
-                      letterSpacing: 'normal',
-                      fontKerning: 'none',
-                      fontVariantLigatures: 'none',
-                      WebkitAppearance: 'none',
-                      MozAppearance: 'none',
-                      appearance: 'none',
-                    }}
-                    spellCheck={false}
-                  />
-                </div>
-              )
-            )}
+      {/* ── Main Voice Design Layout ─────────────────────────────── */}
+      <div className="flex flex-1 min-h-0 overflow-y-auto bg-bg-base">
+        <div className="w-full max-w-2xl mx-auto px-6 py-10 flex flex-col gap-8">
 
-              </div>
-            
-            {!isEditorOpen && text.length > 0 && (
-              <div className="absolute bottom-2 right-4 text-xs font-medium text-text-muted bg-bg-panel border border-border-color px-2 py-1 rounded-md shadow-sm pointer-events-none select-none z-20">
-                {text.split(/\s+/).filter(w => w.length > 0).length} words
-              </div>
-            )}
-            </div>
+          {/* Description Card */}
+          <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-2xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">
+            <Sparkles size={16} className="text-accent-bg shrink-0 mt-0.5" />
+            <span>
+              <strong>Voice Design</strong> creates an entirely new voice from scratch based purely on your <strong>Voice Design Instruction</strong> below. Describe the age, gender, accent, tone, and character.
+            </span>
+          </div>
 
-            {/* Editor Footer (Actions & Status) */}
-            <div className="mt-8 flex flex-col lg:flex-row items-stretch lg:items-end justify-between border-t border-border-color pt-6 gap-6 shrink-0">
-              
-              <div className="flex-1 w-full min-w-0 lg:pr-8">
-                {(status === "idle" || (status === "error" && message.includes("Voice Design Instruction"))) && finalAudios.length === 0 && (
-                  <div className="flex items-center gap-2 text-text-muted text-sm">
-                    <Wand2 size={16} />
-                    <span>
-                      'Provide a Voice Design Instruction and click Generate Voice Preview.'
-                    </span>
-                  </div>
-                )}
-
-
-
-                {status === "error" && !message.includes("Voice Design Instruction") && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
-                    <strong className="font-semibold">Generation Failed: </strong>
-                    {message}
-                  </div>
-                )}
-
-                {/* Final Output Audio */}
-                {(finalAudios.length > 0 || chunkAudios.length > 0) && (status === "complete" || status === "generating") && (
-                  <div className="animate-in slide-in-from-bottom-4 fade-in duration-500 w-full">
-                    <h3 className="text-xs font-semibold tracking-wider text-text-muted uppercase mb-3">Generated Output</h3>
-                    {true && generatedPreviewText && status === "complete" && (
-                      <div className="mb-4 p-3 bg-bg-input/50 border border-border-color rounded-xl text-sm italic text-text-secondary">
-                        "{generatedPreviewText}"
-                      </div>
-                    )}
-                    <div className="flex flex-col gap-3">
-                      {isStitching ? (
-                        <div className="p-4 bg-bg-input border border-border-color rounded-xl flex items-center gap-3 text-sm text-text-primary">
-                          <Loader2 size={16} className="animate-spin text-text-muted" />
-                          <span>Stitching audio chunks...</span>
-                        </div>
-                      ) : stitchedAudioUrl ? (
-                        <AudioPlayer src={stitchedAudioUrl} name="GenVoice_Final.wav" />
-                      ) : finalAudios.map((a, i) => (
-                        <AudioPlayer key={i} src={a.data} name={getDownloadFilename(a.name)} />
-                      ))}
-                    </div>
-
-                    {/* Raw Chunks Toggle */}
-                    {chunkAudios.length > 0 && !isEditorOpen && (
-                      <button 
-                        onClick={() => setIsEditorOpen(true)}
-                        className="mt-6 w-full flex items-center justify-between p-4 border border-border-subtle rounded-xl bg-bg-base/50 hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color group"
-                      >
-                        <span className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-                          <span className="w-1.5 h-1.5 rounded-full bg-accent-bg" />
-                          Chunk Editor ({chunkAudios.length})
-                        </span>
-                        <span className="text-text-muted text-xs bg-bg-input px-2 py-1 rounded-md group-hover:bg-bg-panel transition-colors">
-                          Edit Crossfade
-                        </span>
-                      </button>
-                    )}
-
-                    {/* The Chunk Editor View */}
-                    {chunkAudios.length > 0 && isEditorOpen && (
-                      <div className="mt-8 flex flex-col gap-4 animate-in fade-in duration-200">
-                        <div className="flex justify-between items-center mb-2 pb-4 border-b border-border-subtle sticky top-0 bg-bg-base z-20">
-                          <div className="flex items-center gap-4">
-                            <button 
-                              onClick={() => setIsEditorOpen(false)}
-                              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-input text-text-primary hover:bg-bg-hover transition-colors text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                            >
-                              <ArrowLeft size={16} /> Back
-                            </button>
-                            <h2 className="text-lg font-semibold text-text-primary">Chunk Editor</h2>
-                          </div>
-                          
-                          <button
-                            onClick={handleDownloadZip}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bg-panel border border-border-color text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
-                            title="Download all chunks as ZIP"
-                          >
-                            <Download size={14} />
-                            Download ZIP
-                          </button>
-                        </div>
-                        
-                        <div className="bg-bg-input/30 border border-border-subtle rounded-xl p-3 mb-2 flex items-start gap-3">
-                          <div className="w-5 h-5 rounded-full border border-border-color flex items-center justify-center text-[10px] font-bold text-text-muted shrink-0 mt-0.5">
-                            i
-                          </div>
-                          <div className="text-xs text-text-secondary leading-relaxed">
-                            <strong className="text-text-primary block mb-1">Crossfade vs Trim</strong>
-                            <strong>Crossfade</strong> smoothly blends the overlap between this chunk and the next. <strong>Trim</strong> performs a hard cut, removing the specified duration from the end of the chunk without blending. <strong>Negative values</strong> add silence (padding) between chunks instead of trimming. Changes apply instantly.
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col gap-3 max-h-[700px] overflow-y-auto pr-2 pb-2">
-                          {chunkAudios.map((a, i) => (
-                              <div key={i}>
-                                <AudioPlayer src={a.data} name={getDownloadFilename(a.name)} transcript={chunks[i]} />
-                                {i < chunkAudios.length - 1 && (
-                                  <div className="flex flex-col gap-3 bg-bg-input/20 p-4 rounded-xl border border-border-subtle ml-6 relative before:absolute before:left-[-12px] before:top-1/2 before:w-3 before:h-px before:bg-border-subtle">
-                                    <div className="flex flex-wrap justify-between items-center gap-3">
-                                      <div className="flex items-center gap-3">
-                                        <div className="flex items-center gap-1.5 p-1 bg-bg-panel border border-border-color rounded-lg">
-                                          <button
-                                            onClick={() => {
-                                              const modes = [...chunkTrimModes];
-                                              modes[i] = 'crossfade';
-                                              setChunkTrimModes(modes);
-                                            }}
-                                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                                              (chunkTrimModes[i] || 'crossfade') === 'crossfade' 
-                                                ? 'bg-accent-bg text-accent-text shadow-sm' 
-                                                : 'text-text-muted hover:text-text-primary hover:bg-bg-hover'
-                                            }`}
-                                          >
-                                            Crossfade
-                                          </button>
-                                          <button
-                                            onClick={() => {
-                                              const modes = [...chunkTrimModes];
-                                              modes[i] = 'trim';
-                                              setChunkTrimModes(modes);
-                                            }}
-                                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                                              chunkTrimModes[i] === 'trim' 
-                                                ? 'bg-accent-bg text-accent-text shadow-sm' 
-                                                : 'text-text-muted hover:text-text-primary hover:bg-bg-hover'
-                                            }`}
-                                          >
-                                            Trim
-                                          </button>
-                                        </div>
-                                      </div>
-
-                                      <div className="flex items-center gap-2">
-                                        <button
-                                          onClick={() => {
-                                            const currentTrim = chunkTrims[i] || 0;
-                                            const currentMode = chunkTrimModes[i] || 'crossfade';
-                                            setChunkTrims(Array(chunkAudios.length - 1).fill(currentTrim));
-                                            setChunkTrimModes(Array(chunkAudios.length - 1).fill(currentMode));
-                                          }}
-                                          className="text-[10px] bg-bg-panel border border-border-color hover:bg-bg-hover text-text-muted hover:text-text-primary px-2 py-1 rounded transition-colors whitespace-nowrap"
-                                          title="Apply this exact setting to all chunks"
-                                        >
-                                          Apply to All
-                                        </button>
-                                        <input
-                                          type="number"
-                                          min="-2000"
-                                          value={chunkTrims[i] || 0}
-                                          onChange={(e) => {
-                                            const newTrims = [...chunkTrims];
-                                            newTrims[i] = parseInt(e.target.value) || 0;
-                                            setChunkTrims(newTrims);
-                                          }}
-                                          className="w-16 bg-bg-base border border-border-subtle rounded-md px-2 py-1 text-right font-mono text-sm text-text-primary outline-none focus:border-accent-bg transition-colors shadow-sm"
-                                        />
-                                        <span className="text-xs text-text-muted font-medium">ms</span>
-                                      </div>
-                                    </div>
-                                    <input
-                                      type="range"
-                                      min="-2000"
-                                      max="2000"
-                                      step="10"
-                                      value={chunkTrims[i] || 0}
-                                      onChange={(e) => {
-                                        const newTrims = [...chunkTrims];
-                                        newTrims[i] = parseInt(e.target.value) || 0;
-                                        setChunkTrims(newTrims);
-                                      }}
-                                      className="w-full h-1.5 bg-border-color rounded-full appearance-none cursor-pointer accent-accent-bg"
-                                    />
-                                    <div className="flex justify-between text-[10px] font-medium text-text-muted/60 mt-0.5 px-1">
-                                      <span>-2s</span>
-                                      <span>-1s</span>
-                                      <span>0s</span>
-                                      <span>1s</span>
-                                      <span>2s</span>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {isGen && (
-                  <div className={`flex flex-col gap-2 ${(finalAudios.length > 0 || chunkAudios.length > 0) ? 'mt-4 pt-4 border-t border-border-subtle' : ''}`}>
-                    <div className="flex items-center gap-3 text-sm text-text-primary">
-                      <Loader2 size={16} className="animate-spin text-text-primary" />
-                      <span>{message}</span>
-                      {eta && <span className="text-text-muted tabular-nums">ETA: {eta}</span>}
-                    </div>
-                    {cellsTotal > 0 && (
-                      <div className="w-full max-w-md h-1.5 bg-accent-bg/10 rounded-full overflow-hidden mt-1 relative">
-                        <div 
-                          className="h-full bg-accent-bg" 
-                          style={{ 
-                            width: `${Math.min(100, ((cellsDone + 0.5) / cellsTotal) * 100)}%`,
-                            transitionProperty: 'width',
-                            transitionDuration: '5s',
-                            transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)'
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              {!isEditorOpen && (
-                <div className="flex items-center gap-3 ml-0 sm:ml-6 shrink-0 w-full sm:w-auto">
-
-                  {isGen ? (
-                    <button
-                      onClick={stopRun}
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-input text-text-primary hover:bg-bg-hover-strong border border-border-color font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                    >
-                      <Square size={16} className="fill-current text-text-secondary" />
-                      Stop
-                    </button>
-                  ) : (status === "complete" && (finalAudios.length > 0 || chunkAudios.length > 0)) ? (
-                    <>
-                      <button
-                        onClick={handleNewScript}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                      >
-                        New Script
-                      </button>
-                      <button
-                        onClick={() => { setAudios([]); setStitchedAudioUrl(null); setStatus("idle"); }}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                      >
-                        Edit Script
-                      </button>
-                      <button
-                        id="main-generate-btn"
-                        onClick={handleGenerate}
-                        disabled={isGen || isStoryGen || !text.trim()}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                      >
-                        Retry Generation
-                      </button>
-                    </>
-                  ) : (
-                      <>
-                        <button
-                          onClick={() => { setShowStoryModal(true); setStoryError(""); }}
-                          disabled={isGen || isStoryGen || isOptimizing}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                        >
-                          {isStoryGen ? <Loader2 size={16} className="animate-spin" /> : <><Sparkles size={16} /> AI Write Story</>}
-                        </button>
-                        <button
-                          onClick={() => { setShowOptimizeModal(true); setOptimizeError(""); }}
-                          disabled={isGen || isStoryGen || isOptimizing || !text.trim()}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isOptimizing ? <Loader2 size={16} className="animate-spin" /> : <><Wand2 size={16} /> Optimize Script</>}
-                        </button>
-                        <button
-                          id="main-generate-btn"
-                          onClick={handleGenerate}
-                          disabled={isGen || isStoryGen || !text.trim()}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                        >
-                          Generate Speech
-                        </button>
-                      </>
-                  )}
-                </div>
-              )}
+          {/* Model */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Model</label>
+            <div className="px-3 py-2.5 bg-bg-input border border-border-color rounded-xl text-sm text-text-primary">
+              Breeze-TTS 2
             </div>
           </div>
-        </main>
 
-        {/* Right Settings Sidebar */}
-        <aside className={`${isEditorOpen ? 'hidden' : 'flex'} w-full md:w-[320px] shrink-0 border-t md:border-t-0 md:border-l border-border-color bg-bg-panel flex-col md:overflow-y-auto relative`}>
-          <div className="p-6 flex flex-col gap-8">
-            
-            {/* Settings Header (Sticky) */}
-            <div className="flex flex-col gap-4 sticky top-0 bg-bg-panel z-20 pb-4 pt-6 -mt-6 -mx-6 px-6 border-b border-border-subtle shadow-sm">
-              <div className="flex items-center gap-2 text-text-primary">
-                <Settings2 size={18} />
-                <h2 className="font-medium text-[15px] tracking-tight">Settings</h2>
+          {/* Voice Design Instruction */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
+                Voice Design Instruction
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { setShowWriteDesignModal(true); setWriteDesignError(""); }}
+                  disabled={status !== "idle" && status !== "complete" && status !== "error"}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-primary bg-bg-input border border-border-color hover:bg-bg-hover transition-colors disabled:opacity-50"
+                >
+                  <Sparkles size={12} className="text-accent-bg" /> AI Write
+                </button>
+                <button
+                  onClick={handleOptimizeDesignPrompt}
+                  disabled={isOptimizingDesign || !designPrompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-text-primary bg-bg-input border border-border-color hover:bg-bg-hover transition-colors disabled:opacity-50"
+                >
+                  {isOptimizingDesign ? <Loader2 size={12} className="animate-spin text-accent-bg" /> : <Wand2 size={12} className="text-accent-bg" />}
+                  AI Optimize
+                </button>
               </div>
-              
-
             </div>
+            {optimizeDesignError && <p className="text-xs text-red-500">{optimizeDesignError}</p>}
+            <textarea
+              value={designPrompt}
+              onChange={(e) => setDesignPrompt(e.target.value)}
+              placeholder={"e.g., A raspy old man with a British accent..."}
+              className="w-full h-28 p-3 bg-bg-input border border-border-color rounded-xl text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-ring-color transition-all"
+            />
+          </div>
 
-            {/* Voice Selection */}
-            {false && (
-              <div className="flex flex-col gap-2.5">
-                <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Voice</label>
-                <VoiceSelector 
-                  voices={allVoices} 
-                  selectedId={selectedVoiceId} 
-                  onSelect={setSelectedVoiceId} 
-                  onUploadClick={() => { setShowUpload(true); setUploadError(""); }} 
-                  onDeleteVoice={handleDeleteVoice}
+          {/* Guidance Scale */}
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Guidance Scale</label>
+              <span className="text-[11px] font-mono text-text-muted">{guidanceScale}</span>
+            </div>
+            <input
+              type="range"
+              min="1" max="10" step="0.1"
+              value={guidanceScale}
+              onChange={(e) => setGuidanceScale(parseFloat(e.target.value))}
+              className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
+            />
+            <p className="text-[10px] text-text-muted leading-relaxed">
+              Higher values strengthen guidance. Recommended: 4.0 for Voice Design, 1–3 for expressive cloning.
+            </p>
+          </div>
+
+          {/* Error */}
+          {status === "error" && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
+              <strong className="font-semibold block mb-0.5">Generation Failed:</strong>
+              {message}
+            </div>
+          )}
+
+          {/* Generate & Save Buttons */}
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => {
+                const randomPangram = PANGRAMS[Math.floor(Math.random() * PANGRAMS.length)];
+                const textToGen = text.trim() || randomPangram;
+                setGeneratedPreviewText(textToGen);
+                handleGenerate(textToGen);
+              }}
+              disabled={isGen || !designPrompt.trim()}
+              className="w-full py-3 rounded-xl text-sm font-semibold bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
+            >
+              {isGen ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 size={16} className="animate-spin" /> Generating Preview...
+                </span>
+              ) : "Generate Voice Preview"}
+            </button>
+
+            {status === 'complete' && (stitchedAudioUrl || (finalAudios && finalAudios.length > 0)) && !isGen && (
+              <button
+                disabled={isVoiceSaved}
+                onClick={() => handleSaveVoice(stitchedAudioUrl || finalAudios[0].data)}
+                className="w-full py-3 rounded-xl text-sm font-medium bg-bg-input text-text-primary border border-border-color hover:bg-bg-hover disabled:opacity-50 disabled:hover:bg-bg-input transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
+              >
+                {isVoiceSaved ? "Saved to Custom Voices!" : "Save to Custom Voices"}
+              </button>
+            )}
+
+            {/* Audio Preview */}
+            {status === 'complete' && (stitchedAudioUrl || (finalAudios && finalAudios.length > 0)) && (
+              <div className="mt-2">
+                <audio
+                  controls
+                  src={stitchedAudioUrl || finalAudios[0].data}
+                  className="w-full"
                 />
-                <button
-                  onClick={handleRecommendVoices}
-                  disabled={isRecommending || !text.trim()}
-                  className="mt-1 flex items-center justify-center gap-2 w-full px-3 py-2 text-xs font-medium bg-bg-panel text-text-secondary border border-border-color rounded-lg hover:bg-bg-hover hover:text-text-primary transition-all disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                >
-                  {isRecommending ? <Loader2 size={14} className="animate-spin" /> : <><Mic size={14} /> AI Recommend Voice</>}
-                </button>
-                {recommendError && (
-                  <div className="flex flex-col gap-2 mt-1">
-                    <div className="text-red-500 text-xs px-1 break-words">{recommendError}</div>
-                    <div className="flex items-center gap-2 p-2 bg-red-500/5 border border-red-500/10 rounded-md">
-                      <label className="text-[10px] font-bold text-text-primary uppercase tracking-wider">Change Model:</label>
-                      <CustomModelSelect 
-                        value={aiModel} 
-                        onChange={val => { setAiModel(val); localStorage.setItem('aiModel', val); }}
-                        options={AVAILABLE_AI_MODELS}
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
             )}
-            
-            {true && (
-              <div className="flex flex-col gap-2.5">
-                <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">
-                  <Sparkles size={16} className="text-accent-bg shrink-0 mt-0.5" />
-                  <span>
-                    <strong>Voice Design</strong> creates an entirely new voice from scratch based purely on your <strong>Voice Design Instruction</strong> below. Describe the age, gender, accent, tone, and character.
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Divider */}
-            <div className="h-px w-full bg-accent-bg/5" />
-
-            {/* Model Info (Static for now) */}
-            <div className="flex flex-col gap-2.5">
-              <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Model</label>
-              <div className="px-3 py-2 bg-bg-input border border-border-color rounded-lg text-sm text-text-primary">
-                Breeze-TTS 2
-              </div>
-            </div>
-
-            {/* Instructions / Prompt */}
-            <div className="flex flex-col gap-2.5">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
-                  Voice Design Instruction
-                </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => { setShowWriteDesignModal(true); setWriteDesignError(""); }}
-                    disabled={status !== "idle" && status !== "complete" && status !== "error"}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium text-text-primary hover:bg-bg-hover transition-colors disabled:opacity-50"
-                  >
-                    <Sparkles size={12} className="text-accent-bg" /> AI Write
-                  </button>
-                  <button
-                    onClick={handleOptimizeDesignPrompt}
-                    disabled={isOptimizingDesign || !designPrompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium text-text-primary hover:bg-bg-hover transition-colors disabled:opacity-50"
-                  >
-                    {isOptimizingDesign ? <Loader2 size={12} className="animate-spin text-accent-bg" /> : <Wand2 size={12} className="text-accent-bg" />}
-                    AI Optimize
-                  </button>
-                </div>
-              </div>
-              {optimizeDesignError && <p className="text-xs text-red-500">{optimizeDesignError}</p>}
-
-              <textarea
-                value={designPrompt}
-                onChange={(e) => setDesignPrompt(e.target.value)}
-                placeholder={"e.g., A raspy old man with a British accent..."}
-                className="w-full h-24 p-3 bg-bg-input border border-border-color rounded-xl text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-ring-color transition-all"
-              />
-              <div className="flex justify-between items-center mt-2">
-                <label className="text-[11px] font-medium text-text-secondary">Guidance Scale</label>
-                <span className="text-[10px] font-mono text-text-muted">{guidanceScale}</span>
-              </div>
-              <input
-                type="range"
-                min="1" max="10" step="0.1"
-                value={guidanceScale}
-                onChange={(e) => setGuidanceScale(parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
-              />
-              <p className="text-[10px] text-text-muted mt-1 leading-relaxed">
-                Higher values strengthen guidance. Recommended: 4.0 for Voice Design, 1–3 for expressive cloning.
-              </p>
-
-              {/* Generate & Save Buttons (Only in Design Mode) */}
-              {true && (
-                <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border-subtle">
-                  {status === "error" && message.includes("Voice Design Instruction") && (
-                    <div className="p-2.5 mb-1 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-xs">
-                      <strong className="font-semibold block mb-0.5">Generation Failed:</strong>
-                      {message}
-                    </div>
-                  )}
-                  <button
-                    onClick={() => {
-                      const randomPangram = PANGRAMS[Math.floor(Math.random() * PANGRAMS.length)];
-                      const textToGen = text.trim() || randomPangram;
-                      setGeneratedPreviewText(textToGen);
-                      handleGenerate(textToGen);
-                    }}
-                    disabled={isGen || !designPrompt.trim()}
-                    className="w-full py-2.5 rounded-lg text-sm font-medium bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
-                  >
-                    Generate Voice Preview
-                  </button>
-                  {status === 'complete' && (stitchedAudioUrl || (finalAudios && finalAudios.length > 0)) && !isGen && (
-                    <button
-                      disabled={isVoiceSaved}
-                      onClick={() => handleSaveVoice(stitchedAudioUrl || finalAudios[0].data)}
-                      className="w-full py-2.5 rounded-lg text-sm font-medium bg-bg-input text-text-primary border border-border-color hover:bg-bg-hover disabled:opacity-50 disabled:hover:bg-bg-input transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
-                    >
-                      {isVoiceSaved ? "Saved to Custom Voices!" : "Save to Custom Voices"}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Tags / Directives Section (Only in Clone Mode) */}
-            {false && (
-              <>
-                <div className="h-px w-full bg-accent-bg/5" />
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Vocal Directives</label>
-                    <button
-                      onClick={copyAllTags}
-                      className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
-                      title="Copy all tags"
-                    >
-                      {copiedTags ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
-                      <span>{copiedTags ? "Copied" : "Copy All"}</span>
-                    </button>
-                  </div>
-                  
-                  <div className="text-xs text-text-secondary space-y-5 pr-2">
-                    <p className="text-text-muted">Click to insert at cursor:</p>
-                    {VOCAL_TAGS.map((cat, i) => (
-                      <div key={i} className="flex flex-col gap-2.5">
-                        <span className="text-[10px] uppercase tracking-wider font-semibold text-text-muted">{cat.category}</span>
-                        <div className="flex flex-wrap gap-2">
-                          {cat.tags.map(tag => (
-                            <button 
-                              key={tag}
-                              onMouseDown={(e) => e.preventDefault()} 
-                              onClick={() => insertTag(tag)} 
-                              className="bg-bg-input hover:bg-accent-bg/10 border border-border-subtle hover:border-border-color px-2.5 py-1 rounded-full text-text-primary transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring-color font-mono text-[12px]"
-                            >
-                              {tag}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                    
-                    <div className="mt-4 pt-4 border-t border-border-subtle">
-                      <p className="mb-3">Pacing is natively controlled by punctuation:</p>
-                      <div className="flex flex-wrap gap-2">
-                        <button onMouseDown={(e) => e.preventDefault()} onClick={() => insertTag(',')} className="bg-bg-input hover:bg-accent-bg/10 border border-border-subtle hover:border-border-color px-3 py-1 rounded-full text-text-primary transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring-color font-mono text-[12px]">Comma ,</button>
-                        <button onMouseDown={(e) => e.preventDefault()} onClick={() => insertTag('...')} className="bg-bg-input hover:bg-accent-bg/10 border border-border-subtle hover:border-border-color px-3 py-1 rounded-full text-text-primary transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring-color font-mono text-[12px]">Ellipses ...</button>
-                        <button onMouseDown={(e) => e.preventDefault()} onClick={() => insertTag('.')} className="bg-bg-input hover:bg-accent-bg/10 border border-border-subtle hover:border-border-color px-3 py-1 rounded-full text-text-primary transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring-color font-mono text-[12px]">Period .</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
           </div>
-        </aside>
 
+        </div>
       </div>
 
+
+
+      {/* ── Footer & Dev Logs ─────────────────────────────────────── */}
       {/* ── Footer & Dev Logs ─────────────────────────────────────── */}
       <footer className="h-8 flex items-center justify-between px-6 border-t border-border-color bg-bg-base shrink-0 relative z-20">
         <span className="text-[10px] text-text-muted">
