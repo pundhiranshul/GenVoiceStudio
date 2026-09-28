@@ -201,9 +201,7 @@ export default function SFXStudio() {
               <div className="flex-1 w-full">
                 <AudioPlayer
                   src={audioUrl}
-                  title="SFX Output"
-                  onPlay={() => {}}
-                  autoPlay={true}
+                  name="SFX_Output.wav"
                 />
               </div>
               <a
