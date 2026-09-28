@@ -33,16 +33,27 @@ export async function GET(req: Request) {
     const url = `https://api.kaggle.com/v1/kernels.KernelsApiService/GetKernelSessionStatus`;
 
     // Check the kernel's latest run status using Kaggle's api endpoint
-    const statusRes = await fetch(url, {
-      method: 'POST',
-      headers: { 
-        Authorization: authHeader,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ userName: ownerSlug, kernelSlug: kernelSlug })
-    });
+    let statusRes: Response;
+    try {
+      statusRes = await fetch(url, {
+        method: 'POST',
+        headers: { 
+          Authorization: authHeader,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userName: ownerSlug, kernelSlug: kernelSlug }),
+        signal: AbortSignal.timeout(8000)
+      });
+    } catch (err: any) {
+      console.warn(`[STATUS API] Kaggle fetch timeout or error: ${err.message}`);
+      return NextResponse.json({ status: 'running', rawStatus: 'transient_timeout' });
+    }
 
     if (!statusRes.ok) {
+      if (statusRes.status >= 500) {
+        console.warn(`[STATUS API] Kaggle transient 5xx error (${statusRes.status})`);
+        return NextResponse.json({ status: 'running', rawStatus: 'transient_5xx' });
+      }
       const body = await statusRes.text();
       return NextResponse.json(
         { error: `Kaggle status check failed (${statusRes.status})`, detail: body.substring(0, 300) },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Sparkles, Loader2, Download, Terminal, X, Key, Wand2, AudioLines, Shield, Info, Check, Sun, Moon } from "lucide-react";
+import { Sparkles, Loader2, Download, Terminal, X, Key, Wand2, AudioLines, Shield, Info, Check, Sun, Moon, Copy } from "lucide-react";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { CustomModelSelect, AVAILABLE_AI_MODELS } from "@/components/CustomModelSelect";
 type Status = "idle" | "pushing" | "generating" | "downloading" | "complete" | "error";
@@ -328,9 +328,14 @@ export default function SFXStudio() {
       }
     } catch (err: any) {
       if (!isStoppedRef.current) {
-        addLog(`ERROR: ${err.message}`);
-        setStatus('error');
-        setErrorMsg(err.message);
+        if (err.message?.includes('fetch') || err.message?.includes('timeout') || err.name === 'TypeError') {
+          addLog(`WARNING: Network error (${err.message}). Retrying...`);
+          setTimeout(pollStatus, 8000);
+        } else {
+          addLog(`ERROR: ${err.message}`);
+          setStatus('error');
+          setErrorMsg(err.message);
+        }
       }
     }
   };
@@ -775,6 +780,23 @@ export default function SFXStudio() {
               disabled={status !== "idle" && status !== "complete" && status !== "error"}
             />
             
+            <div className="flex items-center justify-end gap-3 mt-2 text-text-muted">
+              <span className="text-xs uppercase tracking-wider font-medium">{prompt.length} chars</span>
+              <button 
+                onClick={() => {
+                  if (prompt) {
+                    navigator.clipboard.writeText(prompt);
+                    addLog("Prompt copied to clipboard!");
+                  }
+                }}
+                disabled={!prompt}
+                className="p-1.5 hover:bg-bg-hover rounded-md transition-colors outline-none disabled:opacity-50"
+                title="Copy prompt"
+              >
+                <Copy size={14} />
+              </button>
+            </div>
+            
             <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-border-color/50">
               {optimizeError && <p className="text-xs text-red-500">{optimizeError}</p>}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -797,9 +819,6 @@ export default function SFXStudio() {
                     {isOptimizing ? <Loader2 size={16} className="animate-spin text-accent-bg" /> : <Wand2 size={16} className="text-accent-bg" />}
                     AI Optimize
                   </button>
-                  <div className="text-xs font-medium text-text-muted uppercase tracking-wider hidden sm:block">
-                    {prompt.length} chars
-                  </div>
                 </div>
                 
                 {/* Right Controls (Generate / Stop) */}

@@ -742,7 +742,12 @@ export default function Home() {
         pollTimeoutRef.current = setTimeout(() => pollStatus(kernel, isLong, currentChunks), 10000);
       }
     } catch (e: any) {
-      setStatus("error"); setMessage("Poll failed: " + e.message); addLog(`ERROR: ${e.message}`);
+      if (e.message?.includes('fetch') || e.message?.includes('timeout') || e.name === 'TypeError') {
+        addLog(`WARNING: Network error (${e.message}). Retrying...`);
+        pollTimeoutRef.current = setTimeout(() => pollStatus(kernel, isLong, currentChunks), 8000);
+      } else {
+        setStatus("error"); setMessage("Poll failed: " + e.message); addLog(`ERROR: ${e.message}`);
+      }
     }
   };
 
