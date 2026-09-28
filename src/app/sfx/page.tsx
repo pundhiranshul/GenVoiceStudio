@@ -723,7 +723,7 @@ export default function SFXStudio() {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] md:h-screen bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary animate-in fade-in duration-700">
+    <div className="flex flex-col h-[100dvh] md:h-screen bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary">
       
       {/* ── Top Header ────────────────────────────────────────────── */}
       <header className="h-16 px-6 flex items-center justify-end border-b border-border-color shrink-0 relative z-50">
