@@ -269,7 +269,7 @@ const CustomModelSelect = ({ value, onChange, options, className = "" }: { value
 
 // ── main ───────────────────────────────────────────────────────────
 export default function Home() {
-  const [isDark, setIsDark]         = useState(true);
+  const [isDark, setIsDark]         = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   const [hasCredentials, setHasCredentials] = useState(false);
   const [canCancelAuth, setCanCancelAuth] = useState(false);

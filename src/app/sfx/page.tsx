@@ -118,7 +118,7 @@ export default function SFXStudio() {
   const [writeError, setWriteError] = useState("");
 
   const kernelRef = useRef<string | null>(null);
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(false);
 
   const toggleTheme = () => {
     if (document.documentElement.classList.contains('dark')) {

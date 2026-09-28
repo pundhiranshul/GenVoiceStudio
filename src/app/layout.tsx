@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} h-full dark`}>
+    <html lang="en" className={`${inter.variable} h-full`}>
       <body className="min-h-full flex flex-col antialiased bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary">
         <SidebarLayout>
           {children}
