@@ -673,13 +673,13 @@ export default function Home() {
 
       setMessage("Generating...");
       addLog(`Kernel: ${kernel}`);
-      pollTimeoutRef.current = setTimeout(() => pollStatus(kernel), 3000);
+      pollTimeoutRef.current = setTimeout(() => pollStatus(kernel, isLong, sc || []), 3000);
     } catch (e: any) {
       setStatus("error"); setMessage(e.message); addLog(`ERROR: ${e.message}`);
     }
   };
 
-  const pollStatus = async (kernel: string) => {
+  const pollStatus = async (kernel: string, isLong: boolean, currentChunks: any[]) => {
     if (isStoppedRef.current) return;
     try {
       addLog("Polling status…");
@@ -698,9 +698,9 @@ export default function Home() {
         const slugPart = kernel.split('/')[1] || kernel;
         const user     = kaggleUsername;
         const k        = kaggleKey;
-        if (isLongMode) {
+        if (isLong) {
           // Chunked: build one URL per chunk file
-          const chunkAudios = chunks.map((_, i) => ({
+          const chunkAudios = currentChunks.map((_, i) => ({
             name: `breeze_chunk_${i}.wav`,
             url:  `/api/audio?username=${encodeURIComponent(user)}&slug=${encodeURIComponent(slugPart)}&file=${encodeURIComponent(`breeze_chunk_${i}.wav`)}&key=${encodeURIComponent(k)}`,
           }));
@@ -724,7 +724,7 @@ export default function Home() {
         const info = ` (${data.rawStatus || data.status || 'polling'})`;
         setMessage(`Generating${info}...`);
         addLog(`${(data.rawStatus || data.status || "unknown").toUpperCase()}`);
-        pollTimeoutRef.current = setTimeout(() => pollStatus(kernel), 10000);
+        pollTimeoutRef.current = setTimeout(() => pollStatus(kernel, isLong, currentChunks), 10000);
       }
     } catch (e: any) {
       setStatus("error"); setMessage("Poll failed: " + e.message); addLog(`ERROR: ${e.message}`);
@@ -733,7 +733,7 @@ export default function Home() {
 
   const isGen      = status === "generating";
   const finalAudios = audios.filter(a => getCategory(a.name) === "final");
-  const isAudioShown = (chunksTotal > 0 && chunksDone === chunksTotal) || (!isLongMode && finalAudios.some(a => a.name.includes('single.wav')));
+  const isAudioShown = (chunksTotal > 0 && chunksDone === chunksTotal) || (!isLongMode && !!stitchedAudioUrl) || (!isLongMode && finalAudios.some(a => a.name.includes('single.wav')));
 
   const handleNewScript = () => {
     setText("");
@@ -1451,7 +1451,7 @@ export default function Home() {
                 )}
 
                 {/* Final Output Audio */}
-                {(finalAudios.length > 0 || chunkAudios.length > 0) && (status === "complete" || status === "generating") && (
+                {(stitchedAudioUrl || finalAudios.length > 0 || chunkAudios.length > 0) && (status === "complete" || status === "generating") && (
                   <div className="animate-in slide-in-from-bottom-4 fade-in duration-500 w-full">
                     <h3 className="text-xs font-semibold tracking-wider text-text-muted uppercase mb-3">Generated Output</h3>
                     {false && generatedPreviewText && status === "complete" && (

@@ -770,13 +770,13 @@ export default function Home() {
       }
       setMessage("Generating...");
       addLog(`Kernel: ${kernel}`);
-      pollTimeoutRef.current = setTimeout(() => pollStatus(kernel), 3000);
+      pollTimeoutRef.current = setTimeout(() => pollStatus(kernel, isLong, sc || []), 3000);
     } catch (e: any) {
       setStatus("error"); setMessage(e.message); addLog(`ERROR: ${e.message}`);
     }
   };
 
-  const pollStatus = async (kernel: string) => {
+  const pollStatus = async (kernel: string, isLong: boolean, currentChunks: any[]) => {
     if (isStoppedRef.current) return;
     try {
       addLog("Polling status…");
@@ -793,14 +793,14 @@ export default function Home() {
       if (data.status === "done") {
         addLog("Complete! Building audio URL…");
         const slugPart = kernel.split('/')[1] || kernel;
-        if (isLongMode) {
-          const chunkAudios = chunks.map((_, i) => ({
+        if (isLong) {
+          const chunkAudios = currentChunks.map((_, i) => ({
             name: `breeze_chunk_${i}.wav`,
             url:  `/api/audio?username=${encodeURIComponent(kaggleUsername)}&slug=${encodeURIComponent(slugPart)}&file=${encodeURIComponent(`breeze_chunk_${i}.wav`)}&key=${encodeURIComponent(kaggleKey)}`,
           }));
           setStatus("complete"); setMessage("Generation complete!");
           setAudios(chunkAudios);
-          if (isLongMode) setChunksDone(chunksTotal);
+          if (isLong) setChunksDone(currentChunks.length);
           setCellsDone(cellsTotal || 1);
           addLog(`${chunkAudios.length} audio files ready.`);
         } else {
@@ -819,7 +819,7 @@ export default function Home() {
         const info = ` (${data.rawStatus || data.status || 'polling'})`;
         setMessage(`Generating${info}...`);
         addLog(`${(data.rawStatus || data.status || "unknown").toUpperCase()}`);
-        pollTimeoutRef.current = setTimeout(() => pollStatus(kernel), 10000);
+        pollTimeoutRef.current = setTimeout(() => pollStatus(kernel, isLong, currentChunks), 10000);
       }
     } catch (e: any) {
       setStatus("error"); setMessage("Poll failed: " + e.message); addLog(`ERROR: ${e.message}`);
@@ -828,7 +828,8 @@ export default function Home() {
 
   const isGen      = status === "generating";
   const finalAudios = audios.filter(a => getCategory(a.name) === "final");
-  const isAudioShown = (chunksTotal > 0 && chunksDone === chunksTotal) || (!isLongMode && finalAudios.some(a => a.name.includes('single.wav')));
+  const chunkAudios = audios.filter(a => getCategory(a.name) === "chunk" || a.name.includes("chunk"));
+  const isAudioShown = (chunksTotal > 0 && chunksDone === chunksTotal) || (!isLongMode && !!stitchedAudioUrl) || (!isLongMode && finalAudios.some(a => a.name.includes('single.wav')));
 
   const handleNewScript = () => {
     setText("");
@@ -1540,10 +1541,10 @@ export default function Home() {
               </div>
             </div>
 
-            {status === 'complete' && (stitchedAudioUrl || (finalAudios && finalAudios.length > 0)) && !isGen && (
+            {status === 'complete' && (stitchedAudioUrl || finalAudios.length > 0 || chunkAudios.length > 0) && !isGen && (
               <button
                 disabled={isVoiceSaved}
-                onClick={() => handleSaveVoice(stitchedAudioUrl || finalAudios[0].url)}
+                onClick={() => handleSaveVoice(stitchedAudioUrl || (finalAudios[0] && finalAudios[0].url) || (chunkAudios[0] && chunkAudios[0].url))}
                 className="w-full py-3 rounded-xl text-sm font-medium bg-bg-input text-text-primary border border-border-color hover:bg-bg-hover disabled:opacity-50 disabled:hover:bg-bg-input transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
               >
                 {isVoiceSaved ? "Saved to Custom Voices!" : "Save to Custom Voices"}
@@ -1551,13 +1552,22 @@ export default function Home() {
             )}
 
             {/* Audio Preview */}
-            {status === 'complete' && (stitchedAudioUrl || (finalAudios && finalAudios.length > 0)) && (
-              <div className="mt-2">
-                <audio
-                  controls
-                  src={stitchedAudioUrl || finalAudios[0].url}
-                  className="w-full"
-                />
+            {status === 'complete' && (stitchedAudioUrl || finalAudios.length > 0 || chunkAudios.length > 0) && (
+              <div className="mt-2 flex flex-col gap-2">
+                {stitchedAudioUrl ? (
+                  <audio controls src={stitchedAudioUrl} className="w-full" />
+                ) : finalAudios.length > 0 ? (
+                  finalAudios.map((a, i) => (
+                    <audio key={i} controls src={a.url} className="w-full" />
+                  ))
+                ) : (
+                  chunkAudios.map((a, i) => (
+                    <div key={i} className="flex flex-col gap-1">
+                      <span className="text-xs text-text-muted">Chunk {i + 1}</span>
+                      <audio controls src={a.url} className="w-full" />
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>
