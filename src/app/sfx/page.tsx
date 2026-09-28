@@ -241,8 +241,9 @@ export default function SFXStudio() {
       const res = await fetch(url.toString());
       const data = await res.json();
       
-      
-      
+      if (data.status) {
+        addLog(`Polling status: ${(data.status || "unknown").toUpperCase()}`);
+      }
       if (data.chunksTotal > 0) {
         setChunksCurrent(data.chunksCurrent);
         setChunksTotal(data.chunksTotal);

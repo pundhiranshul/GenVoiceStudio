@@ -313,8 +313,14 @@ export default function Home() {
   const [generatedPreviewText, setGeneratedPreviewText] = useState("");
   const [isVoiceSaved, setIsVoiceSaved] = useState(false);
   const [guidanceScale, setGuidanceScale] = useState(2);
+  const [isOptimizingDesign, setIsOptimizingDesign] = useState(false);
+  const [optimizeDesignError, setOptimizeDesignError] = useState("");
+  const [showWriteDesignModal, setShowWriteDesignModal] = useState(false);
+  const [writeDesignTopic, setWriteDesignTopic] = useState("");
+  const [isWritingDesign, setIsWritingDesign] = useState(false);
+  const [writeDesignError, setWriteDesignError] = useState("");
 
-  const generationMode = 'clone';
+  const [generationMode, setGenerationMode] = useState<'clone' | 'design'>('clone');
   const [customVoices, setCustomVoices] = useState<CustomVoice[]>([]);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string>("el_v3_15"); // Ellen as default
   const allVoices = [...PRESET_VOICES, ...customVoices];
@@ -408,7 +414,7 @@ export default function Home() {
       const file = new File([blob], "designed_voice.wav", { type: blob.type || "audio/wav" });
       setNewVoiceFile(file);
       setNewVoiceText(generatedPreviewText || text);
-      const activePrompt = false ? designPrompt : instructions;
+      const activePrompt = true ? designPrompt : instructions;
       setNewVoiceName(activePrompt ? activePrompt.substring(0, 30) + "..." : "New Custom Voice"); 
       setUploadError("");
       setShowUpload(true);
@@ -466,6 +472,92 @@ export default function Home() {
       setWelcomeMessage(messages[Math.floor(Math.random() * messages.length)]);
     }
   }, [kaggleUsername, hasCredentials]);
+
+  
+  const handleOptimizeDesignPrompt = async () => {
+    if (!designPrompt.trim()) return;
+    setIsOptimizingDesign(true);
+    setOptimizeDesignError("");
+    try {
+      const payload: any = {
+        text: designPrompt,
+        instruction: "Optimize this prompt for Voice Design. Enhance it by adding descriptive words about the age, gender, accent, tone, and character. Keep it under 2 sentences.",
+        aiModel: typeof AVAILABLE_AI_MODELS !== 'undefined' ? AVAILABLE_AI_MODELS[0] : 'openai/gpt-4o'
+      };
+      const pass = localStorage.getItem('appPassword');
+      if (pass) {
+        payload.password = pass;
+      } else {
+        payload.username = kaggleUsername;
+        payload.key = kaggleKey;
+      }
+      const mKey = localStorage.getItem('modelProxyKey');
+      const mExp = localStorage.getItem('modelProxyExpiresAt');
+      if (mKey && mExp) {
+        payload.modelProxyKey = mKey;
+        payload.modelProxyExpiresAt = mExp;
+      }
+      const res = await fetch('/api/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to optimize prompt");
+      if (data.modelProxyKey && data.modelProxyExpiresAt) {
+        localStorage.setItem('modelProxyKey', data.modelProxyKey);
+        localStorage.setItem('modelProxyExpiresAt', data.modelProxyExpiresAt);
+      }
+      setDesignPrompt(data.optimizedText);
+    } catch (err: any) {
+      setOptimizeDesignError(err.message);
+    } finally {
+      setIsOptimizingDesign(false);
+    }
+  };
+
+  const handleWriteDesignPrompt = async () => {
+    if (!writeDesignTopic.trim()) return;
+    setIsWritingDesign(true);
+    setWriteDesignError("");
+    try {
+      const payload: any = {
+        text: writeDesignTopic,
+        instruction: "You are an expert voice actor casting director. Write a highly detailed Voice Design instruction prompt based on the user's premise. Describe the age, gender, accent, tone, and character. Just output the prompt itself, nothing else. Keep it under 2 sentences.",
+        aiModel: typeof AVAILABLE_AI_MODELS !== 'undefined' ? AVAILABLE_AI_MODELS[0] : 'openai/gpt-4o'
+      };
+      const pass = localStorage.getItem('appPassword');
+      if (pass) {
+        payload.password = pass;
+      } else {
+        payload.username = kaggleUsername;
+        payload.key = kaggleKey;
+      }
+      const mKey = localStorage.getItem('modelProxyKey');
+      const mExp = localStorage.getItem('modelProxyExpiresAt');
+      if (mKey && mExp) {
+        payload.modelProxyKey = mKey;
+        payload.modelProxyExpiresAt = mExp;
+      }
+      const res = await fetch('/api/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to write prompt");
+      if (data.modelProxyKey && data.modelProxyExpiresAt) {
+        localStorage.setItem('modelProxyKey', data.modelProxyKey);
+        localStorage.setItem('modelProxyExpiresAt', data.modelProxyExpiresAt);
+      }
+      setDesignPrompt(data.optimizedText);
+      setShowWriteDesignModal(false);
+    } catch (err: any) {
+      setWriteDesignError(err.message);
+    } finally {
+      setIsWritingDesign(false);
+    }
+  };
 
   const toggleTheme = () => {
     if (document.documentElement.classList.contains('dark')) {
@@ -649,8 +741,8 @@ export default function Home() {
       setMessage("Please enter either your App Password or your Kaggle Credentials, and text to synthesize.");
       return;
     }
-    const activeInstructions = false ? designPrompt : instructions;
-    if (false && (!activeInstructions || activeInstructions.trim() === "")) {
+    const activeInstructions = true ? designPrompt : instructions;
+    if (true && (!activeInstructions || activeInstructions.trim() === "")) {
       setStatus("error");
       setMessage("Please provide a Voice Design Instruction to design the voice.");
       return;
@@ -666,13 +758,13 @@ export default function Home() {
       let referenceAudio = "";
       let referenceText = "";
       
-      if (true) {
+      if (false) {
         const v = allVoices.find(x => x.id === selectedVoiceId);
         if (v) {
           // @ts-ignore
-          if (v.data.startsWith("/")) {
+          if (v?.data?.startsWith("/")) {
             // @ts-ignore
-            const r = await fetch(v.data);
+            const r = await fetch(v?.data);
             const blob = await r.blob();
             const reader = new FileReader();
             referenceAudio = await new Promise<string>((resolve) => {
@@ -681,10 +773,10 @@ export default function Home() {
             });
           } else {
             // @ts-ignore
-            referenceAudio = v.data;
+            referenceAudio = v?.data;
           }
           // @ts-ignore
-          referenceText = v.transcript;
+          referenceText = v?.transcript;
         }
       }
 
@@ -1483,7 +1575,7 @@ export default function Home() {
                   <div className="flex items-center gap-2 text-text-muted text-sm">
                     <Wand2 size={16} />
                     <span>
-                      {false 
+                      {true 
                         ? 'Provide a Voice Design Instruction and click Generate Voice Preview.' 
                         : 'Select a voice and click Generate to begin.'}
                     </span>
@@ -1503,7 +1595,7 @@ export default function Home() {
                 {(finalAudios.length > 0 || chunkAudios.length > 0) && (status === "complete" || status === "generating") && (
                   <div className="animate-in slide-in-from-bottom-4 fade-in duration-500 w-full">
                     <h3 className="text-xs font-semibold tracking-wider text-text-muted uppercase mb-3">Generated Output</h3>
-                    {false && generatedPreviewText && status === "complete" && (
+                    {true && generatedPreviewText && status === "complete" && (
                       <div className="mb-4 p-3 bg-bg-input/50 border border-border-color rounded-xl text-sm italic text-text-secondary">
                         "{generatedPreviewText}"
                       </div>
@@ -1773,14 +1865,14 @@ export default function Home() {
               {/* Generation Mode Toggle */}
               <div className="flex bg-bg-input p-1 rounded-lg border border-border-color">
                 <button 
-                  onClick={() => { ; setGuidanceScale(2); }}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${true ? 'bg-bg-panel text-text-primary shadow-sm border border-border-color' : 'text-text-muted hover:text-text-secondary border border-transparent'}`}
+                  onClick={() => { setGenerationMode('clone'); setGuidanceScale(2); }}
+                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${false ? 'bg-bg-panel text-text-primary shadow-sm border border-border-color' : 'text-text-muted hover:text-text-secondary border border-transparent'}`}
                 >
                   Voice Clone
                 </button>
                 <button 
-                  onClick={() => { ; setGuidanceScale(4); }}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${false ? 'bg-bg-panel text-text-primary shadow-sm border border-border-color' : 'text-text-muted hover:text-text-secondary border border-transparent'}`}
+                  onClick={() => { setGenerationMode('design'); setGuidanceScale(4); }}
+                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${true ? 'bg-bg-panel text-text-primary shadow-sm border border-border-color' : 'text-text-muted hover:text-text-secondary border border-transparent'}`}
                 >
                   Voice Design
                 </button>
@@ -1788,7 +1880,7 @@ export default function Home() {
             </div>
 
             {/* Voice Selection */}
-            {true && (
+            {false && (
               <div className="flex flex-col gap-2.5">
                 <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Voice</label>
                 <VoiceSelector 
@@ -1822,7 +1914,7 @@ export default function Home() {
               </div>
             )}
             
-            {false && (
+            {true && (
               <div className="flex flex-col gap-2.5">
                 <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">
                   <Sparkles size={16} className="text-accent-bg shrink-0 mt-0.5" />
@@ -1846,13 +1938,34 @@ export default function Home() {
 
             {/* Instructions / Prompt */}
             <div className="flex flex-col gap-2.5">
-              <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
-                {false ? 'Voice Design Instruction' : 'Performance Instructions'}
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
+                  Voice Design Instruction
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { setShowWriteDesignModal(true); setWriteDesignError(""); }}
+                    disabled={status !== "idle" && status !== "complete" && status !== "error"}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium text-text-primary hover:bg-bg-hover transition-colors disabled:opacity-50"
+                  >
+                    <Sparkles size={12} className="text-accent-bg" /> AI Write
+                  </button>
+                  <button
+                    onClick={handleOptimizeDesignPrompt}
+                    disabled={isOptimizingDesign || !designPrompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium text-text-primary hover:bg-bg-hover transition-colors disabled:opacity-50"
+                  >
+                    {isOptimizingDesign ? <Loader2 size={12} className="animate-spin text-accent-bg" /> : <Wand2 size={12} className="text-accent-bg" />}
+                    AI Optimize
+                  </button>
+                </div>
+              </div>
+              {optimizeDesignError && <p className="text-xs text-red-500">{optimizeDesignError}</p>}
+
               <textarea
-                value={false ? designPrompt : instructions}
-                onChange={(e) => false ? setDesignPrompt(e.target.value) : setInstructions(e.target.value)}
-                placeholder={false ? "e.g., A raspy old man with a British accent..." : "e.g., Say it whispering, very quiet and tense..."}
+                value={true ? designPrompt : instructions}
+                onChange={(e) => true ? setDesignPrompt(e.target.value) : setInstructions(e.target.value)}
+                placeholder={true ? "e.g., A raspy old man with a British accent..." : "e.g., Say it whispering, very quiet and tense..."}
                 className="w-full h-24 p-3 bg-bg-input border border-border-color rounded-xl text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-ring-color transition-all"
               />
               <div className="flex justify-between items-center mt-2">
@@ -1871,7 +1984,7 @@ export default function Home() {
               </p>
 
               {/* Generate & Save Buttons (Only in Design Mode) */}
-              {false && (
+              {true && (
                 <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border-subtle">
                   {status === "error" && message.includes("Voice Design Instruction") && (
                     <div className="p-2.5 mb-1 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-xs">
@@ -1905,7 +2018,7 @@ export default function Home() {
             </div>
 
             {/* Tags / Directives Section (Only in Clone Mode) */}
-            {true && (
+            {false && (
               <>
                 <div className="h-px w-full bg-accent-bg/5" />
                 <div className="flex flex-col gap-4">
@@ -2347,6 +2460,68 @@ export default function Home() {
         </div>
       )}
 
+
+      {/* AI Write Prompt Modal */}
+      {showWriteDesignModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-bg-panel w-full max-w-lg rounded-2xl shadow-xl border border-border-subtle flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-border-subtle">
+              <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+                <Sparkles size={20} className="text-accent-bg" /> AI Write Prompt
+              </h2>
+              <p className="text-sm text-text-muted mt-1">
+                Vaguely describe your character and the AI will augment it into a highly detailed Voice Design prompt.
+              </p>
+            </div>
+            
+            <div className="p-6 flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-text-primary">Topic / Premise</label>
+                <textarea
+                  value={writeDesignTopic}
+                  onChange={e => setWriteDesignTopic(e.target.value)}
+                  placeholder="e.g. A grumpy old wizard..."
+                  className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3 text-sm text-text-primary outline-none focus:border-text-muted resize-none transition-colors"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            {writeDesignError && (
+              <div className="px-6 pb-4">
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm flex items-start gap-2">
+                  <div className="break-words w-full flex flex-col gap-2">
+                    <span>{writeDesignError}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="p-4 border-t border-border-subtle bg-bg-base flex gap-3">
+              <button
+                onClick={() => setShowWriteDesignModal(false)}
+                disabled={isWritingDesign}
+                className="flex-1 px-4 py-2.5 bg-bg-input text-text-primary text-sm font-medium rounded-xl text-center transition-colors hover:bg-bg-hover disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleWriteDesignPrompt}
+                disabled={!writeDesignTopic.trim() || isWritingDesign}
+                className="flex-1 px-4 py-2.5 bg-accent-bg text-accent-text text-sm font-medium rounded-xl text-center transition-colors hover:bg-accent-bg/90 disabled:opacity-50 flex justify-center items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              >
+                {isWritingDesign ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Writing...
+                  </>
+                ) : "Generate Prompt"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+  
     </div>
   );
 }

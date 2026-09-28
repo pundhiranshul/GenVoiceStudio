@@ -4,7 +4,7 @@ import { AboutModal } from "@/components/AboutModal";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Mic, AudioLines, Bug, Info, ChevronLeft, ChevronRight, Menu, X, User } from "lucide-react";
+import { Mic, AudioLines, Bug, Info, ChevronLeft, ChevronRight, Menu, X, User, Wand2 } from "lucide-react";
 
 const GenVoiceLogo = ({ size = 24, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className={className}>
@@ -53,13 +53,27 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [username]);
 
+    useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (typeof window !== "undefined" && (window as any).isGenerating) {
+        e.preventDefault();
+        e.returnValue = ''; // Required for Chrome to show confirmation dialog
+        return '';
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
   const navItems = [
     { name: "Generate Voice", href: "/", icon: Mic },
+    { name: "Voice Design", href: "/voice-design", icon: Wand2 },
     { name: "Sound Effects", href: "/sfx", icon: AudioLines }
   ];
 
   const bottomItems = [
-    { name: "System Architecture", href: "#", icon: Info, onClick: () => window.dispatchEvent(new Event('open-architecture')) },
+    { name: "System Architecture", href: "#", icon: Info, onClick: (e: any) => { e.preventDefault(); window.dispatchEvent(new Event('open-architecture')); } },
     { name: "Report Bug", href: "https://github.com/pundhiranshul/GenVoiceStudio/issues/new", icon: Bug, external: true }
   ];
 
@@ -84,6 +98,11 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         {/* Logo Area */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-border-color shrink-0">
           <Link href="/" className="flex items-center gap-3 overflow-hidden" onClick={(e) => {
+            if (pathname === "/") {
+              e.preventDefault();
+              setIsMobileOpen(false);
+              return;
+            }
             if (typeof window !== "undefined" && (window as any).isGenerating) {
               if (!confirm("You have an active generation running. Are you sure you want to navigate away? Progress will be lost.")) {
                 e.preventDefault();
@@ -114,6 +133,11 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 onClick={(e) => {
+                  if (isActive) {
+                    e.preventDefault();
+                    setIsMobileOpen(false);
+                    return;
+                  }
                   if (typeof window !== "undefined" && (window as any).isGenerating) {
                     if (!confirm("You have an active generation running. Are you sure you want to navigate away? Progress will be lost.")) {
                       e.preventDefault();

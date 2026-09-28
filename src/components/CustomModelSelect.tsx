@@ -4,17 +4,34 @@ import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 
 export const AVAILABLE_AI_MODELS = [
-  "google/gemini-3.7-flash",
-  "google/gemini-3.7-pro",
-  "google/gemini-2.5-flash",
-  "google/gemini-2.5-pro",
-  "meta-llama/llama-3-70b-instruct",
-  "meta-llama/llama-3-8b-instruct",
-  "anthropic/claude-3.5-sonnet",
-  "anthropic/claude-3-haiku",
-  "mistralai/mixtral-8x7b-instruct",
-  "openai/gpt-4o",
-  "openai/gpt-4o-mini"
+  // Low Cost / Fast
+  'openai/gpt-5.4-nano-2026-03-17',
+  'google/gemini-3.1-flash-lite-preview',
+  'google/gemini-3.5-flash-lite',
+  'openai/gpt-5.4-mini-2026-03-17',
+
+  // Medium Cost / Balanced
+  'google/gemini-3-flash-preview',
+  'google/gemini-3.5-flash',
+  'google/gemini-3.6-flash',
+  'google/gemini-3.7-flash',
+  'google/gemini-3.8-flash',
+  'qwen/qwen3-next-80b-a3b-instruct',
+  'openai/gpt-oss-120b',
+
+  // Higher Cost / Powerful
+  'openai/gpt-5.4-2026-03-05',
+  'openai/gpt-5.5-2026-04-23',
+  'qwen/qwen3-235b-a22b-instruct-2507',
+  'openai/gpt-5.6-luna',
+  'qwen/qwen3-coder-480b-a35b-instruct',
+
+  // Highest Cost / Reasoning & Pro
+  'openai/gpt-5.6-terra',
+  'google/gemini-3.1-pro-preview',
+  'anthropic/claude-sonnet-5@default',
+  'openai/gpt-6-astra',
+  'deepseek-ai/deepseek-r1-0528'
 ];
 
 export const CustomModelSelect = ({ 
