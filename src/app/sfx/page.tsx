@@ -326,15 +326,12 @@ export default function SFXStudio() {
       <main className="flex-1 flex flex-col min-w-0 md:overflow-y-auto">
         <div className="w-full max-w-4xl mx-auto p-6 md:p-10 space-y-8">
           
-          {/* Header */}
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight mb-2 flex items-center gap-3">
-              <AudioLines className="text-accent-bg" size={28} />
-              Sound Effects Generation
-            </h1>
-            <p className="text-text-secondary leading-relaxed">
-              Generate high-quality cinematic sound effects using Stable Audio Open 1.0, powered by zero-cost Kaggle GPUs.
-            </p>
+          {/* Description Card */}
+          <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-2xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">
+            <AudioLines size={16} className="text-accent-bg shrink-0 mt-0.5" />
+            <span>
+              <strong>Sound Effects Generation</strong> creates high-quality cinematic sound effects using Stable Audio Open 1.0, powered by zero-cost Kaggle GPUs. Describe an acoustic environment, tone, or texture.
+            </span>
           </div>
 
           {/* Auth Section */}

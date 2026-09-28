@@ -309,7 +309,8 @@ export default function Home() {
   const [isStitching, setIsStitching] = useState(false);
 
   const [instructions, setInstructions] = useState("");
-  const [designPrompt, setDesignPrompt] = useState("");
+  const [designPrompt, setDesignPrompt] = useState(() => typeof window !== "undefined" ? sessionStorage.getItem("voice_design_prompt") || "" : "");
+  useEffect(() => { sessionStorage.setItem("voice_design_prompt", designPrompt); }, [designPrompt]);
   const [generatedPreviewText, setGeneratedPreviewText] = useState("");
   const [isVoiceSaved, setIsVoiceSaved] = useState(false);
   const [guidanceScale, setGuidanceScale] = useState(2);
