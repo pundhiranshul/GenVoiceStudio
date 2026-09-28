@@ -37,63 +37,14 @@
     },
     {
       "cell_type": "markdown",
-      "source": "## 1. Clone the repo and install dependencies",
+      "source": "## 1. Load Dataset into Working Directory",
       "metadata": {}
     },
     {
       "cell_type": "code",
-      "source": "!git clone https://github.com/breezeblue-ai/breeze-tts.git /kaggle/working/breeze-tts\n%cd /kaggle/working/breeze-tts\n!python -m pip install -r requirements.txt -q\nprint(\"Install complete.\")\n",
+      "source": "import shutil, sys\\nshutil.copytree(\"/kaggle/input/genvoice-voice-generation/breeze-tts\", \"/kaggle/working/breeze-tts\")\\nsys.path.append(\"/kaggle/working/breeze-tts\")\\nprint(\"Codebase mounted.\")\\n",
       "metadata": {
-        "trusted": true,
-        "execution": {
-          "iopub.status.busy": "2026-09-24T02:10:54.599977Z",
-          "iopub.execute_input": "2026-09-24T02:10:54.600451Z",
-          "iopub.status.idle": "2026-09-24T02:12:36.632453Z",
-          "shell.execute_reply.started": "2026-09-24T02:10:54.600420Z",
-          "shell.execute_reply": "2026-09-24T02:12:36.631577Z"
-        }
-      },
-      "outputs": [],
-      "execution_count": null
-    },
-    {
-      "cell_type": "markdown",
-      "source": "## 2. Remove torchvision\n\n`transformers` pulls in `torchvision` transitively, and its build doesn't match the `torch` version this repo installs — that mismatch crashes the import (`torchvision::nms does not exist`). Breeze never actually uses `torchvision`, so removing it avoids the crash entirely. Since generation runs `infer.py` in its own subprocess, this doesn't need a kernel restart — just do it before the first generation call below.\n",
-      "metadata": {}
-    },
-    {
-      "cell_type": "code",
-      "source": "!pip uninstall -y torchvision torchtext -q\nprint(\"torchvision removed.\")\n",
-      "metadata": {
-        "trusted": true,
-        "execution": {
-          "iopub.status.busy": "2026-09-24T02:12:53.110477Z",
-          "iopub.execute_input": "2026-09-24T02:12:53.111377Z",
-          "iopub.status.idle": "2026-09-24T02:12:54.929485Z",
-          "shell.execute_reply.started": "2026-09-24T02:12:53.111338Z",
-          "shell.execute_reply": "2026-09-24T02:12:54.928531Z"
-        }
-      },
-      "outputs": [],
-      "execution_count": null
-    },
-    {
-      "cell_type": "markdown",
-      "source": "## 3. Download the Breeze TTS 2 checkpoint",
-      "metadata": {}
-    },
-    {
-      "cell_type": "code",
-      "source": "!pip install huggingface_hub -q\nfrom huggingface_hub import snapshot_download\n\nsnapshot_download(\n    repo_id=\"BreezeBlue/Breeze-TTS-2\",\n    local_dir=\"/kaggle/working/breeze-tts-2\"\n)\nprint(\"Checkpoint downloaded.\")\n",
-      "metadata": {
-        "trusted": true,
-        "execution": {
-          "iopub.status.busy": "2026-09-24T02:13:14.792100Z",
-          "iopub.execute_input": "2026-09-24T02:13:14.793040Z",
-          "iopub.status.idle": "2026-09-24T02:13:43.972876Z",
-          "shell.execute_reply.started": "2026-09-24T02:13:14.793000Z",
-          "shell.execute_reply": "2026-09-24T02:13:43.972159Z"
-        }
+        "trusted": true
       },
       "outputs": [],
       "execution_count": null

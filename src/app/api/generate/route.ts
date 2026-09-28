@@ -121,7 +121,7 @@ export async function POST(req: Request) {
           }
 
           cell.source = [
-            `import re, torch, subprocess\n`,
+            `import re, torch, subprocess, os, concurrent.futures\n`,
             `raw_sentences = [s.strip() for s in re.split(r'(?<=[.!?])\\s+|\\n+', paragraph.strip()) if s.strip()]\n`,
             `sentences = []\n`,
             `current_chunk = ""\n`,
@@ -133,13 +133,19 @@ export async function POST(req: Request) {
             `        current_chunk = s\n`,
             `if current_chunk: sentences.append(current_chunk)\n\n`,
             `print(f"{len(sentences)} chunks:")\n`,
-            `for i, sentence in enumerate(sentences):\n`,
+            `def generate_chunk(i, sentence):\n`,
+            `    gpu_id = i % 2\n`,
+            `    env = os.environ.copy()\n`,
+            `    env["CUDA_VISIBLE_DEVICES"] = str(gpu_id)\n`,
             `    out_path = f"/kaggle/working/breeze_chunk_{i}.wav"\n`,
-            `    print(f"Generating {i+1}/{len(sentences)}...")\n`,
-            `    result = subprocess.run([${inferArgs}], capture_output=True, text=True, cwd="/kaggle/working/breeze-tts")\n`,
+            `    print(f"Generating {i+1}/{len(sentences)} on GPU {gpu_id}...")\n`,
+            `    result = subprocess.run([${inferArgs}], capture_output=True, text=True, cwd="/kaggle/working/breeze-tts", env=env)\n`,
             `    if result.returncode != 0:\n`,
-            `        print("ERROR:", result.stderr[-1000:])\n`,
-            `        break\n`,
+            `        print(f"ERROR on chunk {i}:", result.stderr[-1000:])\n`,
+            `\n`,
+            `with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:\n`,
+            `    futures = [executor.submit(generate_chunk, i, s) for i, s in enumerate(sentences)]\n`,
+            `    concurrent.futures.wait(futures)\n`,
           ];
         }
       }
