@@ -23,11 +23,19 @@ export async function GET(req: Request) {
 
     const authHeader = 'Basic ' + Buffer.from(`${username}:${key}`).toString('base64');
 
-    // Check the kernel's latest run status
-    const statusRes = await fetch(
-      `https://www.kaggle.com/api/v1/kernels/${encodeURIComponent(kernel)}`,
-      { headers: { Authorization: authHeader } }
-    );
+    // Split username/slug and encode separately
+    const [ownerSlug, kernelSlug] = kernel.split('/');
+    const url = `https://api.kaggle.com/v1/kernels.KernelsApiService/GetKernelSessionStatus`;
+
+    // Check the kernel's latest run status using Kaggle's api endpoint
+    const statusRes = await fetch(url, {
+      method: 'POST',
+      headers: { 
+        Authorization: authHeader,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ userName: ownerSlug, kernelSlug: kernelSlug })
+    });
 
     if (!statusRes.ok) {
       const body = await statusRes.text();
@@ -38,12 +46,8 @@ export async function GET(req: Request) {
     }
 
     const kernelData = await statusRes.json();
-    // Kaggle returns currentRunningVersion.status or lastRunningVersion.status
-    const rawStatus: string =
-      kernelData?.currentRunningVersion?.status ||
-      kernelData?.lastRunningVersion?.status ||
-      kernelData?.status ||
-      'queued';
+    // Kaggle returns { "status": "COMPLETE", "failureMessage": ... }
+    const rawStatus: string = kernelData?.status || 'queued';
 
     const status = mapKaggleStatus(rawStatus);
 
