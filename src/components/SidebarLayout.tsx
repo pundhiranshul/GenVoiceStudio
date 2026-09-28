@@ -96,8 +96,8 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         `}
       >
         {/* Logo Area */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-border-color shrink-0">
-          <Link href="/" className="flex items-center gap-3 overflow-hidden" onClick={(e) => {
+        <div className={`h-16 flex items-center px-4 border-b border-border-color shrink-0 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+          <Link href="/" className={`flex items-center gap-3 overflow-hidden ${isCollapsed ? 'justify-center' : ''}`} onClick={(e) => {
             if (pathname === "/") {
               e.preventDefault();
               setIsMobileOpen(false);
@@ -111,7 +111,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
             }
             setIsMobileOpen(false);
           }}>
-            <GenVoiceLogo size={32} className="shrink-0 text-text-primary" />
+            <GenVoiceLogo size={42} className={`shrink-0 text-text-primary ${isCollapsed ? "mx-auto" : ""}`} />
             {!isCollapsed && <span className="font-semibold text-lg tracking-tight whitespace-nowrap text-text-primary">GenVoice Studio</span>}
           </Link>
           
