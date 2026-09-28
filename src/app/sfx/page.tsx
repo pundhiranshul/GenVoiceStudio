@@ -744,7 +744,7 @@ export default function SFXStudio() {
 
       {/* ── Main Canvas ─────────────────────────────────────────────── */}
       <main className="flex-1 flex flex-col min-w-0 md:overflow-y-auto">
-        <div className="w-full max-w-2xl mx-auto px-6 py-10 space-y-8">
+        <div className="w-full max-w-3xl mx-auto px-6 py-10 space-y-8">
           
           {/* Description Card */}
           <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-2xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">
@@ -773,7 +773,7 @@ export default function SFXStudio() {
                   <button
                     onClick={() => { setShowWriteModal(true); setWriteError(""); }}
                     disabled={status !== "idle" && status !== "complete" && status !== "error"}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-base border border-border-color rounded-xl text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none w-full sm:w-auto"
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-base border border-border-color rounded-xl text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none w-full sm:w-auto whitespace-nowrap"
                   >
                     <Sparkles size={16} className="text-accent-bg" />
                     AI Write Prompt
@@ -781,7 +781,7 @@ export default function SFXStudio() {
                   <button
                     onClick={handleOptimizePrompt}
                     disabled={isOptimizing || !prompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-base border border-border-color rounded-xl text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none w-full sm:w-auto"
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-base border border-border-color rounded-xl text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none w-full sm:w-auto whitespace-nowrap"
                   >
                     {isOptimizing ? <Loader2 size={16} className="animate-spin text-accent-bg" /> : <Wand2 size={16} className="text-accent-bg" />}
                     AI Optimize
@@ -796,7 +796,7 @@ export default function SFXStudio() {
                   {(status === "pushing" || status === "generating" || status === "downloading") && (
                     <button
                       onClick={stopRun}
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-red-500/10 text-red-500 border border-red-500/20 px-6 py-2.5 rounded-xl font-semibold hover:bg-red-500/20 transition-all outline-none"
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-red-500/10 text-red-500 border border-red-500/20 px-6 py-2.5 rounded-xl font-semibold hover:bg-red-500/20 transition-all outline-none whitespace-nowrap"
                     >
                       <X size={16} /> Stop
                     </button>
@@ -804,7 +804,7 @@ export default function SFXStudio() {
                   <button
                     onClick={handleGenerate}
                     disabled={!prompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-text-primary text-bg-base px-6 py-2.5 rounded-xl font-semibold hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100 outline-none"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-text-primary text-bg-base px-6 py-2.5 rounded-xl font-semibold hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100 outline-none whitespace-nowrap"
                   >
                     {(status === "idle" || status === "complete" || status === "error") && <><Sparkles size={16} /> Generate SFX</>}
                     {(status === "pushing" || status === "generating" || status === "downloading") && <><Loader2 size={16} className="animate-spin" /> {status === "pushing" ? "Starting GPU..." : "Generating..."}</>}
