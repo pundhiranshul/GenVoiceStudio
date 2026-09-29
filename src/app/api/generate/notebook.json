@@ -46,7 +46,10 @@
         "import shutil, sys\n",
         "shutil.copytree(\"/kaggle/input/genvoice-voice-generation/breeze-tts\", \"/kaggle/working/breeze-tts\")\n",
         "sys.path.append(\"/kaggle/working/breeze-tts\")\n",
-        "print(\"Codebase mounted.\")\n"
+        "with open(\"/kaggle/working/breeze-tts/models/breeze.py\", \"r\") as f: c = f.read()\n",
+        "c = c.replace(\"from transformers.modeling_utils import no_init_weights\", \"import contextlib\\n@contextlib.contextmanager\\ndef no_init_weights(_enable=True):\\n    yield\\n\")\n",
+        "with open(\"/kaggle/working/breeze-tts/models/breeze.py\", \"w\") as f: f.write(c)\n",
+        "print(\"Codebase mounted and patched.\")\n"
       ],
       "metadata": {
         "trusted": true
