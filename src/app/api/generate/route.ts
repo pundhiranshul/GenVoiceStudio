@@ -87,6 +87,10 @@ export async function POST(req: Request) {
             '    if not os.path.exists(dst):\n',
             '        os.symlink(src, dst)\n',
             'sys.path.insert(0, shadow_dir)\n',
+            '# Unload transformers and qwen_tts so Python is forced to reload them from our offline packages!\n',
+            'for k in list(sys.modules.keys()):\n',
+            '    if k.startswith("transformers") or k.startswith("qwen_tts"):\n',
+            '        del sys.modules[k]\n',
             'subprocess.run([sys.executable, "-m", "pip", "install", "-q", "joblib", "pooch"], check=True)\n',
             'print(f"Codebase mounted from {BASE_DIR}, patched, and dependencies installed.")\n',
           ];
