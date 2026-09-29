@@ -61,8 +61,11 @@ export async function POST(req: Request) {
             '        break\n',
             'if not BASE_DIR:\n',
             '    raise FileNotFoundError("Could not find breeze-tts codebase in /kaggle/input")\n',
-            'sys.path.insert(0, os.path.join(BASE_DIR, "offline_packages"))\n',
+            '# breeze-tts at the front so its modules are found first\n',
             'sys.path.insert(0, os.path.join(BASE_DIR, "breeze-tts"))\n',
+            '# offline_packages at the END — system torch/torchvision take precedence\n',
+            '# to prevent a version mismatch (torchvision::nms RuntimeError)\n',
+            'sys.path.append(os.path.join(BASE_DIR, "offline_packages"))\n',
             'subprocess.run([sys.executable, "-m", "pip", "install", "-q", "joblib", "pooch"], check=True)\n',
             'print(f"Codebase mounted from {BASE_DIR} and dependencies installed.")\n',
           ];
