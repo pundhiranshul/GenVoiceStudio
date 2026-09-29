@@ -188,7 +188,7 @@ export async function POST(req: Request) {
           if (instructions && instructions.trim() !== '') {
             pythonReqVars += `    req["instruction"] = ${JSON.stringify(instructions)}\n`;
           }
-          const cfgScale = guidanceScale || 4;
+          const cfgScale = guidanceScale !== undefined ? guidanceScale : 1;
 
           cell.source = [
             `import re, torch, os, concurrent.futures\n`,
@@ -210,12 +210,12 @@ export async function POST(req: Request) {
             `print("Loading models onto GPU 0 & GPU 1 in BF16...")\n`,
             `cfg = FastStreamingConfig(max_new_tokens=1500, max_seq_len=2048, repetition_penalty=1.1)\n`,
             `\ntorch.cuda.set_device(0)\n`,
-            `tok_0, mdl_0, atok_0 = load_runtime(MODEL_DIR, device="cuda:0")\n`,
+            `tok_0, mdl_0, atok_0 = load_runtime(MODEL_DIR, device="cuda:0", attn_implementation="sdpa")\n`,
             `update_generation_config_for_breeze(mdl_0)\n`,
             `rt_0 = FastBreezeStreamingRuntime(mdl_0, atok_0, cfg, tokenizer=tok_0)\n`,
             `\nif len(sentences) > 1:\n`,
             `    torch.cuda.set_device(1)\n`,
-            `    tok_1, mdl_1, atok_1 = load_runtime(MODEL_DIR, device="cuda:1")\n`,
+            `    tok_1, mdl_1, atok_1 = load_runtime(MODEL_DIR, device="cuda:1", attn_implementation="sdpa")\n`,
             `    update_generation_config_for_breeze(mdl_1)\n`,
             `    rt_1 = FastBreezeStreamingRuntime(mdl_1, atok_1, cfg, tokenizer=tok_1)\n`,
             `\ndef generate_chunk(i, sentence):\n`,
