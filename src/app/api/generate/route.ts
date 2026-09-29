@@ -58,7 +58,7 @@ export async function POST(req: Request) {
             'sys.path.append("/kaggle/working/breeze-tts")\n',
             'print("Installing dependencies from offline packages...")\n',
             'if os.path.exists("/kaggle/input/genvoice-voice-generation/packages"):\n',
-            '    subprocess.run([sys.executable, "-m", "pip", "install", "--no-index", "--find-links=/kaggle/input/genvoice-voice-generation/packages", "-r", "/kaggle/working/breeze-tts/requirements.txt", "qwen-tts", "huggingface-hub", "-q"], check=True)\n',
+            '    subprocess.run([sys.executable, "-m", "pip", "install", "--no-index", "--find-links=/kaggle/input/genvoice-voice-generation/packages", "-r", "/kaggle/working/breeze-tts/requirements.txt", "qwen-tts", "huggingface-hub", "/kaggle/input/genvoice-voice-generation/packages/sox-1.5.0", "-q"], check=True)\n',
             'else:\n',
             '    subprocess.run([sys.executable, "-m", "pip", "install", "qwen-tts", "-q"], check=True)\n',
             '# Patch out the removed transformers.modeling_utils.no_init_weights import\n',
