@@ -53,24 +53,11 @@ export async function POST(req: Request) {
         const src = Array.isArray(cell.source) ? cell.source.join('') : String(cell.source);
         if (src.includes('copytree') && src.includes('breeze-tts')) {
           cell.source = [
-            'import shutil, sys, re, subprocess, os\n',
-            'sys.path.append("/kaggle/input/genvoice-voice-gen/pytorch/default/1/offline_packages")\n',
-            'if not os.path.exists("/kaggle/working/breeze-tts"):\n',
-            '    shutil.copytree("/kaggle/input/genvoice-voice-gen/pytorch/default/1/breeze-tts", "/kaggle/working/breeze-tts")\n',
-            'sys.path.append("/kaggle/working/breeze-tts")\n',
-            '# Patch out the removed transformers.modeling_utils.no_init_weights import\n',
-            'breeze_path = "/kaggle/working/breeze-tts/models/breeze.py"\n',
-            'with open(breeze_path) as _f: _lines = _f.readlines()\n',
-            '# Separate __future__ imports (must stay at top) from everything else\n',
-            '_future = [l for l in _lines if re.match(r"^from __future__ import", l)]\n',
-            '_rest   = [l for l in _lines if not re.match(r"^from __future__ import", l)]\n',
-            '_rest_src = "".join(_rest)\n',
-            '# Replace the deprecated import with an indentation-preserving pass\n',
-            '_rest_src = re.sub(r"^([ \\t]*)from transformers\\.modeling_utils import no_init_weights.*$", r"\\1pass", _rest_src, flags=re.MULTILINE)\n',
-            '_header = "import contextlib\\n@contextlib.contextmanager\\ndef no_init_weights(*a, **kw):\\n    yield\\n\\n"\n',
-            '# Write: future imports → our header → patched rest\n',
-            'with open(breeze_path, "w") as _f: _f.write("".join(_future) + _header + _rest_src)\n',
-            'print("Codebase mounted and patched.")\n',
+            'import sys, subprocess\n',
+            'sys.path.append("/kaggle/input/genvoice/pytorch/default/1/offline_packages")\n',
+            'sys.path.append("/kaggle/input/genvoice/pytorch/default/1/breeze-tts")\n',
+            'subprocess.run([sys.executable, "-m", "pip", "install", "-q", "joblib", "pooch"], check=True)\n',
+            'print("Codebase mounted and dependencies installed.")\n',
           ];
           break;
         }
@@ -78,26 +65,14 @@ export async function POST(req: Request) {
     }
 
     // Inject a model-weight check cell: use dataset if safetensors present, else download
-    const MODEL_DATASET_PATH = '/kaggle/input/genvoice-voice-gen/pytorch/default/1/breeze-tts-2';
-    const MODEL_DOWNLOAD_PATH = '/kaggle/working/breeze-tts-2';
+    const MODEL_DIR = '/kaggle/input/genvoice/pytorch/default/1/breeze-tts-2';
     const modelCheckCell = {
       cell_type: 'code',
       execution_count: null,
       metadata: { trusted: true },
       outputs: [],
       source: [
-        'import glob, os\n',
-        `_ds_path = "${MODEL_DATASET_PATH}"\n`,
-        `_dl_path = "${MODEL_DOWNLOAD_PATH}"\n`,
-        '_has_weights = len(glob.glob(os.path.join(_ds_path, "*.safetensors"))) > 0 or len(glob.glob(os.path.join(_ds_path, "*.bin"))) > 0\n',
-        'if _has_weights:\n',
-        '    MODEL_DIR = _ds_path\n',
-        '    print(f"Model weights found in dataset: {MODEL_DIR}")\n',
-        'else:\n',
-        '    print("Model weights not in dataset — downloading from HuggingFace...")\n',
-        '    from huggingface_hub import snapshot_download\n',
-        `    MODEL_DIR = snapshot_download(repo_id="BreezeBlue/Breeze-TTS-2", local_dir="${MODEL_DOWNLOAD_PATH}")\n`,
-        '    print(f"Downloaded to: {MODEL_DIR}")\n',
+        `MODEL_DIR = "${MODEL_DIR}"\n`,
         'print(f"Using model: {MODEL_DIR}")\n',
       ]
     };
@@ -178,7 +153,7 @@ export async function POST(req: Request) {
           if (instructions && instructions.trim() !== '') {
             pythonReqVars += `    req["instruction"] = ${JSON.stringify(instructions)}\n`;
           }
-          let cfgScale = guidanceScale || 4;
+          const cfgScale = guidanceScale || 4;
 
           cell.source = [
             `import re, torch, os, concurrent.futures\n`,
@@ -285,7 +260,7 @@ export async function POST(req: Request) {
     }
     if (currentChunk) finalChunks.push(currentChunk);
 
-    const needsChunking = finalChunks.length > 1;
+    const needsChunking = true; // Always use concurrent chunked generation for dual T4 support
 
     if (needsChunking) {
       // Drop the single-shot cell — replace it with a skip notice
@@ -333,10 +308,10 @@ export async function POST(req: Request) {
       isPrivate:  true,
       enableGpu:  true,
       enableInternet: true,
-      datasetDataSources: ['daijizaiten/genvoice-voice-generation'],
+      datasetDataSources: [],
       competitionDataSources: [],
       kernelDataSources: [],
-      modelDataSources: [],
+      modelDataSources: ['daijizaiten/genvoice/pytorch/default'],
       categoryIds: [],
     };
 
