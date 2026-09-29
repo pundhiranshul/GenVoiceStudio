@@ -53,11 +53,14 @@ export async function POST(req: Request) {
         const src = Array.isArray(cell.source) ? cell.source.join('') : String(cell.source);
         if (src.includes('copytree') && src.includes('breeze-tts')) {
           cell.source = [
-            'import shutil, sys, re, subprocess\n',
+            'import shutil, sys, re, subprocess, os\n',
             'shutil.copytree("/kaggle/input/genvoice-voice-generation/breeze-tts", "/kaggle/working/breeze-tts")\n',
             'sys.path.append("/kaggle/working/breeze-tts")\n',
             'print("Installing qwen-audio-tokenizer...")\n',
-            'subprocess.run([sys.executable, "-m", "pip", "install", "qwen-audio-tokenizer", "-q"], check=True)\n',
+            'if os.path.exists("/kaggle/input/genvoice-voice-generation/packages"):\n',
+            '    subprocess.run([sys.executable, "-m", "pip", "install", "--no-index", "--find-links=/kaggle/input/genvoice-voice-generation/packages", "qwen-audio-tokenizer", "-q"], check=True)\n',
+            'else:\n',
+            '    subprocess.run([sys.executable, "-m", "pip", "install", "qwen-audio-tokenizer", "-q"], check=True)\n',
             '# Patch out the removed transformers.modeling_utils.no_init_weights import\n',
             'breeze_path = "/kaggle/working/breeze-tts/models/breeze.py"\n',
             'with open(breeze_path) as _f: _lines = _f.readlines()\n',
