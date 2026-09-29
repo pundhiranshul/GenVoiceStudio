@@ -54,9 +54,9 @@ export async function POST(req: Request) {
         if (src.includes('copytree') && src.includes('breeze-tts')) {
           cell.source = [
             'import shutil, sys, re, subprocess, os\n',
-            'sys.path.append("/kaggle/input/genvoice-voice-generation/offline_packages")\n',
+            'sys.path.append("/kaggle/input/genvoice-voice-gen/pytorch/default/1/offline_packages")\n',
             'if not os.path.exists("/kaggle/working/breeze-tts"):\n',
-            '    shutil.copytree("/kaggle/input/genvoice-voice-generation/breeze-tts", "/kaggle/working/breeze-tts")\n',
+            '    shutil.copytree("/kaggle/input/genvoice-voice-gen/pytorch/default/1/breeze-tts", "/kaggle/working/breeze-tts")\n',
             'sys.path.append("/kaggle/working/breeze-tts")\n',
             '# Patch out the removed transformers.modeling_utils.no_init_weights import\n',
             'breeze_path = "/kaggle/working/breeze-tts/models/breeze.py"\n',
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
     }
 
     // Inject a model-weight check cell: use dataset if safetensors present, else download
-    const MODEL_DATASET_PATH = '/kaggle/input/genvoice-voice-generation/breeze-tts-2';
+    const MODEL_DATASET_PATH = '/kaggle/input/genvoice-voice-gen/pytorch/default/1/breeze-tts-2';
     const MODEL_DOWNLOAD_PATH = '/kaggle/working/breeze-tts-2';
     const modelCheckCell = {
       cell_type: 'code',
