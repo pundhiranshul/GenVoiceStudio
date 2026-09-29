@@ -53,7 +53,7 @@ export async function POST(req: Request) {
         const src = Array.isArray(cell.source) ? cell.source.join('') : String(cell.source);
         if (src.includes('copytree') && src.includes('breeze-tts')) {
           cell.source = [
-            'import os, sys, subprocess\n',
+            'import os, sys, subprocess, shutil, re\n',
             'BASE_DIR = None\n',
             'for root, dirs, files in os.walk("/kaggle/input"):\n',
             '    if "breeze-tts" in dirs and "breeze-tts-2" in dirs:\n',
@@ -61,13 +61,24 @@ export async function POST(req: Request) {
             '        break\n',
             'if not BASE_DIR:\n',
             '    raise FileNotFoundError("Could not find breeze-tts codebase in /kaggle/input")\n',
+            'if not os.path.exists("/kaggle/working/breeze-tts"):\n',
+            '    shutil.copytree(os.path.join(BASE_DIR, "breeze-tts"), "/kaggle/working/breeze-tts")\n',
+            '# Patch out the removed transformers.modeling_utils.no_init_weights import\n',
+            'breeze_path = "/kaggle/working/breeze-tts/models/breeze.py"\n',
+            'with open(breeze_path) as _f: _lines = _f.readlines()\n',
+            '_future = [l for l in _lines if re.match(r"^from __future__ import", l)]\n',
+            '_rest   = [l for l in _lines if not re.match(r"^from __future__ import", l)]\n',
+            '_rest_src = "".join(_rest)\n',
+            '_rest_src = re.sub(r"^([ \\t]*)from transformers\\.modeling_utils import no_init_weights.*$", r"\\1pass", _rest_src, flags=re.MULTILINE)\n',
+            '_header = "import contextlib\\n@contextlib.contextmanager\\ndef no_init_weights(*a, **kw):\\n    yield\\n\\n"\n',
+            'with open(breeze_path, "w") as _f: _f.write("".join(_future) + _header + _rest_src)\n',
             '# breeze-tts at the front so its modules are found first\n',
-            'sys.path.insert(0, os.path.join(BASE_DIR, "breeze-tts"))\n',
+            'sys.path.insert(0, "/kaggle/working/breeze-tts")\n',
             '# offline_packages at the END — system torch/torchvision take precedence\n',
             '# to prevent a version mismatch (torchvision::nms RuntimeError)\n',
             'sys.path.append(os.path.join(BASE_DIR, "offline_packages"))\n',
             'subprocess.run([sys.executable, "-m", "pip", "install", "-q", "joblib", "pooch"], check=True)\n',
-            'print(f"Codebase mounted from {BASE_DIR} and dependencies installed.")\n',
+            'print(f"Codebase mounted from {BASE_DIR}, patched, and dependencies installed.")\n',
           ];
           break;
         }
