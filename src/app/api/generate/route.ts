@@ -59,7 +59,7 @@ export async function POST(req: Request) {
             '# Patch out the removed transformers.modeling_utils.no_init_weights import\n',
             'breeze_path = "/kaggle/working/breeze-tts/models/breeze.py"\n',
             'with open(breeze_path) as _f: _src = _f.read()\n',
-            '_src = re.sub(r"^[ \\t]*from transformers\\.modeling_utils import no_init_weights.*$", "pass", _src, flags=re.MULTILINE)\n',
+            '_src = re.sub(r"^([ \\t]*)from transformers\\.modeling_utils import no_init_weights.*$", r"\\1pass", _src, flags=re.MULTILINE)\n',
             '_header = "import contextlib\\n@contextlib.contextmanager\\ndef no_init_weights(*a, **kw):\\n    yield\\n\\n"\n',
             'with open(breeze_path, "w") as _f: _f.write(_header + _src)\n',
             'print("Codebase mounted and patched.")\n',
