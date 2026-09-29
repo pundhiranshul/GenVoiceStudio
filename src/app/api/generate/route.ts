@@ -78,32 +78,30 @@ export async function POST(req: Request) {
     // Inject a model-weight check cell: use dataset if safetensors present, else download
     const MODEL_DATASET_PATH = '/kaggle/input/genvoice-voice-generation/breeze-tts-2';
     const MODEL_DOWNLOAD_PATH = '/kaggle/working/breeze-tts-2';
-    for (const cell of notebook.cells) {
-      if (cell.cell_type === 'code' && cell.source) {
-        const src = Array.isArray(cell.source) ? cell.source.join('') : String(cell.source);
-        // Insert after the setup cell (find the reference clip cell)
-        if (src.includes('load_dataset') && src.includes('librispeech')) {
-          // Insert a new model-check cell before this one by prepending to this cell's source
-          const modelCheckLines = [
-            'import glob, os\n',
-            `_ds_path = "${MODEL_DATASET_PATH}"\n`,
-            `_dl_path = "${MODEL_DOWNLOAD_PATH}"\n`,
-            '_has_weights = len(glob.glob(os.path.join(_ds_path, "*.safetensors"))) > 0 or len(glob.glob(os.path.join(_ds_path, "*.bin"))) > 0\n',
-            'if _has_weights:\n',
-            '    MODEL_DIR = _ds_path\n',
-            '    print(f"Model weights found in dataset: {MODEL_DIR}")\n',
-            'else:\n',
-            '    print("Model weights not in dataset — downloading from HuggingFace...")\n',
-            '    from huggingface_hub import snapshot_download\n',
-            `    MODEL_DIR = snapshot_download(repo_id="BreezeBlue/Breeze-TTS-2", local_dir="${MODEL_DOWNLOAD_PATH}")\n`,
-            '    print(f"Downloaded to: {MODEL_DIR}")\n',
-            'print(f"Using model: {MODEL_DIR}")\n',
-          ];
-          cell.source = [...modelCheckLines, ...(Array.isArray(cell.source) ? cell.source : [String(cell.source)])];
-          break;
-        }
-      }
-    }
+    const modelCheckCell = {
+      cell_type: 'code',
+      execution_count: null,
+      metadata: { trusted: true },
+      outputs: [],
+      source: [
+        'import glob, os\n',
+        `_ds_path = "${MODEL_DATASET_PATH}"\n`,
+        `_dl_path = "${MODEL_DOWNLOAD_PATH}"\n`,
+        '_has_weights = len(glob.glob(os.path.join(_ds_path, "*.safetensors"))) > 0 or len(glob.glob(os.path.join(_ds_path, "*.bin"))) > 0\n',
+        'if _has_weights:\n',
+        '    MODEL_DIR = _ds_path\n',
+        '    print(f"Model weights found in dataset: {MODEL_DIR}")\n',
+        'else:\n',
+        '    print("Model weights not in dataset — downloading from HuggingFace...")\n',
+        '    from huggingface_hub import snapshot_download\n',
+        `    MODEL_DIR = snapshot_download(repo_id="BreezeBlue/Breeze-TTS-2", local_dir="${MODEL_DOWNLOAD_PATH}")\n`,
+        '    print(f"Downloaded to: {MODEL_DIR}")\n',
+        'print(f"Using model: {MODEL_DIR}")\n',
+      ]
+    };
+
+    // Insert the new cell directly after the setup cell (index 2)
+    notebook.cells.splice(3, 0, modelCheckCell);
 
     // Inject text and optional reference audio / instructions into the appropriate cells
     let found = false;
@@ -199,13 +197,20 @@ export async function POST(req: Request) {
             `    env["CUDA_VISIBLE_DEVICES"] = str(gpu_id)\n`,
             `    out_path = f"/kaggle/working/breeze_chunk_{i}.wav"\n`,
             `    print(f"Generating {i+1}/{len(sentences)} on GPU {gpu_id}...")\n`,
-            `    result = subprocess.run([${inferArgs}], capture_output=True, text=True, cwd="/kaggle/working/breeze-tts", env=env)\n`,
-            `    if result.returncode != 0:\n`,
-            `        print(f"ERROR on chunk {i}:", result.stderr[-1000:])\n`,
+            `    try:\n`,
+            `        result = subprocess.run([${inferArgs}], capture_output=True, text=True, cwd="/kaggle/working/breeze-tts", env=env)\n`,
+            `        if result.returncode != 0:\n`,
+            `            print(f"ERROR on chunk {i}:", result.stderr[-1000:])\n`,
+            `            print(f"STDOUT on chunk {i}:", result.stdout[-1000:])\n`,
+            `    except Exception as e:\n`,
+            `        print(f"EXCEPTION on chunk {i}: {e}")\n`,
             `\n`,
             `with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:\n`,
             `    futures = [executor.submit(generate_chunk, i, s) for i, s in enumerate(sentences)]\n`,
             `    concurrent.futures.wait(futures)\n`,
+            `    for f in futures:\n`,
+            `        if f.exception() is not None:\n`,
+            `            print(f"THREAD EXCEPTION: {f.exception()}")\n`,
             `\n`,
             `def crossfade(a, b, sr, fade_ms=80):\n`,
             `    fade_len = min(int(sr * fade_ms / 1000), a.shape[1], b.shape[1])\n`,
