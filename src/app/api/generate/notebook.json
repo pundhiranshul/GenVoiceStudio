@@ -43,12 +43,13 @@
     {
       "cell_type": "code",
       "source": [
-        "import shutil, sys\n",
+        "import shutil, sys, re\n",
         "shutil.copytree(\"/kaggle/input/genvoice-voice-generation/breeze-tts\", \"/kaggle/working/breeze-tts\")\n",
         "sys.path.append(\"/kaggle/working/breeze-tts\")\n",
         "with open(\"/kaggle/working/breeze-tts/models/breeze.py\", \"r\") as f: c = f.read()\n",
-        "c = c.replace(\"from transformers.modeling_utils import no_init_weights\", \"import contextlib\\n@contextlib.contextmanager\\ndef no_init_weights(_enable=True):\\n    yield\\n\")\n",
-        "with open(\"/kaggle/working/breeze-tts/models/breeze.py\", \"w\") as f: f.write(c)\n",
+        "c = re.sub(r\"^[ \\t]*from transformers\\.modeling_utils import no_init_weights.*$\", \"pass\", c, flags=re.MULTILINE)\n",
+        "mock = \"import contextlib\\n@contextlib.contextmanager\\ndef no_init_weights(*args, **kwargs):\\n    yield\\n\"\n",
+        "with open(\"/kaggle/working/breeze-tts/models/breeze.py\", \"w\") as f: f.write(mock + c)\n",
         "print(\"Codebase mounted and patched.\")\n"
       ],
       "metadata": {
