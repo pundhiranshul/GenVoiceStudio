@@ -46,6 +46,29 @@ export async function POST(req: Request) {
       });
     }
 
+    // Replace the setup cell with a clean, properly-structured source
+    // This is done in TypeScript to avoid nested JSON/Python escaping nightmares
+    for (const cell of notebook.cells) {
+      if (cell.cell_type === 'code' && cell.source) {
+        const src = Array.isArray(cell.source) ? cell.source.join('') : String(cell.source);
+        if (src.includes('copytree') && src.includes('breeze-tts')) {
+          cell.source = [
+            'import shutil, sys, re\n',
+            'shutil.copytree("/kaggle/input/genvoice-voice-generation/breeze-tts", "/kaggle/working/breeze-tts")\n',
+            'sys.path.append("/kaggle/working/breeze-tts")\n',
+            '# Patch out the removed transformers.modeling_utils.no_init_weights import\n',
+            'breeze_path = "/kaggle/working/breeze-tts/models/breeze.py"\n',
+            'with open(breeze_path) as _f: _src = _f.read()\n',
+            '_src = re.sub(r"^[ \\t]*from transformers\\.modeling_utils import no_init_weights.*$", "pass", _src, flags=re.MULTILINE)\n',
+            '_header = "import contextlib\\n@contextlib.contextmanager\\ndef no_init_weights(*a, **kw):\\n    yield\\n\\n"\n',
+            'with open(breeze_path, "w") as _f: _f.write(_header + _src)\n',
+            'print("Codebase mounted and patched.")\n',
+          ];
+          break;
+        }
+      }
+    }
+
     // Inject text and optional reference audio / instructions into the appropriate cells
     let found = false;
     for (const cell of notebook.cells) {
