@@ -75,6 +75,36 @@ export async function POST(req: Request) {
       }
     }
 
+    // Inject a model-weight check cell: use dataset if safetensors present, else download
+    const MODEL_DATASET_PATH = '/kaggle/input/genvoice-voice-generation/breeze-tts-2';
+    const MODEL_DOWNLOAD_PATH = '/kaggle/working/breeze-tts-2';
+    for (const cell of notebook.cells) {
+      if (cell.cell_type === 'code' && cell.source) {
+        const src = Array.isArray(cell.source) ? cell.source.join('') : String(cell.source);
+        // Insert after the setup cell (find the reference clip cell)
+        if (src.includes('load_dataset') && src.includes('librispeech')) {
+          // Insert a new model-check cell before this one by prepending to this cell's source
+          const modelCheckLines = [
+            'import glob, os\n',
+            `_ds_path = "${MODEL_DATASET_PATH}"\n`,
+            `_dl_path = "${MODEL_DOWNLOAD_PATH}"\n`,
+            '_has_weights = len(glob.glob(os.path.join(_ds_path, "*.safetensors"))) > 0 or len(glob.glob(os.path.join(_ds_path, "*.bin"))) > 0\n',
+            'if _has_weights:\n',
+            '    MODEL_DIR = _ds_path\n',
+            '    print(f"Model weights found in dataset: {MODEL_DIR}")\n',
+            'else:\n',
+            '    print("Model weights not in dataset — downloading from HuggingFace...")\n',
+            '    from huggingface_hub import snapshot_download\n',
+            `    MODEL_DIR = snapshot_download(repo_id="BreezeBlue/Breeze-TTS-2", local_dir="${MODEL_DOWNLOAD_PATH}")\n`,
+            '    print(f"Downloaded to: {MODEL_DIR}")\n',
+            'print(f"Using model: {MODEL_DIR}")\n',
+          ];
+          cell.source = [...modelCheckLines, ...(Array.isArray(cell.source) ? cell.source : [String(cell.source)])];
+          break;
+        }
+      }
+    }
+
     // Inject text and optional reference audio / instructions into the appropriate cells
     let found = false;
     for (const cell of notebook.cells) {
@@ -84,7 +114,7 @@ export async function POST(req: Request) {
         // Single-shot generation cell
         if (src.includes('paragraph = (') && src.includes('infer.py')) {
           const subprocessArgs: string[] = [
-            `    "python", "infer.py", "../breeze-tts-2",\n`,
+            `    "python", "infer.py", MODEL_DIR,\n`,
           ];
           if (referenceAudio) {
             subprocessArgs.push(
@@ -140,7 +170,7 @@ export async function POST(req: Request) {
 
         // Inject instructions into the chunked generation cell
         if (src.includes('breeze_paragraph_chunked.wav') && src.includes('subprocess.run')) {
-          let inferArgs = `"python", "infer.py", "/kaggle/input/genvoice-voice-generation/breeze-tts-2"`;
+          let inferArgs = `"python", "infer.py", MODEL_DIR`;
           if (referenceAudio) {
             inferArgs += `, "--ref-audio", "/kaggle/working/reference.wav", "--ref-text", reference_text`;
           }
