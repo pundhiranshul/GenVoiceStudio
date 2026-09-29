@@ -54,8 +54,8 @@ export async function POST(req: Request) {
         if (src.includes('copytree') && src.includes('breeze-tts')) {
           cell.source = [
             'import sys, subprocess\n',
-            'sys.path.append("/kaggle/input/genvoice/pytorch/default/1/offline_packages")\n',
-            'sys.path.append("/kaggle/input/genvoice/pytorch/default/1/breeze-tts")\n',
+            'sys.path.insert(0, "/kaggle/input/genvoice/pytorch/default/1/genvoice_model/offline_packages")\n',
+            'sys.path.insert(0, "/kaggle/input/genvoice/pytorch/default/1/genvoice_model/breeze-tts")\n',
             'subprocess.run([sys.executable, "-m", "pip", "install", "-q", "joblib", "pooch"], check=True)\n',
             'print("Codebase mounted and dependencies installed.")\n',
           ];
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     }
 
     // Inject a model-weight check cell: use dataset if safetensors present, else download
-    const MODEL_DIR = '/kaggle/input/genvoice/pytorch/default/1/breeze-tts-2';
+    const MODEL_DIR = '/kaggle/input/genvoice/pytorch/default/1/genvoice_model/breeze-tts-2';
     const modelCheckCell = {
       cell_type: 'code',
       execution_count: null,
