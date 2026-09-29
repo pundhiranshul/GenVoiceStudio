@@ -92,7 +92,8 @@ export async function POST(req: Request) {
       metadata: { trusted: true },
       outputs: [],
       source: [
-        `MODEL_DIR = os.path.join(BASE_DIR, "breeze-tts-2")\n`,
+        `import pathlib\n`,
+        `MODEL_DIR = pathlib.Path(BASE_DIR) / "breeze-tts-2"\n`,
         'print(f"Using model: {MODEL_DIR}")\n',
       ]
     };
