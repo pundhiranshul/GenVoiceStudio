@@ -1804,37 +1804,15 @@ export default function Home() {
                 placeholder={"e.g., Say it whispering, very quiet and tense..."}
                 className="w-full h-24 p-3 bg-bg-input border border-border-color rounded-xl text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-ring-color transition-all"
               />
-              {(() => {
-                const isStd = selectedVoiceId === "std_S0";
-                return isStd ? (
-                  <>
-                    <div className="flex justify-between items-center mt-2">
-                      <label className="text-[11px] font-medium text-text-secondary">Guidance Scale</label>
-                      <span className="text-[10px] font-mono text-text-muted">{guidanceScale}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="1" max="10" step="0.1"
-                      value={guidanceScale}
-                      onChange={(e) => setGuidanceScale(parseFloat(e.target.value))}
-                      className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
-                    />
-                    <p className="text-[10px] text-text-muted mt-1 leading-relaxed">
-                      Higher values strengthen guidance. Recommended: 2–5.
-                    </p>
-                  </>
-                ) : (
-                  <div className="mt-2 p-3 bg-accent-bg/10 border border-accent-bg/20 rounded-lg">
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="text-[11px] font-medium text-text-secondary">Guidance Scale</label>
-                      <span className="text-[10px] font-mono text-text-muted">Locked at 1.0</span>
-                    </div>
-                    <p className="text-[10px] text-text-muted leading-relaxed">
-                      Guidance scale is automatically locked to 1.0 when cloning voices or using custom presets to prevent model generation crashes.
-                    </p>
-                  </div>
-                );
-              })()}
+              <div className="mt-2 p-3 bg-accent-bg/10 border border-accent-bg/20 rounded-lg">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-[11px] font-medium text-text-secondary">Guidance Scale</label>
+                  <span className="text-[10px] font-mono text-text-muted">Locked at 1.0</span>
+                </div>
+                <p className="text-[10px] text-text-muted leading-relaxed">
+                  Guidance scale is permanently locked to 1.0 because the underlying Breeze-TTS model architecture does not currently support Classifier-Free Guidance (CFG).
+                </p>
+              </div>
 
               {/* Generate & Save Buttons (Only in Design Mode) */}
               {false && (

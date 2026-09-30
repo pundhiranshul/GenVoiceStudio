@@ -188,7 +188,7 @@ export async function POST(req: Request) {
           if (instructions && instructions.trim() !== '') {
             pythonReqVars += `    req["instruction"] = ${JSON.stringify(instructions)}\n`;
           }
-          const cfgScale = guidanceScale !== undefined ? guidanceScale : (referenceAudio ? 1 : 4);
+          const cfgScale = 1.0;
 
           cell.source = [
             `import re, torch, os, concurrent.futures\n`,
