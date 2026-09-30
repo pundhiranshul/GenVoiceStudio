@@ -87,7 +87,7 @@ type AudioFile = { name: string; url: string };
 type CustomVoice = { id: string; name: string; data: string; transcript: string; isPreset?: boolean; };
 
 const PRESET_VOICES: CustomVoice[] = [
-  { id: "std_S0", name: "Standard AI Voice (S0)", data: "", transcript: "Standard built-in AI voice. Supports full Guidance Scale.", isPreset: true },
+  { id: "std_S0", name: "Standard AI Voice (S0)", data: "", transcript: "", isPreset: true },
   { id: "el_v3_15", name: "Ellen - Serious, Direct and Confident", data: "/presets/el_15.mp3", transcript: "Freedom kindles the flames of hope in every heart.", isPreset: true },
   { id: "el_v3_16", name: "James - Husky, Engaging and Bold", data: "/presets/el_16.mp3", transcript: "Cleanliness is the key to a healthy, happy life.", isPreset: true },
   { id: "el_v3_17", name: "Amy - Natural and Sweet", data: "/presets/el_17.mp3", transcript: "Life can be funny sometimes with all the hills and valleys, but without the lows, you'd never get to experience the highs.", isPreset: true },
