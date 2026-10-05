@@ -71,7 +71,7 @@ export async function POST(req: Request) {
             '    print("Extracting offline packages to local SSD...")\n',
             '    with zipfile.ZipFile(PACK_FILE, "r") as z:\n',
             '        z.extractall(extract_dir)\n',
-            '    for d in ["torch", "torchvision", "torchaudio", "torchgen", "regex", "numpy", "scipy"]:\n',
+            '    for d in ["torch", "torchvision", "torchaudio", "torchgen", "regex", "numpy", "scipy", "huggingface_hub"]:\n',
             '        p = os.path.join(extract_dir, d)\n',
             '        if os.path.exists(p): shutil.rmtree(p)\n\n',
             '# Add to sys.path\n',
