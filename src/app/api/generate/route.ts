@@ -85,7 +85,7 @@ export async function POST(req: Request) {
             '# Patch native transformers ROPE functions (default was removed in v5+)\n',
             '_ru_path = pathlib.Path(__import__("transformers").__file__).parent / "modeling_rope_utils.py"\n',
             '_ru_text = _ru_path.read_text()\n',
-            'if "\\"default\\"" not in _ru_text and "ROPE_INIT_FUNCTIONS" in _ru_text:\n',
+            'if "ROPE_INIT_FUNCTIONS" in _ru_text and "def _default_rope" not in _ru_text:\n',
             '    _ru_patch = "\\n\\ndef _default_rope(*args, **kwargs):\\n    config = args[0]\\n    device = args[1] if len(args) > 1 else None\\n    import torch\\n    base = getattr(config, \'rope_theta\', 10000.0)\\n    dim = getattr(config, \'head_dim\', getattr(config, \'hidden_size\', 1024) // getattr(config, \'num_attention_heads\', 16))\\n    inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2, dtype=torch.int64).float().to(device) / dim))\\n    return inv_freq, 1.0\\nROPE_INIT_FUNCTIONS[\\"default\\"] = _default_rope\\n"\n',
             '    _ru_path.write_text(_ru_text + _ru_patch)\n',
             '    print("Patched transformers.modeling_rope_utils with default rope_init_fn.")\n\n',
