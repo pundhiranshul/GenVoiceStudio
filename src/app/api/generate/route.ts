@@ -354,7 +354,7 @@ export async function POST(req: Request) {
       isPrivate:  true,
       enableGpu:  true,
       enableInternet: true,
-      datasetDataSources: ['daijizaiten/breeze-tts-offline-core'],
+      datasetDataSources: ['daijizaiten/breeze-tts-offline-core-v2'],
       competitionDataSources: [],
       kernelDataSources: [],
       modelDataSources: [],
