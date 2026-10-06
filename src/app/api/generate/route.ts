@@ -63,7 +63,6 @@ export async function POST(req: Request) {
             '    raise FileNotFoundError("Could not find offline_packages.pack in /kaggle/input. Verify dataset is mounted.")\n\n',
             'PACK_FILE = DATASET_ROOT / "offline_packages.pack"\n',
             'WEIGHTS_DIR = DATASET_ROOT / "breeze-tts-2"\n',
-            'WHEELS_DIR = DATASET_ROOT / "wheels"\n',
             'REPO_DIR = DATASET_ROOT / "breeze-tts"\n\n',
             '# 1. The Pack Hack (Instant Import Injection)\n',
             'extract_dir = "/kaggle/working/offline_packages"\n',
