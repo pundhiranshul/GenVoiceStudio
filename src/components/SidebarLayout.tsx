@@ -42,6 +42,11 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('open-architecture', handleOpenAbout);
   }, []);
 
+  // Close mobile sidebar when pathname changes
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
+
   useEffect(() => {
     const u = localStorage.getItem("kaggleUsername");
     if (u) setUsername(u);
@@ -100,19 +105,18 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         {/* Logo Area */}
         <div className={`h-16 flex items-center px-4 border-b border-border-color shrink-0 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
           <Link href="/" className={`flex items-center gap-3 overflow-hidden ${isCollapsed ? 'justify-center' : ''}`} onClick={(e) => {
-            e.preventDefault();
             if (pathname === "/") {
+              e.preventDefault();
               setIsMobileOpen(false);
-              window.location.href = "/";
+              window.location.reload();
               return;
             }
             if (typeof window !== "undefined" && (window as any).isGenerating) {
               if (!confirm("You have an active generation running. Are you sure you want to navigate away? Progress will be lost.")) {
+                e.preventDefault();
                 return;
               }
             }
-            setIsMobileOpen(false);
-            router.push("/");
           }}>
             <GenVoiceLogo size={42} className={`shrink-0 text-text-primary ${isCollapsed ? "mx-auto" : ""}`} />
             {!isCollapsed && <span className="font-semibold text-lg tracking-tight whitespace-nowrap text-text-primary">GenVoice Studio</span>}
@@ -132,24 +136,25 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (
-              <button
+              <Link
                 key={item.href}
+                href={item.href}
                 onClick={(e) => {
-                  e.preventDefault();
                   if (isActive) {
+                    e.preventDefault();
                     setIsMobileOpen(false);
+                    // Force a hard navigation to reset the page state if they click the active tab
                     window.location.reload();
                     return;
                   }
                   if (typeof window !== "undefined" && (window as any).isGenerating) {
                     if (!confirm("You have an active generation running. Are you sure you want to navigate away? Progress will be lost.")) {
+                      e.preventDefault();
                       return;
                     }
                   }
-                  setIsMobileOpen(false);
-                  router.push(item.href);
                 }}
-                className={`flex w-full items-center gap-3 px-3 py-2.5 rounded-xl transition-colors outline-none cursor-pointer
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors outline-none
                   ${isActive 
                     ? "bg-accent-bg text-accent-text font-medium shadow-sm" 
                     : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
@@ -160,7 +165,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
               >
                 <Icon size={18} className="shrink-0" />
                 {!isCollapsed && <span className="whitespace-nowrap text-sm">{item.name}</span>}
-              </button>
+              </Link>
             );
           })}
         </nav>
