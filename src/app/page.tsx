@@ -267,6 +267,7 @@ export default function Home() {
   const [welcomeMessage, setWelcomeMessage] = useState("What do you want to say?");
   const [audios, setAudios]       = useState<AudioFile[]>([]);
   const audiosRef                 = useRef<AudioFile[]>([]);
+  const historySavedRef           = useRef(false);
   const [showLogs, setShowLogs]   = useState(false);
   const [logs, setLogs]           = useState<string[]>([]);
 
@@ -403,7 +404,25 @@ export default function Home() {
 
   useEffect(() => {
     get('custom_voices').then(val => {
-      if (val) setCustomVoices(val);
+      const explicitVoices = val || [];
+      const populate = localStorage.getItem('populateFromLibrary') !== 'false';
+      if (populate) {
+        import('@/lib/history').then(({ getHistory }) => {
+          getHistory().then(history => {
+            const historyVoices = history
+              .filter(h => h.type === 'design' || h.type === 'voice')
+              .map(h => ({
+                id: `history_${h.id}`,
+                name: `Library: ${h.prompt ? h.prompt.slice(0, 20) + '...' : 'Generation'}`,
+                audioUrl: URL.createObjectURL(h.audioBlob),
+                transcript: h.text
+              }));
+            setCustomVoices([...explicitVoices, ...historyVoices]);
+          });
+        });
+      } else if (explicitVoices.length > 0) {
+        setCustomVoices(explicitVoices);
+      }
     });
 
     const storedUsername = localStorage.getItem('kaggleUsername');
@@ -614,6 +633,7 @@ export default function Home() {
       setMessage("Please enter either your App Password or your Kaggle Credentials, and text to synthesize.");
       return;
     }
+    historySavedRef.current = false;
     const activeInstructions = false ? designPrompt : instructions;
     if (false && (!activeInstructions || activeInstructions.trim() === "")) {
       setStatus("error");
@@ -733,6 +753,22 @@ export default function Home() {
           setCellsDone(cellsTotal || 1);
           addLog(`Audio ready.`);
           localStorage.removeItem('voice_kernel');
+          
+          // Save to history (fire and forget to not block UI)
+          import('@/lib/history').then(async ({ saveToHistory }) => {
+            try {
+              const res = await fetch(audioUrl);
+              const blob = await res.blob();
+              await saveToHistory({
+                type: 'voice',
+                text: textToUse,
+                audioBlob: blob
+              });
+              console.log("Saved to local history");
+            } catch (err) {
+              console.error("Failed to save to history:", err);
+            }
+          });
         }
       } else if (data.status === "failed") {
         setStatus("error"); setMessage(`Generation failed`); addLog(`ERROR: ${data.error || 'Failed'}`);
@@ -834,6 +870,13 @@ export default function Home() {
           const url = URL.createObjectURL(stitchedBlob);
           currentUrl = url;
           setStitchedAudioUrl(url);
+
+          if (!historySavedRef.current) {
+            historySavedRef.current = true;
+            import('@/lib/history').then(({ saveToHistory }) => {
+              saveToHistory({ type: 'voice', text, audioBlob: stitchedBlob }).catch(console.error);
+            });
+          }
         } catch (e) {
           console.error("Stitching failed", e);
         } finally {

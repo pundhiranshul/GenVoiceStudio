@@ -4,7 +4,7 @@ import { AboutModal } from "@/components/AboutModal";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Mic, AudioLines, Bug, Info, ChevronLeft, ChevronRight, Menu, X, User, Wand2 } from "lucide-react";
+import { Mic, AudioLines, Bug, Info, ChevronLeft, ChevronRight, Menu, X, User, Wand2, Library } from "lucide-react";
 
 const GenVoiceLogo = ({ size = 24, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 200 200" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
@@ -69,7 +69,8 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { name: "Generate Voice", href: "/", icon: Mic },
     { name: "Voice Design", href: "/voice-design", icon: Wand2 },
-    { name: "Sound Effects", href: "/sfx", icon: AudioLines }
+    { name: "Sound Effects", href: "/sfx", icon: AudioLines },
+    { name: "Library", href: "/library", icon: Library }
   ];
 
   const bottomItems = [

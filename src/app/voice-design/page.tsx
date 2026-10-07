@@ -266,6 +266,7 @@ export default function Home() {
   const [welcomeMessage, setWelcomeMessage] = useState("What do you want to say?");
   const [audios, setAudios]       = useState<AudioFile[]>([]);
   const audiosRef                 = useRef<AudioFile[]>([]);
+  const historySavedRef           = useRef(false);
   const [showLogs, setShowLogs]   = useState(false);
   const [logs, setLogs]           = useState<string[]>([]);
 
@@ -721,6 +722,7 @@ export default function Home() {
       setMessage("Please provide a Voice Design Instruction to design the voice.");
       return;
     }
+    historySavedRef.current = false;
     isStoppedRef.current = false;
     setIsVoiceSaved(false);
     setStatus("generating"); setMessage("Submitting…");
@@ -825,6 +827,19 @@ export default function Home() {
           setStitchedAudioUrl(audioUrl);
           setCellsDone(cellsTotal || 1);
           addLog(`Audio ready.`);
+
+          import('@/lib/history').then(async ({ saveToHistory }) => {
+            try {
+              const res = await fetch(audioUrl);
+              const blob = await res.blob();
+              await saveToHistory({
+                type: 'design',
+                prompt: designPrompt,
+                text: typeof window !== "undefined" ? localStorage.getItem("voice_design_text") || "" : "",
+                audioBlob: blob
+              });
+            } catch (err) {}
+          });
         }
       } else if (data.status === "failed") {
         setStatus("error"); setMessage(`Kaggle Error`); addLog(`ERROR: ${data.error || 'Failed'}`);
@@ -929,6 +944,18 @@ export default function Home() {
           const url = URL.createObjectURL(stitchedBlob);
           currentUrl = url;
           setStitchedAudioUrl(url);
+
+          if (!historySavedRef.current) {
+            historySavedRef.current = true;
+            import('@/lib/history').then(({ saveToHistory }) => {
+              saveToHistory({ 
+                type: 'design', 
+                prompt: designPrompt,
+                text: typeof window !== "undefined" ? localStorage.getItem("voice_design_text") || "" : "",
+                audioBlob: stitchedBlob 
+              }).catch(console.error);
+            });
+          }
         } catch (e) {
           console.error("Stitching failed", e);
         } finally {

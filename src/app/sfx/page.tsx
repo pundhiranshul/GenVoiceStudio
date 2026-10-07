@@ -320,6 +320,18 @@ export default function SFXStudio() {
         addLog('Audio ready.');
         setStatus('complete');
         localStorage.removeItem('sfx_kernel');
+
+        import('@/lib/history').then(async ({ saveToHistory }) => {
+          try {
+            const res = await fetch(audioStreamUrl);
+            const blob = await res.blob();
+            await saveToHistory({
+              type: 'sfx',
+              prompt: prompt,
+              audioBlob: blob
+            });
+          } catch (err) {}
+        });
       } else if (data.status === 'failed' || data.error) {
         throw new Error(data.error || 'Generation failed.');
       } else {
