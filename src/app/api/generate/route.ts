@@ -28,6 +28,10 @@ export async function POST(req: Request) {
       slug     = process.env.KAGGLE_KERNEL_SLUG || 'genvoice-api';
     }
 
+    if (!referenceAudio && instructions) {
+      slug += '-design';
+    }
+
     if (!username || !token) {
       return NextResponse.json(
         { error: 'Kaggle credentials not provided or not configured on server.' },
@@ -310,7 +314,7 @@ export async function POST(req: Request) {
     }
     if (currentChunk) finalChunks.push(currentChunk);
 
-    const needsChunking = true; // Always use concurrent chunked generation for dual T4 support
+    const needsChunking = finalChunks.length > 1;
 
     if (needsChunking) {
       // Drop the single-shot cell — replace it with a skip notice
