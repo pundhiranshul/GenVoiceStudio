@@ -135,8 +135,9 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
                 href={item.href}
                 onClick={(e) => {
                   if (isActive) {
-                    e.preventDefault();
                     setIsMobileOpen(false);
+                    // Force a hard navigation to reset the page state if they click the active tab
+                    window.location.href = item.href;
                     return;
                   }
                   if (typeof window !== "undefined" && (window as any).isGenerating) {
