@@ -129,28 +129,32 @@ export async function POST(req: Request) {
         }
 
         // Replace the reference audio cell if a custom reference was provided
-        if (referenceAudio && referenceText && src.includes('load_dataset') && src.includes('librispeech_asr_dummy')) {
-          const b64Data = referenceAudio.includes(',') ? referenceAudio.split(',')[1] : referenceAudio;
-          cell.source = [
-            `import base64\n`,
-            `import io\n`,
-            `import soundfile as sf\n`,
-            `\n`,
-            `audio_b64 = ${JSON.stringify(b64Data)}\n`,
-            `audio_data = base64.b64decode(audio_b64)\n`,
-            `\n`,
-            `try:\n`,
-            `    data, sr = sf.read(io.BytesIO(audio_data))\n`,
-            `    sf.write("/kaggle/working/reference.wav", data, sr)\n`,
-            `    print("Custom reference clip decoded and saved.")\n`,
-            `except Exception as e:\n`,
-            `    print(f"Error decoding custom audio: {e}")\n`,
-            `    with open("/kaggle/working/reference.wav", "wb") as f:\n`,
-            `        f.write(audio_data)\n`,
-            `\n`,
-            `reference_text = ${JSON.stringify(referenceText)}\n`,
-            `print(f"Transcript: {reference_text}")\n`,
-          ];
+        if (src.includes('load_dataset') && src.includes('librispeech_asr_dummy')) {
+          if (referenceAudio && referenceText) {
+            const b64Data = referenceAudio.includes(',') ? referenceAudio.split(',')[1] : referenceAudio;
+            cell.source = [
+              `import base64\n`,
+              `import io\n`,
+              `import soundfile as sf\n`,
+              `\n`,
+              `audio_b64 = ${JSON.stringify(b64Data)}\n`,
+              `audio_data = base64.b64decode(audio_b64)\n`,
+              `\n`,
+              `try:\n`,
+              `    data, sr = sf.read(io.BytesIO(audio_data))\n`,
+              `    sf.write("/kaggle/working/reference.wav", data, sr)\n`,
+              `    print("Custom reference clip decoded and saved.")\n`,
+              `except Exception as e:\n`,
+              `    print(f"Error decoding custom audio: {e}")\n`,
+              `    with open("/kaggle/working/reference.wav", "wb") as f:\n`,
+              `        f.write(audio_data)\n`,
+              `\n`,
+              `reference_text = ${JSON.stringify(referenceText)}\n`,
+              `print(f"Transcript: {reference_text}")\n`,
+            ];
+          } else {
+            cell.source = [`print("No reference audio provided. Skipping dummy audio setup.")\n`];
+          }
         }
 
         // Inject instructions into the chunked generation cell

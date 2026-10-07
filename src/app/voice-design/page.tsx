@@ -708,7 +708,18 @@ export default function Home() {
   };
 
   const handleGenerate = async (overrideText?: string | React.MouseEvent) => {
-    const textToUse = typeof overrideText === 'string' ? overrideText : text;
+    let textToUse = typeof overrideText === 'string' ? overrideText : text;
+    
+    // In Voice Design mode, truncate long text to the first sentence to force a fast single-shot preview
+    if (textToUse && textToUse.length > 200) {
+      const sentences = textToUse.match(/[^.!?]+[.!?]+/g);
+      if (sentences && sentences.length > 0) {
+        textToUse = sentences[0].trim();
+      } else {
+        textToUse = textToUse.substring(0, 200).trim() + "...";
+      }
+    }
+
     if ((!password && (!kaggleUsername || !kaggleKey)) || !textToUse) {
       setStatus("error");
       setMessage("Please enter either your App Password or your Kaggle Credentials, and text to synthesize.");
