@@ -28,7 +28,17 @@ export function AudioPlayer({ src, name, transcript }: AudioPlayerProps) {
 
   const handleTimeUpdate = () => {
     if (audioRef.current) {
-      setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
+      const current = audioRef.current.currentTime;
+      const audioDur = audioRef.current.duration;
+      const dur = isFinite(audioDur) && audioDur > 0 ? audioDur : Math.max(duration, current);
+      
+      if (dur > 0) {
+        setProgress((current / dur) * 100);
+      }
+      
+      if (current > duration) {
+        setDuration(current);
+      }
     }
   };
 
@@ -40,8 +50,12 @@ export function AudioPlayer({ src, name, transcript }: AudioPlayerProps) {
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (audioRef.current) {
-      const seekTo = (parseFloat(e.target.value) / 100) * audioRef.current.duration;
-      audioRef.current.currentTime = seekTo;
+      const audioDur = audioRef.current.duration;
+      const dur = isFinite(audioDur) && audioDur > 0 ? audioDur : duration;
+      const seekTo = (parseFloat(e.target.value) / 100) * dur;
+      if (isFinite(seekTo)) {
+        audioRef.current.currentTime = seekTo;
+      }
       setProgress(parseFloat(e.target.value));
     }
   };
@@ -63,7 +77,18 @@ export function AudioPlayer({ src, name, transcript }: AudioPlayerProps) {
         src={src}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
-        onEnded={() => { setIsPlaying(false); setProgress(100); }}
+        onDurationChange={(e) => {
+          if (isFinite(e.currentTarget.duration)) {
+            setDuration(e.currentTarget.duration);
+          }
+        }}
+        onEnded={() => { 
+          setIsPlaying(false); 
+          setProgress(100); 
+          if (audioRef.current) {
+            setDuration(audioRef.current.currentTime);
+          }
+        }}
         className="hidden"
       />
       
