@@ -4,6 +4,7 @@ export interface HistoryItem {
   id: string;
   type: 'voice' | 'design' | 'sfx';
   createdAt: number;
+  name?: string;
   text?: string;
   prompt?: string;
   audioBlob: Blob;

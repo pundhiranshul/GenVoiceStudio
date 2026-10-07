@@ -285,7 +285,11 @@ export default function Home() {
 
   const [instructions, setInstructions] = useState("");
   const [designPrompt, setDesignPrompt] = useState(() => typeof window !== "undefined" ? localStorage.getItem("voice_design_prompt") || "" : "");
-  useEffect(() => { localStorage.setItem("voice_design_prompt", designPrompt); }, [designPrompt]);
+  const [voiceName, setVoiceName] = useState(() => typeof window !== "undefined" ? localStorage.getItem("voice_design_name") || "" : "");
+  useEffect(() => { 
+    localStorage.setItem("voice_design_prompt", designPrompt); 
+    localStorage.setItem("voice_design_name", voiceName);
+  }, [designPrompt, voiceName]);
   const [generatedPreviewText, setGeneratedPreviewText] = useState("");
   const [isVoiceSaved, setIsVoiceSaved] = useState(false);
   const [guidanceScale, setGuidanceScale] = useState(2);
@@ -471,7 +475,7 @@ export default function Home() {
         payload.modelProxyKey = mKey;
         payload.modelProxyExpiresAt = mExp;
       }
-      const res = await fetch('/api/optimize', {
+      const res = await fetch('/api/optimize-design', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -483,6 +487,7 @@ export default function Home() {
         localStorage.setItem('modelProxyExpiresAt', data.modelProxyExpiresAt);
       }
       setDesignPrompt(data.optimizedText);
+      if (data.suggestedName) setVoiceName(data.suggestedName);
     } catch (err: any) {
       setOptimizeDesignError(err.message);
     } finally {
@@ -513,7 +518,7 @@ export default function Home() {
         payload.modelProxyKey = mKey;
         payload.modelProxyExpiresAt = mExp;
       }
-      const res = await fetch('/api/optimize', {
+      const res = await fetch('/api/optimize-design', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -525,6 +530,7 @@ export default function Home() {
         localStorage.setItem('modelProxyExpiresAt', data.modelProxyExpiresAt);
       }
       setDesignPrompt(data.optimizedText);
+      if (data.suggestedName) setVoiceName(data.suggestedName);
       setShowWriteDesignModal(false);
     } catch (err: any) {
       setWriteDesignError(err.message);
@@ -834,6 +840,7 @@ export default function Home() {
               const blob = await res.blob();
               await saveToHistory({
                 type: 'design',
+                name: voiceName || undefined,
                 prompt: designPrompt,
                 text: typeof window !== "undefined" ? localStorage.getItem("voice_design_text") || "" : "",
                 audioBlob: blob
@@ -950,6 +957,7 @@ export default function Home() {
             import('@/lib/history').then(({ saveToHistory }) => {
               saveToHistory({ 
                 type: 'design', 
+                name: voiceName || undefined,
                 prompt: designPrompt,
                 text: typeof window !== "undefined" ? localStorage.getItem("voice_design_text") || "" : "",
                 audioBlob: stitchedBlob 
@@ -1502,12 +1510,19 @@ export default function Home() {
             <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
               Voice Design Instruction
             </label>
-            <div className="bg-bg-panel border border-border-color rounded-2xl p-4 shadow-sm focus-within:ring-2 ring-ring-color transition-all">
+            <div className="bg-bg-panel border border-border-color rounded-2xl p-4 shadow-sm focus-within:ring-2 ring-ring-color transition-all flex flex-col gap-2">
+              <input
+                type="text"
+                placeholder="Voice Name (e.g. Grumpy Wizard)"
+                value={voiceName}
+                onChange={(e) => setVoiceName(e.target.value)}
+                className="w-full bg-transparent text-text-primary text-sm font-semibold tracking-wide placeholder:text-text-muted focus:outline-none pb-2 border-b border-border-subtle"
+              />
               <textarea
                 value={designPrompt}
                 onChange={(e) => setDesignPrompt(e.target.value)}
                 placeholder={"e.g., A raspy old man with a British accent..."}
-                className="w-full h-28 bg-transparent resize-none outline-none text-sm leading-relaxed placeholder:text-text-muted text-text-primary"
+                className="w-full h-24 bg-transparent resize-none outline-none text-sm leading-relaxed placeholder:text-text-muted text-text-primary"
               />
             </div>
           </div>

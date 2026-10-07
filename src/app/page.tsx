@@ -421,7 +421,7 @@ export default function Home() {
               .filter(h => h.type === 'design')
               .map(h => ({
                 id: `history_${h.id}`,
-                name: h.prompt ? (h.prompt.length > 30 ? h.prompt.slice(0, 30) + '...' : h.prompt) : 'Voice Design',
+                name: h.name || (h.prompt ? (h.prompt.length > 30 ? h.prompt.slice(0, 30) + '...' : h.prompt) : 'Voice Design'),
                 data: URL.createObjectURL(h.audioBlob),
                 transcript: h.text
               }));

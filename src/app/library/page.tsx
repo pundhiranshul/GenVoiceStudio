@@ -149,6 +149,11 @@ export default function LibraryPage() {
                   </div>
                 </div>
 
+                {item.name && (
+                  <div className="text-sm font-semibold text-text-primary mb-1">
+                    {item.name}
+                  </div>
+                )}
                 {item.prompt && (
                   <div className="text-sm font-medium text-text-primary">
                     <span className="text-xs text-text-muted uppercase tracking-wider block mb-1">Prompt</span>
