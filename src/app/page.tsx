@@ -394,9 +394,17 @@ export default function Home() {
   };
 
   const handleDeleteVoice = async (id: string) => {
-    const updated = customVoices.filter(v => v.id !== id);
-    setCustomVoices(updated);
-    await set('custom_voices', updated);
+    if (id.startsWith('history_')) {
+      const realId = id.replace('history_', '');
+      import('@/lib/history').then(async ({ deleteHistoryItem }) => {
+        await deleteHistoryItem(realId);
+      });
+    } else {
+      const explicitVoices = await get('custom_voices') || [];
+      const updated = explicitVoices.filter((v: any) => v.id !== id);
+      await set('custom_voices', updated);
+    }
+    setCustomVoices(customVoices.filter(v => v.id !== id));
     if (selectedVoiceId === id) {
       setSelectedVoiceId("el_v3_15");
     }
@@ -410,11 +418,11 @@ export default function Home() {
         import('@/lib/history').then(({ getHistory }) => {
           getHistory().then(history => {
             const historyVoices = history
-              .filter(h => h.type === 'design' || h.type === 'voice')
+              .filter(h => h.type === 'design')
               .map(h => ({
                 id: `history_${h.id}`,
-                name: `Library: ${h.prompt ? h.prompt.slice(0, 20) + '...' : 'Generation'}`,
-                audioUrl: URL.createObjectURL(h.audioBlob),
+                name: h.prompt ? (h.prompt.length > 30 ? h.prompt.slice(0, 30) + '...' : h.prompt) : 'Voice Design',
+                data: URL.createObjectURL(h.audioBlob),
                 transcript: h.text
               }));
             setCustomVoices([...explicitVoices, ...historyVoices]);
