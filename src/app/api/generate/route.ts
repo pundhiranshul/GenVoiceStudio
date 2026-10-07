@@ -99,7 +99,7 @@ export async function POST(req: Request) {
         // Single-shot generation cell
         if (src.includes('paragraph = (') && src.includes('infer.py')) {
           const subprocessArgs: string[] = [
-            `    "python", "infer.py", MODEL_DIR,\n`,
+            `    "python", "infer.py", str(MODEL_DIR),\n`,
           ];
           if (referenceAudio) {
             subprocessArgs.push(
@@ -160,10 +160,11 @@ export async function POST(req: Request) {
             pythonReqVars += `        "ref_audio_path": "/kaggle/working/reference.wav",\n`;
             pythonReqVars += `        "ref_text": reference_text,\n`;
           }
+          let pythonCfgScale = "1.0";
           if (instructions && instructions.trim() !== '') {
             pythonReqVars += `        "instruction": ${JSON.stringify(instructions)},\n`;
+            pythonCfgScale = `${guidanceScale || 4.0}`;
           }
-          const cfgScale = guidanceScale || 4;
 
           cell.source = [
             `import re, torch, os, time\n`,
@@ -228,7 +229,7 @@ export async function POST(req: Request) {
             `    set_all_seeds(42)\n`,
             `    inputs = prepare_inputs(\n`,
             `        tokenizer, audio_tokenizer, model, [request],\n`,
-            `        get_template(template_name), guidance_scale=${cfgScale},\n`,
+            `        get_template(template_name), guidance_scale=${pythonCfgScale},\n`,
             `        guidance_scale_ref=None, guidance_scale_ins=None\n`,
             `    )\n`,
             `    \n`,
