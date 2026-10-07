@@ -663,7 +663,7 @@ export default function Home() {
         const v = allVoices.find(x => x.id === selectedVoiceId);
         if (v && v.data) {
           // @ts-ignore
-          if (v.data.startsWith("/")) {
+          if (v.data.startsWith("/") || v.data.startsWith("blob:")) {
             // @ts-ignore
             const r = await fetch(v.data);
             const blob = await r.blob();
