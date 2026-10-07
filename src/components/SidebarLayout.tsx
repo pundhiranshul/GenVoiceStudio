@@ -132,15 +132,13 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (
-              <Link
+              <button
                 key={item.href}
-                href={item.href}
                 onClick={(e) => {
                   e.preventDefault();
                   if (isActive) {
                     setIsMobileOpen(false);
-                    // Force a hard navigation to reset the page state if they click the active tab
-                    window.location.href = item.href;
+                    window.location.reload();
                     return;
                   }
                   if (typeof window !== "undefined" && (window as any).isGenerating) {
@@ -149,12 +147,9 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
                     }
                   }
                   setIsMobileOpen(false);
-                  
-                  // Programmatically push the route instead of relying on Link's default behavior
-                  // which can sometimes be interrupted by state changes on mobile
                   router.push(item.href);
                 }}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors outline-none
+                className={`flex w-full items-center gap-3 px-3 py-2.5 rounded-xl transition-colors outline-none cursor-pointer
                   ${isActive 
                     ? "bg-accent-bg text-accent-text font-medium shadow-sm" 
                     : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
@@ -165,7 +160,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
               >
                 <Icon size={18} className="shrink-0" />
                 {!isCollapsed && <span className="whitespace-nowrap text-sm">{item.name}</span>}
-              </Link>
+              </button>
             );
           })}
         </nav>
