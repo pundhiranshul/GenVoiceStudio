@@ -215,17 +215,24 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-full relative">
-        {/* Mobile Header Trigger */}
-        <div className="md:hidden absolute top-0 left-0 h-16 w-16 flex items-center justify-center z-[60]">
-          <button 
-            onClick={() => setIsMobileOpen(true)}
-            className="p-2 text-text-primary hover:bg-bg-hover rounded-lg transition-colors bg-bg-base/80 backdrop-blur-sm"
-          >
-            <Menu size={24} />
-          </button>
+      <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
+        {/* Mobile Header Bar */}
+        <div className="md:hidden flex items-center justify-between h-14 px-4 bg-bg-panel border-b border-border-color shrink-0 z-30 relative">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsMobileOpen(true)}
+              className="p-1.5 -ml-1.5 text-text-primary hover:bg-bg-hover rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+            >
+              <Menu size={24} />
+            </button>
+            <span className="font-semibold text-text-primary text-sm">GenVoice Studio</span>
+          </div>
         </div>
-        {children}
+        
+        {/* Page Content */}
+        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+          {children}
+        </div>
       </div>
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
     </div>
