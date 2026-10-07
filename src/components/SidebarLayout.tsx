@@ -90,14 +90,14 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/50 z-[90] md:hidden"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside 
-        className={`fixed md:relative z-50 flex flex-col h-full bg-bg-panel border-r border-border-color transition-all duration-300 ease-in-out
+        className={`fixed md:relative z-[100] flex flex-col h-full bg-bg-panel border-r border-border-color transition-all duration-300 ease-in-out
           ${isMobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
           ${isCollapsed ? "w-20" : "w-64"}
         `}
@@ -215,7 +215,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         {/* Collapse Toggle (Desktop only) */}
         <button 
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden md:flex absolute -right-3 top-20 w-6 h-6 bg-bg-panel border border-border-color rounded-full items-center justify-center text-text-muted hover:text-text-primary shadow-sm z-50 transition-transform hover:scale-110"
+          className="hidden md:flex absolute -right-3 top-20 w-6 h-6 bg-bg-panel border border-border-color rounded-full items-center justify-center text-text-muted hover:text-text-primary shadow-sm z-[100] transition-transform hover:scale-110"
         >
           {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
