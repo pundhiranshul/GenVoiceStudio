@@ -922,41 +922,54 @@ export default function Home() {
     });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Backspace' || e.key === 'Delete') {
-      const el = e.currentTarget;
-      if (el.selectionStart === el.selectionEnd) {
-        if (e.key === 'Backspace') {
-          const textBefore = text.slice(0, el.selectionStart);
-          const tagMatch = textBefore.match(/(\([^)]+\))$/);
-          if (tagMatch) {
-            e.preventDefault();
-            const startPos = el.selectionStart - tagMatch[0].length;
-            setText(text.slice(0, startPos) + text.slice(el.selectionStart));
-            setTimeout(() => {
-              if (textAreaRef.current) {
-                textAreaRef.current.selectionStart = textAreaRef.current.selectionEnd = startPos;
-              }
-            }, 0);
-          }
-        } else if (e.key === 'Delete') {
-          const textAfter = text.slice(el.selectionStart);
-          const tagMatch = textAfter.match(/^(\([^)]+\))/);
-          if (tagMatch) {
-            e.preventDefault();
-            const endPos = el.selectionStart + tagMatch[0].length;
-            setText(text.slice(0, el.selectionStart) + text.slice(endPos));
-            setTimeout(() => {
-              if (textAreaRef.current) {
-                textAreaRef.current.selectionStart = textAreaRef.current.selectionEnd = el.selectionStart;
-              }
-            }, 0);
-          }
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    const el = e.target;
+    let finalNewText = newText;
+    let finalCursor = el.selectionStart;
+
+    if (text.length === newText.length + 1) {
+      const deletedCharIndex = el.selectionStart;
+      const deletedChar = text[deletedCharIndex];
+      if (deletedChar === ')') {
+        const textBeforeDeleted = newText.slice(0, deletedCharIndex);
+        const tagMatch = textBeforeDeleted.match(/(\([^)]+)$/);
+        if (tagMatch) {
+          const startPos = deletedCharIndex - tagMatch[0].length;
+          finalNewText = newText.slice(0, startPos) + newText.slice(deletedCharIndex);
+          finalCursor = startPos;
+        }
+      } else if (deletedChar === '(') {
+        const textAfterDeleted = newText.slice(deletedCharIndex);
+        const tagMatch = textAfterDeleted.match(/^([^)]+\))/);
+        if (tagMatch) {
+          const endPos = deletedCharIndex + tagMatch[0].length;
+          finalNewText = newText.slice(0, deletedCharIndex) + newText.slice(endPos);
+          finalCursor = deletedCharIndex;
         }
       }
     }
+
+    setText(finalNewText);
+
+    if (status === 'complete' && audios.length > 0 && !isEditorOpen) {
+      setAudios([]);
+      setStitchedAudioUrl(null);
+      setStatus('idle');
+    }
+
+    if (finalCursor !== el.selectionStart) {
+      setTimeout(() => {
+        if (textAreaRef.current) {
+          textAreaRef.current.selectionStart = textAreaRef.current.selectionEnd = finalCursor;
+        }
+      }, 0);
+    }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Other key events could go here, Backspace/Delete handled in handleTextChange
+  };
   const handleDoubleClick = (e: React.MouseEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget;
     const pos = el.selectionStart;
@@ -1468,7 +1481,7 @@ export default function Home() {
                   <textarea
                     ref={textAreaRef}
                     value={text}
-                    onChange={e => setText(e.target.value)}
+                    onChange={handleTextChange}
                     onKeyDown={handleKeyDown}
                     onDoubleClick={handleDoubleClick}
                     placeholder=""
