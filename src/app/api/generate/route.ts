@@ -253,7 +253,7 @@ export async function POST(req: Request) {
             `if current_chunk: sentences.append(current_chunk)\n\n`,
             `print(f"{len(sentences)} chunks:")\n\n`,
             `print("Loading models onto GPU 0 & GPU 1 in BF16...")\n`,
-            `cfg = FastStreamingConfig(max_new_tokens=1500, max_seq_len=4096, repetition_penalty=1.1)\n`,
+            `cfg = FastStreamingConfig(max_new_tokens=1500, repetition_penalty=1.1)\n`,
             `\ntorch.cuda.set_device(0)\n`,
             `tok_0, mdl_0, atok_0 = load_runtime(MODEL_DIR, device="cuda:0", attn_implementation="sdpa")\n`,
             `update_generation_config_for_breeze(mdl_0)\n`,
