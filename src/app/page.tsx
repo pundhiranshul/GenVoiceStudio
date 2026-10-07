@@ -1378,7 +1378,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 md:h-full md:overflow-hidden bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary pb-8 md:pb-0">
+    <div className="flex flex-col md:flex-1 md:min-h-0 min-h-[100dvh] md:h-full md:overflow-hidden bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary">
 
       {/* ── Top Header ────────────────────────────────────────────── */}
       <header className="h-16 px-6 flex items-center justify-end border-b border-border-color shrink-0 relative z-50">
@@ -1420,7 +1420,7 @@ export default function Home() {
       </header>
 
       {/* ── Main Studio Split ─────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row flex-1 min-h-0 md:overflow-hidden">
+      <div className="flex flex-col md:flex-row md:flex-1 md:min-h-0 md:overflow-hidden">
         
         {/* Center Canvas */}
         <main className="flex-1 flex flex-col min-w-0 bg-bg-base shrink-0 md:shrink md:overflow-y-auto">
@@ -1968,7 +1968,7 @@ export default function Home() {
       </div>
 
       {/* ── Footer & Dev Logs ─────────────────────────────────────── */}
-      <footer className="h-8 flex items-center justify-between px-6 border-t border-border-color bg-bg-base shrink-0 fixed bottom-0 left-0 right-0 md:static z-40">
+      <footer className="h-8 flex items-center justify-between px-6 border-t border-border-color bg-bg-base shrink-0">
         <span className="text-[10px] text-text-muted">
           Built by <a href="https://github.com/pundhiranshul" target="_blank" rel="noreferrer" className="text-text-secondary hover:text-text-primary transition-colors underline decoration-white/20 underline-offset-2">Anshul Pundhir</a>
         </span>
