@@ -460,7 +460,7 @@ export default function Home() {
       const payload: any = {
         text: designPrompt,
         instruction: "Optimize this prompt for Voice Design. Enhance it by adding descriptive words about the age, gender, accent, tone, and character. Keep it under 2 sentences.",
-        aiModel: typeof AVAILABLE_AI_MODELS !== 'undefined' ? AVAILABLE_AI_MODELS[0] : 'openai/gpt-4o'
+        aiModel
       };
       const pass = localStorage.getItem('appPassword');
       if (pass) {
@@ -503,7 +503,7 @@ export default function Home() {
       const payload: any = {
         text: writeDesignTopic,
         instruction: "You are an expert voice actor casting director. Write a highly detailed Voice Design instruction prompt based on the user's premise. Describe the age, gender, accent, tone, and character. Just output the prompt itself, nothing else. Keep it under 2 sentences.",
-        aiModel: typeof AVAILABLE_AI_MODELS !== 'undefined' ? AVAILABLE_AI_MODELS[0] : 'openai/gpt-4o'
+        aiModel
       };
       const pass = localStorage.getItem('appPassword');
       if (pass) {
