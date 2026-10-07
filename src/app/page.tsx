@@ -1717,12 +1717,12 @@ export default function Home() {
 
               {/* Action Buttons */}
               {!isEditorOpen && (
-                <div className="flex flex-row items-center gap-3 ml-0 sm:ml-6 shrink-0 w-full sm:w-auto mt-4 sm:mt-0 overflow-x-auto no-scrollbar pb-2 sm:pb-0">
+                <div className="flex flex-col sm:flex-row items-center gap-3 ml-0 sm:ml-6 shrink-0 w-full sm:w-auto mt-4 sm:mt-0">
 
                   {isGen ? (
                     <button
                       onClick={stopRun}
-                      className="whitespace-nowrap shrink-0 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-input text-text-primary hover:bg-bg-hover-strong border border-border-color font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-input text-text-primary hover:bg-bg-hover-strong border border-border-color font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                     >
                       <Square size={16} className="fill-current text-text-secondary" />
                       Stop
@@ -1731,13 +1731,13 @@ export default function Home() {
                     <>
                       <button
                         onClick={handleNewScript}
-                        className="whitespace-nowrap shrink-0 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                       >
                         New Script
                       </button>
                       <button
                         onClick={() => { setAudios([]); setStitchedAudioUrl(null); setStatus("idle"); }}
-                        className="whitespace-nowrap shrink-0 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                       >
                         Edit Script
                       </button>
@@ -1745,7 +1745,7 @@ export default function Home() {
                         id="main-generate-btn"
                         onClick={handleGenerate}
                         disabled={isGen || isStoryGen || !text.trim()}
-                        className="whitespace-nowrap shrink-0 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                       >
                         Retry Generation
                       </button>
@@ -1755,14 +1755,14 @@ export default function Home() {
                         <button
                           onClick={() => { setShowStoryModal(true); setStoryError(""); }}
                           disabled={isGen || isStoryGen || isOptimizing}
-                          className="whitespace-nowrap shrink-0 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                         >
                           {isStoryGen ? <Loader2 size={16} className="animate-spin" /> : <><Sparkles size={16} /> AI Write Story</>}
                         </button>
                         <button
                           onClick={() => { setShowOptimizeModal(true); setOptimizeError(""); }}
                           disabled={isGen || isStoryGen || isOptimizing || !text.trim()}
-                          className="whitespace-nowrap shrink-0 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isOptimizing ? <Loader2 size={16} className="animate-spin" /> : <><Wand2 size={16} /> Optimize Script</>}
                         </button>
@@ -1770,7 +1770,7 @@ export default function Home() {
                           id="main-generate-btn"
                           onClick={handleGenerate}
                           disabled={isGen || isStoryGen || !text.trim()}
-                          className="whitespace-nowrap shrink-0 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                         >
                           Generate Speech
                         </button>
