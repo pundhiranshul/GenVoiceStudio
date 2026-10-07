@@ -761,7 +761,7 @@ export default function Home() {
               const blob = await res.blob();
               await saveToHistory({
                 type: 'voice',
-                text: textToUse,
+                text: text,
                 audioBlob: blob
               });
               console.log("Saved to local history");
