@@ -258,8 +258,9 @@ export default function Home() {
   const [kaggleKey, setKaggleKey] = useState("");
   const [modelProxyKey, setModelProxyKey] = useState("");
   const [modelProxyExpiresAt, setModelProxyExpiresAt] = useState("");
-  const [text, setText] = useState(() => typeof window !== "undefined" ? localStorage.getItem("voice_text") || "" : "");
-  useEffect(() => { localStorage.setItem("voice_text", text); }, [text]);
+  const DEFAULT_TEXT = "Hello! This is my new voice. Freedom kindles the flames of hope in every heart.";
+  const [text, setText] = useState(() => typeof window !== "undefined" ? localStorage.getItem("voice_design_text") || DEFAULT_TEXT : DEFAULT_TEXT);
+  useEffect(() => { localStorage.setItem("voice_design_text", text); }, [text]);
   const [status, setStatus]       = useState<AppStatus>("idle");
   const [message, setMessage]     = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState("What do you want to say?");
@@ -708,18 +709,7 @@ export default function Home() {
   };
 
   const handleGenerate = async (overrideText?: string | React.MouseEvent) => {
-    let textToUse = typeof overrideText === 'string' ? overrideText : text;
-    
-    // In Voice Design mode, truncate long text to the first sentence to force a fast single-shot preview
-    if (textToUse && textToUse.length > 200) {
-      const sentences = textToUse.match(/[^.!?]+[.!?]+/g);
-      if (sentences && sentences.length > 0) {
-        textToUse = sentences[0].trim();
-      } else {
-        textToUse = textToUse.substring(0, 200).trim() + "...";
-      }
-    }
-
+    const textToUse = typeof overrideText === 'string' ? overrideText : text;
     if ((!password && (!kaggleUsername || !kaggleKey)) || !textToUse) {
       setStatus("error");
       setMessage("Please enter either your App Password or your Kaggle Credentials, and text to synthesize.");
