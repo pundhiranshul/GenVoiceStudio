@@ -1641,7 +1641,7 @@ export default function Home() {
 
       {/* ── Footer & Dev Logs ─────────────────────────────────────── */}
       {/* ── Footer & Dev Logs ─────────────────────────────────────── */}
-      <footer className="h-8 flex items-center justify-between px-6 border-t border-border-color bg-bg-base shrink-0 relative z-20">
+      <footer className="h-8 flex items-center justify-between px-6 border-t border-border-color bg-bg-base shrink-0 sticky bottom-0 z-40">
         <span className="text-[10px] text-text-muted">
           Built by <a href="https://github.com/pundhiranshul" target="_blank" rel="noreferrer" className="text-text-secondary hover:text-text-primary transition-colors underline decoration-white/20 underline-offset-2">Anshul Pundhir</a>
         </span>
