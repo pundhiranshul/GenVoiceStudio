@@ -53,64 +53,42 @@ export async function POST(req: Request) {
         const src = Array.isArray(cell.source) ? cell.source.join('') : String(cell.source);
         if (src.includes('copytree') && src.includes('breeze-tts')) {
           cell.source = [
-            'import os\n',
-            'os.environ["CUDA_LAUNCH_BLOCKING"] = "1"\n',
-            'import sys, subprocess, shutil, zipfile, time, concurrent.futures\n',
+            'import os, sys, subprocess, concurrent.futures\n',
             'from pathlib import Path\n',
+            'os.environ["CUDA_LAUNCH_BLOCKING"] = "1"\n',
             'REPO_DIR = Path("/kaggle/working/breeze-tts")\n',
             'MODEL_DIR = Path("/kaggle/working/breeze-tts-2")\n\n',
-            'print("Cloning repository...")\n',
-            'if not REPO_DIR.exists():\n',
-            '    subprocess.run(["git", "clone", "https://github.com/breezeblue-ai/breeze-tts.git", str(REPO_DIR)], check=True)\n\n',
-            'sys.path.insert(0, str(REPO_DIR))\n\n',
-            'print("Installing dependencies...")\n',
-            'subprocess.run([sys.executable, "-m", "pip", "install", "-r", str(REPO_DIR / "requirements.txt"), "-q"], check=False)\n',
-            'subprocess.run(["sudo", "apt-get", "update", "-y", "-q"], check=False)\n',
-            'subprocess.run(["sudo", "apt-get", "install", "sox", "libsox-fmt-all", "-y", "-q"], check=False)\n',
-            'subprocess.run([sys.executable, "-m", "pip", "install", "sox", "onnxruntime", "-q"], check=False)\n',
-            'subprocess.run([sys.executable, "-m", "pip", "uninstall", "torchvision", "torchtext", "-y", "-q"], check=False)\n',
-            'print("Codebase mounted and dependencies installed.")\n',
+            'def install_dependencies():\n',
+            '    print("Cloning repository and installing dependencies...")\n',
+            '    if not REPO_DIR.exists():\n',
+            '        subprocess.run(["git", "clone", "https://github.com/breezeblue-ai/breeze-tts.git", str(REPO_DIR)], check=True)\n',
+            '    subprocess.run(["sudo", "apt-get", "update", "-y", "-q"], check=False)\n',
+            '    subprocess.run(["sudo", "apt-get", "install", "sox", "libsox-fmt-all", "-y", "-q"], check=False)\n',
+            '    subprocess.run([sys.executable, "-m", "pip", "install", "-r", str(REPO_DIR / "requirements.txt"), "sox", "onnxruntime", "-q"], check=False)\n',
+            '    subprocess.run([sys.executable, "-m", "pip", "uninstall", "torchvision", "torchtext", "-y", "-q"], check=False)\n',
+            '    print("Dependencies installed.")\n\n',
+            'def download_model():\n',
+            '    if not MODEL_DIR.exists() or not list(MODEL_DIR.glob("*.safetensors")):\n',
+            '        print("Downloading Breeze TTS 2 checkpoint from Hugging Face...")\n',
+            '        from huggingface_hub import snapshot_download\n',
+            '        hf_token = None\n',
+            '        try:\n',
+            '            from kaggle_secrets import UserSecretsClient\n',
+            '            hf_token = UserSecretsClient().get_secret("HF_TOKEN")\n',
+            '        except:\n',
+            '            pass\n',
+            '        snapshot_download(repo_id="BreezeBlue/Breeze-TTS-2", local_dir=str(MODEL_DIR), token=hf_token)\n',
+            '        print("Checkpoint downloaded.")\n\n',
+            'with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:\n',
+            '    futures = [executor.submit(install_dependencies), executor.submit(download_model)]\n',
+            '    concurrent.futures.wait(futures)\n\n',
+            'sys.path.insert(0, str(REPO_DIR))\n',
+            'print(f"Setup complete. Using model: {MODEL_DIR}")\n',
           ];
           break;
         }
       }
     }
-
-    // Inject a model-weight check cell: use dataset if safetensors present, else download
-    const modelCheckCell = {
-      cell_type: 'code',
-      execution_count: null,
-      metadata: { trusted: true },
-      outputs: [],
-      source: [
-        `import os\n`,
-        `from pathlib import Path\n`,
-        `MODEL_DIR = Path("/kaggle/working/breeze-tts-2")\n`,
-        `if not MODEL_DIR.exists() or not list(MODEL_DIR.glob("*.safetensors")):\n`,
-        `    print("Downloading Breeze TTS 2 checkpoint from Hugging Face...")\n`,
-        `    subprocess.run([sys.executable, "-m", "pip", "install", "huggingface_hub", "-q"], check=False)\n`,
-        `    from huggingface_hub import snapshot_download\n`,
-        `    hf_token = None\n`,
-        `    try:\n`,
-        `        from kaggle_secrets import UserSecretsClient\n`,
-        `        user_secrets = UserSecretsClient()\n`,
-        `        hf_token = user_secrets.get_secret("HF_TOKEN")\n`,
-        `    except:\n`,
-        `        pass\n`,
-        `    if not hf_token:\n`,
-        `        print("WARNING: HF_TOKEN not found in Kaggle Secrets. Attempting unauthenticated download.")\n`,
-        `    snapshot_download(\n`,
-        `        repo_id="BreezeBlue/Breeze-TTS-2",\n`,
-        `        local_dir=str(MODEL_DIR),\n`,
-        `        token=hf_token\n`,
-        `    )\n`,
-        `    print("Checkpoint downloaded.")\n`,
-        'print(f"Using model: {MODEL_DIR}")\n',
-      ]
-    };
-
-    // Insert the new cell directly after the setup cell (index 2)
-    notebook.cells.splice(3, 0, modelCheckCell);
 
     // Inject text and optional reference audio / instructions into the appropriate cells
     let found = false;
