@@ -256,7 +256,7 @@ export async function POST(req: Request) {
             `    ]\n`,
             `    env = os.environ.copy()\n`,
             `    env["CUDA_VISIBLE_DEVICES"] = str(gpu_id)\n`,
-            `    env["PYTHONPATH"] = str(MODEL_DIR) + os.pathsep + env.get("PYTHONPATH", "")\n`,
+            `    env["PYTHONPATH"] = "/kaggle/working/site-packages" + os.pathsep + str(MODEL_DIR) + os.pathsep + env.get("PYTHONPATH", "")\n`,
             `    result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(REPO_DIR), env=env)\n`,
             `    if result.returncode != 0:\n`,
             `        print(f"ERROR on chunk {i}:", result.stderr[-1000:])\n`,
