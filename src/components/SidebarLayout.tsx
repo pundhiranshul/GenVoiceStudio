@@ -3,7 +3,7 @@ import { AboutModal } from "@/components/AboutModal";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Mic, AudioLines, Bug, Info, ChevronLeft, ChevronRight, Menu, X, User, Wand2, Library } from "lucide-react";
 
 const GenVoiceLogo = ({ size = 24, className = "" }) => (
@@ -34,6 +34,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
   const [username, setUsername] = useState("");
   const [showAbout, setShowAbout] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     const handleOpenAbout = () => setShowAbout(true);
@@ -99,18 +100,19 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         {/* Logo Area */}
         <div className={`h-16 flex items-center px-4 border-b border-border-color shrink-0 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
           <Link href="/" className={`flex items-center gap-3 overflow-hidden ${isCollapsed ? 'justify-center' : ''}`} onClick={(e) => {
+            e.preventDefault();
             if (pathname === "/") {
-              e.preventDefault();
               setIsMobileOpen(false);
+              window.location.href = "/";
               return;
             }
             if (typeof window !== "undefined" && (window as any).isGenerating) {
               if (!confirm("You have an active generation running. Are you sure you want to navigate away? Progress will be lost.")) {
-                e.preventDefault();
                 return;
               }
             }
             setIsMobileOpen(false);
+            router.push("/");
           }}>
             <GenVoiceLogo size={42} className={`shrink-0 text-text-primary ${isCollapsed ? "mx-auto" : ""}`} />
             {!isCollapsed && <span className="font-semibold text-lg tracking-tight whitespace-nowrap text-text-primary">GenVoice Studio</span>}
@@ -134,6 +136,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 onClick={(e) => {
+                  e.preventDefault();
                   if (isActive) {
                     setIsMobileOpen(false);
                     // Force a hard navigation to reset the page state if they click the active tab
@@ -142,11 +145,14 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
                   }
                   if (typeof window !== "undefined" && (window as any).isGenerating) {
                     if (!confirm("You have an active generation running. Are you sure you want to navigate away? Progress will be lost.")) {
-                      e.preventDefault();
                       return;
                     }
                   }
                   setIsMobileOpen(false);
+                  
+                  // Programmatically push the route instead of relying on Link's default behavior
+                  // which can sometimes be interrupted by state changes on mobile
+                  router.push(item.href);
                 }}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors outline-none
                   ${isActive 
