@@ -61,7 +61,6 @@ ${text}`;
     },
     body: JSON.stringify({
       model: model, 
-      response_format: { type: "json_object" },
       messages: [{ role: 'user', content: prompt }]
     })
   });
@@ -147,7 +146,8 @@ export async function POST(req: Request) {
 
     let parsedResult;
     try {
-      parsedResult = JSON.parse(optimizedResult);
+      const cleanedResult = optimizedResult.replace(/```json\n?|\n?```/g, '').trim();
+      parsedResult = JSON.parse(cleanedResult);
     } catch (e) {
       console.error("Failed to parse JSON from AI:", optimizedResult);
       // Fallback
