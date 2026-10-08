@@ -97,8 +97,18 @@ export async function POST(req: Request) {
     }
 
     // 2. Parse log for FINAL_RESULT as fallback
-    if (logFile) {
-      const match = logFile.match(/FINAL_RESULT:\s*(\{.*\})/);
+    let logText = '';
+    if (typeof logFile === 'string' && logFile.startsWith('http')) {
+      try {
+        const logRes = await fetch(logFile);
+        if (logRes.ok) logText = await logRes.text();
+      } catch (e) {}
+    } else if (typeof logFile === 'string') {
+      logText = logFile;
+    }
+
+    if (logText) {
+      const match = logText.match(/FINAL_RESULT:\s*(\{.*\})/);
       if (match) {
         try {
           const results = JSON.parse(match[1]);
@@ -110,7 +120,10 @@ export async function POST(req: Request) {
     }
 
     // If we didn't find FINAL_RESULT, we consider it an error.
-    const failureMsg = statusData.failureMessage || 'Verification kernel did not output expected results. It might have crashed.';
+    let failureMsg = statusData.failureMessage || 'Verification kernel did not output expected results. It might have crashed.';
+    if (failureMsg.toLowerCase().includes('failed to fetch')) {
+      failureMsg = 'Network error communicating with Kaggle. Please check your internet connection.';
+    }
     return NextResponse.json({ status: 'error', error: failureMsg });
 
   } catch (error: any) {

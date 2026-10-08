@@ -1207,7 +1207,15 @@ export default function Home() {
                               }, 1000);
                             } else {
                               setVerifyStatus('error');
-                              setVerifyError(results.error || "Verification failed. Internet or GPU not available.");
+                              let friendlyError = "Verification failed. Internet or GPU not available.";
+                              if (!results.internet && !results.gpu) {
+                                friendlyError = "Internet access blocked and GPU not available. Please verify your phone number on Kaggle to enable these features.";
+                              } else if (!results.internet) {
+                                friendlyError = "Internet access is blocked. Please ensure your Kaggle account is phone-verified to use Internet.";
+                              } else if (!results.gpu) {
+                                friendlyError = "GPU is not available. Please ensure your Kaggle account has free GPU quota remaining.";
+                              }
+                              setVerifyError(friendlyError);
                             }
                           } else {
                             polling = false;
@@ -1217,7 +1225,11 @@ export default function Home() {
                         }
                       } catch (e: any) {
                         setVerifyStatus('error');
-                        setVerifyError(e.message);
+                        let msg = e.message;
+                        if (msg === "Failed to fetch") {
+                          msg = "Network error: Failed to reach the server. Please check your connection.";
+                        }
+                        setVerifyError(msg);
                       }
                     }}
                     className="flex-1 bg-accent-bg text-accent-text font-medium py-3.5 rounded-xl hover:bg-accent-bg/90 transition-all shadow-sm flex items-center justify-center gap-2"
@@ -1407,7 +1419,15 @@ export default function Home() {
                         }, 1000);
                       } else {
                         setVerifyStatus('error');
-                        setVerifyError(results.error || "Verification failed. Internet or GPU not available.");
+                        let friendlyError = "Verification failed. Internet or GPU not available.";
+                        if (!results.internet && !results.gpu) {
+                          friendlyError = "Internet access blocked and GPU not available. Please verify your phone number on Kaggle to enable these features.";
+                        } else if (!results.internet) {
+                          friendlyError = "Internet access is blocked. Please ensure your Kaggle account is phone-verified to use Internet.";
+                        } else if (!results.gpu) {
+                          friendlyError = "GPU is not available. Please ensure your Kaggle account has free GPU quota remaining.";
+                        }
+                        setVerifyError(friendlyError);
                       }
                     } else {
                       polling = false;
@@ -1417,7 +1437,11 @@ export default function Home() {
                   }
                 } catch (e: any) {
                   setVerifyStatus('error');
-                  setVerifyError(e.message);
+                  let msg = e.message;
+                  if (msg === "Failed to fetch") {
+                    msg = "Network error: Failed to reach the server. Please check your connection.";
+                  }
+                  setVerifyError(msg);
                 }
               } else if (authMode === 'admin' && password) {
                 setIsVerifying(true);
