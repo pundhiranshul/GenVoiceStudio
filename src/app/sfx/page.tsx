@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Sparkles, Loader2, Download, Terminal, X, Key, Wand2, AudioLines, Shield, Info, Check, Sun, Moon, Copy } from "lucide-react";
+import { Sparkles, Loader2, Download, Terminal, X, Key, Wand2, AudioLines, Shield, Info, Check, Sun, Moon, Copy, Eye, EyeOff } from "lucide-react";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { CustomModelSelect, AVAILABLE_AI_MODELS } from "@/components/CustomModelSelect";
 type Status = "idle" | "pushing" | "generating" | "downloading" | "complete" | "error";
@@ -56,6 +56,8 @@ export default function SFXStudio() {
 
   const [kaggleUsername, setKaggleUsername] = useState("");
   const [kaggleKey, setKaggleKey] = useState("");
+  const [showKaggleKey, setShowKaggleKey] = useState(false);
+  const [showAppPassword, setShowAppPassword] = useState(false);
   const [hasCredentials, setHasCredentials] = useState(false);
   const [canCancelAuth, setCanCancelAuth] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
@@ -579,13 +581,22 @@ export default function SFXStudio() {
                   onChange={e => setKaggleUsername(e.target.value)}
                   className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
                 />
-                <input
-                  type="password"
-                  placeholder="Kaggle API Key"
-                  value={kaggleKey}
-                  onChange={e => setKaggleKey(e.target.value)}
-                  className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
-                />
+                <div className="relative">
+                  <input
+                    type={showKaggleKey ? "text" : "password"}
+                    placeholder="Kaggle API Key"
+                    value={kaggleKey}
+                    onChange={e => setKaggleKey(e.target.value)}
+                    className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 pr-12 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowKaggleKey(!showKaggleKey)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                  >
+                    {showKaggleKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
@@ -595,13 +606,22 @@ export default function SFXStudio() {
                 <span>Access the shared hosted instance. This requires the master App Password.</span>
               </div>
               <div className="space-y-3">
-                <input
-                  type="password"
-                  placeholder="App Password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
-                />
+                <div className="relative">
+                  <input
+                    type={showAppPassword ? "text" : "password"}
+                    placeholder="App Password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 pr-12 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAppPassword(!showAppPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                  >
+                    {showAppPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
             </div>
           )}

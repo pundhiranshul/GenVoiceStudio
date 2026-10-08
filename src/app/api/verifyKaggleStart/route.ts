@@ -89,7 +89,10 @@ print(f"FINAL_RESULT: {json.dumps(results)}")
     
     if (!kaggleRes.ok) {
       if (kaggleRes.status === 401) {
-        return NextResponse.json({ error: 'Invalid Kaggle credentials.' }, { status: 401 });
+        return NextResponse.json({ error: 'Invalid Kaggle API key or username. Please check your credentials.' }, { status: 401 });
+      }
+      if (kaggleRes.status === 409 && kaggleData.includes('already in use')) {
+        return NextResponse.json({ error: 'Notebook title already in use. This usually happens if you entered the wrong Kaggle username but the correct API key. Please double-check your username.' }, { status: 409 });
       }
       return NextResponse.json({ error: `Kaggle API Error: ${kaggleData}` }, { status: kaggleRes.status });
     }

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { get, set } from "idb-keyval";
-import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User, ArrowLeft, Mic, ChevronDown, Menu, AudioLines, LayoutTemplate } from 'lucide-react';
+import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User, ArrowLeft, Mic, ChevronDown, Menu, AudioLines, LayoutTemplate, Eye, EyeOff } from 'lucide-react';
 import { VoiceSelector, Voice } from "@/components/VoiceSelector";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { stitchChunks } from "@/utils/audioEditor";
@@ -256,6 +256,8 @@ export default function Home() {
   const [password, setPassword]   = useState("");
   const [kaggleUsername, setKaggleUsername] = useState("");
   const [kaggleKey, setKaggleKey] = useState("");
+  const [showKaggleKey, setShowKaggleKey] = useState(false);
+  const [showAppPassword, setShowAppPassword] = useState(false);
   const [modelProxyKey, setModelProxyKey] = useState("");
   const [modelProxyExpiresAt, setModelProxyExpiresAt] = useState("");
   const DEFAULT_TEXT = "Hello! This is my new voice. Freedom kindles the flames of hope in every heart.";
@@ -1293,13 +1295,22 @@ export default function Home() {
                   onChange={e => setKaggleUsername(e.target.value)}
                   className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
                 />
-                <input
-                  type="password"
-                  placeholder="Kaggle API Key"
-                  value={kaggleKey}
-                  onChange={e => setKaggleKey(e.target.value)}
-                  className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
-                />
+                <div className="relative">
+                  <input
+                    type={showKaggleKey ? "text" : "password"}
+                    placeholder="Kaggle API Key"
+                    value={kaggleKey}
+                    onChange={e => setKaggleKey(e.target.value)}
+                    className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 pr-12 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowKaggleKey(!showKaggleKey)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                  >
+                    {showKaggleKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
@@ -1309,13 +1320,22 @@ export default function Home() {
                 <span>Access the shared hosted instance. This requires the master App Password.</span>
               </div>
               <div className="space-y-3">
-                <input
-                  type="password"
-                  placeholder="App Password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
-                />
+                <div className="relative">
+                  <input
+                    type={showAppPassword ? "text" : "password"}
+                    placeholder="App Password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 pr-12 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAppPassword(!showAppPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                  >
+                    {showAppPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
             </div>
           )}
