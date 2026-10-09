@@ -21,7 +21,8 @@ async function mintProxyToken(username: string | null, key: string) {
   });
   
   if (!res.ok) {
-    throw new Error(`Failed to mint proxy token: ${res.status} ${res.statusText}`);
+    const errText = await res.text();
+    throw new Error(`Failed to mint proxy token: ${res.status} ${res.statusText} - Details: ${errText}`);
   }
   
   const data = await res.json();
