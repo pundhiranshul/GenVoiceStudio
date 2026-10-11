@@ -6,13 +6,13 @@
 
   **Broadcast-quality voice cloning, neural text-to-speech, and expressive audio synthesis — powered by free Kaggle GPU infrastructure.**
 
-  [![Live Demo](https://img.shields.io/badge/Demo-Live_Studio-6366f1?style=for-the-badge&logo=vercel&logoColor=white)](https://gen-voice-eight.vercel.app/)
-  [![Next.js](https://img.shields.io/badge/Next.js_16-App_Router-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-  [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-38bdf8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-  [![Compute](https://img.shields.io/badge/Kaggle-Dual_T4_GPUs-20beff?style=for-the-badge&logo=kaggle&logoColor=white)](https://www.kaggle.com/)
-  [![Model](https://img.shields.io/badge/Breeze_TTS_2-Acoustic_Model-ffd21e?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/BreezeBlue/Breeze-TTS-2)
-  [![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)](./LICENSE)
+  [![Live Demo](https://img.shields.io/badge/Demo-Live_Studio-6366f1?style=flat-square&logo=vercel&logoColor=white)](https://gen-voice-eight.vercel.app/)
+  [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v3-38bdf8?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+  [![Compute](https://img.shields.io/badge/Kaggle-Dual_T4_GPUs-20beff?style=flat-square&logo=kaggle&logoColor=white)](https://www.kaggle.com/)
+  [![Model](https://img.shields.io/badge/Breeze_TTS_2-HuggingFace-ffd21e?style=flat-square&logo=huggingface&logoColor=black)](https://huggingface.co/BreezeBlue/Breeze-TTS-2)
+  [![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](./LICENSE)
 
   <p align="center">
     <a href="https://gen-voice-eight.vercel.app/"><strong>Explore the Live Studio →</strong></a>
@@ -73,20 +73,18 @@ When generating speech, the neural acoustic pipeline interprets embedded vocal m
 Listen to this long-form dramatic narration generated entirely end-to-end on GenVoice Studio:
 
 > **Title:** *The Autobiography of Albert Einstein (Dark Alternate)*  
-> **Format:** 44.1 kHz, 16-bit Mono Broadcast WAV  
-> **Source File:** [`genvoice_voice_1791392674247.wav`](./genvoice_voice_1791392674247.wav)
+> **Duration:** 4 minutes 42 seconds  
+> **Master WAV:** [`genvoice_voice_1791392674247.wav`](./genvoice_voice_1791392674247.wav) (44.1 kHz, 16-bit Mono, 24.9 MB)  
+> **Streaming MP3:** [`genvoice_voice_1791392674247.mp3`](./genvoice_voice_1791392674247.mp3) (192 kbps, 6.6 MB)
 
-<div align="center">
+| Audio Track | Format | Play Online | Download |
+| :--- | :--- | :--- | :--- |
+| **Albert Einstein (Fast Stream)** | MP3 (192 kbps) | [▶️ **Play on GitHub Audio Player**](./genvoice_voice_1791392674247.mp3) | [⬇️ Raw MP3 (6.6 MB)](https://raw.githubusercontent.com/pundhiranshul/GenVoiceStudio/main/genvoice_voice_1791392674247.mp3) |
+| **Albert Einstein (Studio Master)** | WAV (44.1 kHz) | [▶️ **Play on GitHub Audio Player**](./genvoice_voice_1791392674247.wav) | [⬇️ Raw WAV (24.9 MB)](https://raw.githubusercontent.com/pundhiranshul/GenVoiceStudio/main/genvoice_voice_1791392674247.wav) |
+| **Live Studio Web App** | Cloud | [🚀 **Launch Live Studio**](https://gen-voice-eight.vercel.app/) | — |
 
-<audio controls src="./genvoice_voice_1791392674247.wav" style="width: 100%; max-width: 680px;">
-  Your browser does not support the audio element.
-</audio>
-
-<p>
-  <a href="./genvoice_voice_1791392674247.wav">⬇️ <strong>Download / Stream Master WAV Audio</strong></a>
-</p>
-
-</div>
+> [!TIP]
+> Click **Play on GitHub Audio Player** above to open GitHub's native waveform audio player directly in your browser.
 
 ---
 
