@@ -70,21 +70,10 @@ When generating speech, the neural acoustic pipeline interprets embedded vocal m
 
 ### Featured Generation Sample
 
-Listen to this long-form dramatic narration generated entirely end-to-end on GenVoice Studio:
+Listen to this long-form dramatic narration generated entirely end-to-end on GenVoice Studio (*The Autobiography of Albert Einstein*):
 
-> **Title:** *The Autobiography of Albert Einstein (Dark Alternate)*  
-> **Duration:** 4 minutes 42 seconds  
-> **Master WAV:** [`genvoice_voice_1791392674247.wav`](./genvoice_voice_1791392674247.wav) (44.1 kHz, 16-bit Mono, 24.9 MB)  
-> **Streaming MP3:** [`genvoice_voice_1791392674247.mp3`](./genvoice_voice_1791392674247.mp3) (192 kbps, 6.6 MB)
-
-| Audio Track | Format | Play Online | Download |
-| :--- | :--- | :--- | :--- |
-| **Albert Einstein (Fast Stream)** | MP3 (192 kbps) | [▶️ **Play on GitHub Audio Player**](./genvoice_voice_1791392674247.mp3) | [⬇️ Raw MP3 (6.6 MB)](https://raw.githubusercontent.com/pundhiranshul/GenVoiceStudio/main/genvoice_voice_1791392674247.mp3) |
-| **Albert Einstein (Studio Master)** | WAV (44.1 kHz) | [▶️ **Play on GitHub Audio Player**](./genvoice_voice_1791392674247.wav) | [⬇️ Raw WAV (24.9 MB)](https://raw.githubusercontent.com/pundhiranshul/GenVoiceStudio/main/genvoice_voice_1791392674247.wav) |
-| **Live Studio Web App** | Cloud | [🚀 **Launch Live Studio**](https://gen-voice-eight.vercel.app/) | — |
-
-> [!TIP]
-> Click **Play on GitHub Audio Player** above to open GitHub's native waveform audio player directly in your browser.
+- [▶️ **Play Audio Sample**](https://gen-voice-eight.vercel.app/genvoice_voice_1791392674247.mp3)
+- [⬇️ **Download Audio File (MP3, 1.7 MB)**](https://github.com/pundhiranshul/GenVoiceStudio/raw/main/genvoice_voice_1791392674247.mp3)
 
 ---
 
