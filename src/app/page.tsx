@@ -1279,8 +1279,11 @@ export default function Home() {
     }
 
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-6 animate-in fade-in duration-500 overflow-y-auto">
-        <div className={`max-w-xl w-full bg-bg-panel border border-border-color rounded-3xl p-8 sm:p-10 shadow-xl my-auto ${status === 'error' ? 'animate-shake' : ''} relative`}>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 md:p-8 animate-in fade-in duration-500 overflow-y-auto">
+        <div className="max-w-5xl w-full flex flex-col lg:flex-row items-center lg:items-stretch justify-center gap-6 lg:gap-8 my-auto py-6">
+          <AuthAudioGuide />
+
+          <div className={`max-w-xl w-full bg-bg-panel border border-border-color rounded-3xl p-8 sm:p-10 shadow-xl ${status === 'error' ? 'animate-shake' : ''} relative`}>
           
           {canCancelAuth && !verifyScreen && (
             <div className="absolute top-6 right-6 flex items-center gap-2">
@@ -1313,8 +1316,6 @@ export default function Home() {
             <h1 className="text-2xl font-semibold tracking-tight mt-2">Welcome to GenVoice</h1>
             <p className="text-sm text-text-muted text-center leading-relaxed">Choose how you want to authenticate to run your inferences.</p>
           </div>
-
-          <AuthAudioGuide />
 
           <div className="flex bg-bg-input p-1 rounded-lg border border-border-color mb-8">
             <button 
@@ -1535,8 +1536,9 @@ export default function Home() {
           )}
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <div className="flex flex-col md:flex-1 md:min-h-0 min-h-[100dvh] md:h-full md:overflow-hidden bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary">
