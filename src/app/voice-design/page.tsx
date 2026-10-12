@@ -1401,7 +1401,7 @@ export default function Home() {
                     <li><strong>Important:</strong> You must verify your phone number. This is required by Kaggle to allow internet access (to download the AI models) and to use their free GPUs. Go to <a href="https://www.kaggle.com/settings" target="_blank" rel="noreferrer" className="text-accent-bg underline underline-offset-2 hover:opacity-80">kaggle.com/settings</a>, find <strong>"Phone verify"</strong> under Phone verification, and follow the steps.</li>
                     <li>On the same settings page, your username is listed under <strong>"Your username"</strong>.</li>
                     <li>Then go to <a href="https://www.kaggle.com/settings/api" target="_blank" rel="noreferrer" className="text-accent-bg underline underline-offset-2 hover:opacity-80">kaggle.com/settings/api</a>.</li>
-                    <li>Click <strong>"Generate new token"</strong>, enter <strong>"GenVoice"</strong> as the Token Name, click <strong>Generate</strong>, and copy the API token.</li>
+                    <li>Click <strong>"Generate New Token"</strong>, enter <strong>"GenVoice"</strong> as the Token Name, click <strong>Generate</strong>, and copy the API token.</li>
                   </ol>
                 </div>
               </div>
