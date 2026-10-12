@@ -1,35 +1,39 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Radio } from "lucide-react";
+import { Play, Pause, RotateCcw, Volume2, VolumeX } from "lucide-react";
 
+/**
+ * Voice visualizer pane — rendered as a transparent left column inside the auth card.
+ * No card chrome (no bg, no border, no rounded corners). The parent card provides context.
+ */
 export function AuthAudioGuide() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
-  // 30 frequency bars for balanced voice visualization
-  const barCount = 30;
-  const [waveformBars, setWaveformBars] = useState<number[]>(() =>
-    Array.from({ length: 30 }, (_, i) => 12 + Math.sin(i * 0.45) * 6)
+  const BAR_COUNT = 28;
+  const [bars, setBars] = useState<number[]>(() =>
+    Array.from({ length: BAR_COUNT }, (_, i) => 10 + Math.sin(i * 0.5) * 5)
   );
 
+  // Set up AudioContext + analyser exactly once, on first user interaction
   const setupAudioContext = useCallback(() => {
     if (audioContextRef.current || !audioRef.current) return;
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      const ctx = new AudioCtx();
+      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new Ctx();
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 256;
-      // Lower smoothing so bars react rapidly and flicker to vocal inflections
-      analyser.smoothingTimeConstant = 0.52;
+      analyser.smoothingTimeConstant = 0.55;
 
       const source = ctx.createMediaElementSource(audioRef.current);
       source.connect(analyser);
@@ -37,258 +41,178 @@ export function AuthAudioGuide() {
 
       audioContextRef.current = ctx;
       analyserRef.current = analyser;
-    } catch {
-      // AudioContext fallback
-    }
+      sourceRef.current = source;
+    } catch (_) { /* safari / blocked */ }
   }, []);
 
-  useEffect(() => {
+  const startPlay = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
-
-    const startPlayback = () => {
-      setupAudioContext();
-      if (audioContextRef.current && audioContextRef.current.state === "suspended") {
-        audioContextRef.current.resume();
-      }
-      audio
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(() => setIsPlaying(false));
-    };
-
-    startPlayback();
-
-    const handleFirstInteraction = () => {
-      if (audioRef.current && audioRef.current.paused) {
-        startPlayback();
-      }
-      window.removeEventListener("click", handleFirstInteraction);
-      window.removeEventListener("keydown", handleFirstInteraction);
-    };
-
-    window.addEventListener("click", handleFirstInteraction, { once: true });
-    window.addEventListener("keydown", handleFirstInteraction, { once: true });
-
-    return () => {
-      audio.pause();
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      window.removeEventListener("click", handleFirstInteraction);
-      window.removeEventListener("keydown", handleFirstInteraction);
-    };
+    setupAudioContext();
+    if (audioContextRef.current?.state === "suspended") {
+      audioContextRef.current.resume();
+    }
+    audio.play().then(() => setIsPlaying(true)).catch(() => {});
   }, [setupAudioContext]);
 
-  // Real-time animation loop for vocal frequency flickering
+  // Try autoplay immediately; catch is expected on most browsers without interaction
   useEffect(() => {
-    const renderWave = () => {
-      if (analyserRef.current && isPlaying) {
-        const bufferLength = analyserRef.current.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        analyserRef.current.getByteFrequencyData(dataArray);
+    startPlay();
+  }, [startPlay]);
 
-        const bars: number[] = [];
-        // Human speech formants are predominantly in the lower-mid bins
-        // Speech range covers indices 1 through bufferLength * 0.55
-        const maxSpeechBin = Math.floor(bufferLength * 0.55);
-
-        for (let i = 0; i < barCount; i++) {
-          // Bell curve distribution across the vocal frequencies
-          const freqIndex = Math.min(
-            maxSpeechBin - 1,
-            Math.max(1, Math.floor((i / barCount) * maxSpeechBin))
-          );
-          const rawVal = dataArray[freqIndex] || 0;
-          
-          // Enhanced dynamic range: exaggerate vocal syllables and pauses
-          const normalized = rawVal / 255;
-          const dynamicBoost = Math.pow(normalized, 1.15) * 100;
-          
-          // Add subtle natural jitter for lively flickering response to voice
-          const jitter = rawVal > 25 ? (Math.random() - 0.5) * 6 : 0;
-          const height = Math.max(8, Math.min(100, dynamicBoost + jitter));
-          bars.push(height);
-        }
-        setWaveformBars(bars);
-      } else if (!isPlaying) {
-        // Organic idle breathing wave
-        const t = Date.now() / 900;
-        const idleBars = Array.from({ length: barCount }, (_, i) => {
-          return 12 + Math.sin(t + i * 0.35) * 7;
-        });
-        setWaveformBars(idleBars);
+  // On first page click/key, resume if audio is still paused
+  useEffect(() => {
+    const resume = () => {
+      if (!hasInteracted) {
+        setHasInteracted(true);
+        if (audioRef.current?.paused) startPlay();
       }
-      animationFrameRef.current = requestAnimationFrame(renderWave);
     };
-
-    animationFrameRef.current = requestAnimationFrame(renderWave);
+    window.addEventListener("click", resume, { once: true });
+    window.addEventListener("keydown", resume, { once: true });
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      window.removeEventListener("click", resume);
+      window.removeEventListener("keydown", resume);
     };
+  }, [hasInteracted, startPlay]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    };
+  }, []);
+
+  // Real-time frequency analysis loop
+  useEffect(() => {
+    const tick = () => {
+      if (analyserRef.current && isPlaying) {
+        const buf = new Uint8Array(analyserRef.current.frequencyBinCount);
+        analyserRef.current.getByteFrequencyData(buf);
+
+        // Human speech sits roughly in the bottom 55% of the FFT bins
+        const speechBins = Math.floor(buf.length * 0.55);
+        const next: number[] = [];
+        for (let i = 0; i < BAR_COUNT; i++) {
+          const idx = Math.max(1, Math.floor((i / BAR_COUNT) * speechBins));
+          const raw = buf[idx] ?? 0;
+          // Boost dynamics: power curve makes quiet moments drop, loud syllables spike
+          const normalised = Math.pow(raw / 255, 1.1) * 100;
+          // Tiny random jitter adds life to vocal texture
+          const jitter = raw > 20 ? (Math.random() - 0.5) * 8 : 0;
+          next.push(Math.max(6, Math.min(100, normalised + jitter)));
+        }
+        setBars(next);
+      } else {
+        // Idle breathing wave
+        const t = Date.now() / 850;
+        setBars(Array.from({ length: BAR_COUNT }, (_, i) =>
+          10 + Math.sin(t + i * 0.38) * 7
+        ));
+      }
+      animationFrameRef.current = requestAnimationFrame(tick);
+    };
+    animationFrameRef.current = requestAnimationFrame(tick);
+    return () => { if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current); };
   }, [isPlaying]);
 
   const togglePlay = () => {
-    if (!audioRef.current) return;
+    const audio = audioRef.current;
+    if (!audio) return;
     setupAudioContext();
-    if (audioContextRef.current && audioContextRef.current.state === "suspended") {
-      audioContextRef.current.resume();
-    }
-
+    if (audioContextRef.current?.state === "suspended") audioContextRef.current.resume();
     if (isPlaying) {
-      audioRef.current.pause();
+      audio.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(() => {});
+      audio.play().then(() => setIsPlaying(true)).catch(() => {});
     }
-  };
-
-  const toggleMute = () => {
-    if (!audioRef.current) return;
-    audioRef.current.muted = !isMuted;
-    setIsMuted(!isMuted);
-  };
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!audioRef.current) return;
-    const newTime = parseFloat(e.target.value);
-    audioRef.current.currentTime = newTime;
-    setCurrentTime(newTime);
   };
 
   const handleRestart = () => {
-    if (!audioRef.current) return;
-    audioRef.current.currentTime = 0;
-    audioRef.current
-      .play()
-      .then(() => setIsPlaying(true))
-      .catch(() => {});
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.play().then(() => setIsPlaying(true)).catch(() => {});
   };
 
-  const formatTime = (secs: number) => {
-    if (isNaN(secs) || !isFinite(secs)) return "0:00";
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m}:${s.toString().padStart(2, "0")}`;
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const t = parseFloat(e.target.value);
+    audio.currentTime = t;
+    setCurrentTime(t);
+  };
+
+  const fmt = (s: number) => {
+    if (!isFinite(s)) return "0:00";
+    return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   };
 
   return (
-    <div
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="w-full lg:w-80 xl:w-88 shrink-0 bg-bg-panel/90 border border-border-color rounded-3xl p-6 sm:p-7 shadow-2xl backdrop-blur-xl flex flex-col justify-between transition-all duration-300 relative group overflow-hidden min-h-[340px] lg:min-h-[460px]"
-    >
+    <div className="flex flex-col items-center justify-between w-full h-full gap-6 py-2">
       <audio
         ref={audioRef}
         src="/samples/AuthenticationGuide_1.wav"
         preload="auto"
-        onTimeUpdate={() => {
-          if (audioRef.current) {
-            setCurrentTime(audioRef.current.currentTime);
-          }
-        }}
-        onLoadedMetadata={() => {
-          if (audioRef.current && isFinite(audioRef.current.duration)) {
-            setDuration(audioRef.current.duration);
-          }
-        }}
-        onDurationChange={() => {
-          if (audioRef.current && isFinite(audioRef.current.duration)) {
-            setDuration(audioRef.current.duration);
-          }
-        }}
-        onEnded={() => {
-          setIsPlaying(false);
-          setCurrentTime(0);
-        }}
+        onTimeUpdate={() => audioRef.current && setCurrentTime(audioRef.current.currentTime)}
+        onLoadedMetadata={() => audioRef.current && isFinite(audioRef.current.duration) && setDuration(audioRef.current.duration)}
+        onDurationChange={() => audioRef.current && isFinite(audioRef.current.duration) && setDuration(audioRef.current.duration)}
+        onEnded={() => { setIsPlaying(false); setCurrentTime(0); }}
       />
 
-      {/* Atmospheric ambient glow that pulses with speech energy */}
-      <div
-        className={`absolute inset-0 bg-radial from-accent-bg/20 via-transparent to-transparent pointer-events-none transition-opacity duration-700 blur-xl ${
-          isPlaying ? "opacity-100 scale-110" : "opacity-25 scale-90"
-        }`}
-      />
-
-      {/* Header bar: minimal live indicator & micro controls */}
-      <div className="w-full flex items-center justify-between z-10">
-        <div className="flex items-center gap-2">
-          {isPlaying ? (
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-mono tracking-wider font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
-              PLAYING
-            </span>
-          ) : (
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-border-color/40 border border-border-color/60 text-text-muted text-[11px] font-mono tracking-wider">
-              <Radio size={12} className="opacity-70" />
-              READY
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={handleRestart}
-            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-            title="Replay from start"
-            aria-label="Replay audio"
-          >
-            <RotateCcw size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={toggleMute}
-            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-            title={isMuted ? "Unmute" : "Mute"}
-            aria-label={isMuted ? "Unmute audio" : "Mute audio"}
-          >
-            {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-          </button>
-        </div>
+      {/* Status pill */}
+      <div className="flex items-center gap-2 self-start">
+        {isPlaying ? (
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono tracking-widest font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            LIVE
+          </span>
+        ) : (
+          <span className="text-[10px] font-mono tracking-widest text-text-muted uppercase">
+            {hasInteracted ? "PAUSED" : "tap to play"}
+          </span>
+        )}
       </div>
 
-      {/* Prominent, Responsive Waveform Visualizer */}
+      {/* Waveform — clickable, fills available height */}
       <div
+        role="button"
+        tabIndex={0}
+        aria-label={isPlaying ? "Pause" : "Play"}
         onClick={togglePlay}
-        className="w-full flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-1 py-8 cursor-pointer relative z-10 group/wave my-auto"
-        title={isPlaying ? "Click to pause" : "Click to play"}
+        onKeyDown={e => (e.key === "Enter" || e.key === " ") && togglePlay()}
+        className="relative flex-1 w-full flex items-center justify-center gap-[3px] sm:gap-1 cursor-pointer group outline-none px-1"
       >
-        {waveformBars.map((heightPct, idx) => (
+        {bars.map((h, i) => (
           <div
-            key={idx}
-            style={{ height: `${heightPct}%` }}
-            className={`w-1 sm:w-1.5 min-h-[8px] rounded-full transition-all duration-75 ${
+            key={i}
+            style={{ height: `${h}%` }}
+            className={`w-1 sm:w-[5px] rounded-full transition-all duration-75 ${
               isPlaying
-                ? "bg-accent-bg shadow-[0_0_12px_rgba(255,255,255,0.3)]"
-                : "bg-border-color/70 group-hover/wave:bg-text-secondary"
+                ? "bg-text-primary/70 group-hover:bg-text-primary"
+                : "bg-text-muted/40 group-hover:bg-text-muted/70"
             }`}
           />
         ))}
 
-        {/* Central interactive play/pause glass button */}
+        {/* Play / pause disc — only shows on hover or when paused */}
         <div
-          className={`absolute inset-0 flex items-center justify-center transition-all duration-300 pointer-events-none ${
-            !isPlaying || isHovered ? "opacity-100 scale-100" : "opacity-0 scale-90"
+          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 pointer-events-none ${
+            !isPlaying ? "opacity-100" : "opacity-0 group-hover:opacity-100"
           }`}
         >
-          <div className="w-14 h-14 rounded-full bg-bg-panel/90 border border-border-color shadow-2xl flex items-center justify-center text-text-primary group-hover/wave:scale-110 group-hover/wave:border-accent-bg/40 transition-all backdrop-blur-md">
-            {isPlaying ? (
-              <Pause size={20} fill="currentColor" />
-            ) : (
-              <Play size={20} fill="currentColor" className="ml-1" />
-            )}
+          <div className="w-12 h-12 rounded-full bg-bg-panel border border-border-color shadow-xl flex items-center justify-center text-text-primary backdrop-blur-sm transition-transform group-hover:scale-110">
+            {isPlaying
+              ? <Pause size={18} fill="currentColor" />
+              : <Play size={18} fill="currentColor" className="ml-0.5" />}
           </div>
         </div>
       </div>
 
-      {/* Minimalist scrubber track & time readout */}
-      <div className="w-full flex flex-col gap-2 z-10">
+      {/* Scrubber + controls */}
+      <div className="w-full flex flex-col gap-2">
         <input
           type="range"
           min={0}
@@ -296,12 +220,35 @@ export function AuthAudioGuide() {
           step={0.1}
           value={currentTime}
           onChange={handleSeek}
-          className="w-full h-1.5 bg-border-color/50 hover:bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg outline-none transition-colors"
-          aria-label="Seek audio"
+          className="w-full h-1 rounded-full appearance-none cursor-pointer bg-border-color/40 accent-text-primary outline-none"
+          aria-label="Seek"
         />
-        <div className="flex justify-between items-center text-[10px] font-mono text-text-muted px-0.5">
-          <span>{formatTime(currentTime)}</span>
-          <span>{formatTime(duration || 63)}</span>
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-mono text-text-muted">{fmt(currentTime)}</span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleRestart}
+              className="p-1.5 text-text-muted hover:text-text-primary rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              aria-label="Restart"
+            >
+              <RotateCcw size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (audioRef.current) {
+                  audioRef.current.muted = !isMuted;
+                  setIsMuted(v => !v);
+                }
+              }}
+              className="p-1.5 text-text-muted hover:text-text-primary rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              aria-label={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+            </button>
+          </div>
+          <span className="text-[10px] font-mono text-text-muted">{fmt(duration || 63)}</span>
         </div>
       </div>
     </div>

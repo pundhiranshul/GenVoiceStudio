@@ -631,12 +631,26 @@ export default function SFXStudio() {
     }
 
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 md:p-8 animate-in fade-in duration-500 overflow-y-auto">
-        <div className="max-w-5xl w-full flex flex-col lg:flex-row items-center lg:items-stretch justify-center gap-6 lg:gap-8 my-auto py-6">
-          <AuthAudioGuide />
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 animate-in fade-in duration-500 overflow-y-auto">
+        <div className={`max-w-4xl w-full my-auto bg-bg-panel border border-border-color rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row ${status === 'error' ? 'animate-shake' : ''} relative`}>
 
-          <div className={`max-w-xl w-full bg-bg-panel border border-border-color rounded-3xl p-8 sm:p-10 shadow-xl ${status === 'error' ? 'animate-shake' : ''} relative`}>
-          
+          {/* ── Left: Voice visualizer + branding ─────────────────── */}
+          <div className="relative flex flex-col gap-6 p-8 sm:p-10 lg:w-[44%] shrink-0 border-b lg:border-b-0 lg:border-r border-border-color/60 bg-bg-input/30">
+            <div className="absolute inset-0 bg-gradient-to-b from-accent-bg/5 via-transparent to-transparent pointer-events-none" />
+
+            <div className="flex flex-col gap-2 relative z-10">
+              <GenVoiceLogo size={40} />
+              <h1 className="text-xl font-semibold tracking-tight mt-1">Welcome to GenVoice</h1>
+              <p className="text-sm text-text-muted leading-relaxed">Choose how to authenticate and start creating.</p>
+            </div>
+
+            <div className="flex-1 min-h-[180px] lg:min-h-0 relative z-10">
+              <AuthAudioGuide />
+            </div>
+          </div>
+
+          {/* ── Right: Auth form ───────────────────────────────────── */}
+          <div className="flex-1 flex flex-col p-8 sm:p-10 relative">
           {canCancelAuth && !verifyScreen && (
             <div className="absolute top-6 right-6 flex items-center gap-2">
               <button
@@ -662,12 +676,6 @@ export default function SFXStudio() {
               </button>
             </div>
           )}
-
-          <div className="flex flex-col items-center gap-3 mb-6">
-            <GenVoiceLogo size={48} />
-            <h1 className="text-2xl font-semibold tracking-tight mt-2">Welcome to GenVoice</h1>
-            <p className="text-sm text-text-muted text-center leading-relaxed">Choose how you want to authenticate to run your inferences.</p>
-          </div>
 
           <div className="flex bg-bg-input p-1 rounded-lg border border-border-color mb-8">
             <button 
@@ -886,11 +894,11 @@ export default function SFXStudio() {
               </button>
             </div>
           )}
-        </div>
+          </div>{/* end right auth pane */}
+        </div>{/* end unified card */}
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   return (
     <div className="flex flex-col md:flex-1 md:min-h-0 min-h-[100dvh] md:h-full md:overflow-hidden bg-bg-base text-text-primary selection:bg-accent-bg/20 selection:text-text-primary">
