@@ -1351,8 +1351,11 @@ export default function Home() {
 
           {/* ── Left: Voice waves & branding integrated into the site (no panel) ── */}
           <div className="flex-1 w-full max-w-xl flex flex-col justify-center items-start gap-6 sm:gap-8 py-2">
-            <div className="flex flex-col items-start gap-4">
-              <GenVoiceLogo size={58} className="shrink-0" />
+            <div className="w-full flex flex-col items-start gap-4">
+              {/* Logo justified center with respect to the left space */}
+              <div className="w-full flex justify-center mb-1">
+                <GenVoiceLogo size={62} className="shrink-0" />
+              </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-text-primary">
                 Welcome to GenVoice
               </h1>

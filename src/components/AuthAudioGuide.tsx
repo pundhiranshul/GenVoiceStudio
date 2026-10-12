@@ -13,13 +13,13 @@ import {
 /**
  * High-performance, acoustic feature-driven voice wave component.
  * Seamlessly integrated into the site background (no panel/card wrapper).
- * - Scrubbing/seeking is integrated directly in the bar panel.
+ * - Upper ~90% of the bar panel toggles play/pause on click (does NOT seek).
+ * - Only the meager bottom part has the seeking / scrubbing feature.
  * - Replay and Mute/Unmute buttons are located on the top right.
- * - No bottom playback row or redundant badges.
  */
 export function AuthAudioGuide() {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const scrubTrackRef = useRef<HTMLDivElement>(null);
   const barRefs = useRef<(HTMLDivElement | null)[]>([]);
   const animationFrameRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
@@ -93,7 +93,6 @@ export function AuthAudioGuide() {
           if (el) {
             const h = Math.max(6, Math.min(100, currentBarsRef.current[b]));
             el.style.height = `${h}%`;
-            // Color passed bars with full opacity / accent
             const isPassed = (b / BARS_COUNT) <= progressRatio;
             el.style.opacity = isPassed ? "1" : "0.35";
           }
@@ -149,12 +148,12 @@ export function AuthAudioGuide() {
     audio.play().then(() => setIsPlaying(true)).catch(() => {});
   };
 
-  // Direct waveform scrubbing
+  // Seeking restricted exclusively to the meager bottom scrub track
   const seekFromClientX = useCallback((clientX: number) => {
-    const container = containerRef.current;
+    const track = scrubTrackRef.current;
     const audio = audioRef.current;
-    if (!container || !audio) return;
-    const rect = container.getBoundingClientRect();
+    if (!track || !audio) return;
+    const rect = track.getBoundingClientRect();
     const clickX = Math.max(0, Math.min(rect.width, clientX - rect.left));
     const ratio = clickX / rect.width;
     const totalDur = audio.duration && isFinite(audio.duration) ? audio.duration : duration || 63;
@@ -163,17 +162,20 @@ export function AuthAudioGuide() {
     setCurrentTime(target);
   }, [duration]);
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleScrubMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
     isDraggingRef.current = true;
     seekFromClientX(e.clientX);
   };
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+  const handleScrubTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.stopPropagation();
     isDraggingRef.current = true;
     if (e.touches[0]) seekFromClientX(e.touches[0].clientX);
   };
 
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+  const handleScrubTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.stopPropagation();
     if (isDraggingRef.current && e.touches[0]) {
       seekFromClientX(e.touches[0].clientX);
     }
@@ -261,21 +263,8 @@ export function AuthAudioGuide() {
         </div>
       </div>
 
-      {/* Interactive Sound Wave Bar Panel — seeking integrated directly inside */}
-      <div
-        ref={containerRef}
-        role="slider"
-        tabIndex={0}
-        aria-label="Audio scrubber and visualizer"
-        aria-valuemin={0}
-        aria-valuemax={duration || 63}
-        aria-valuenow={currentTime}
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={() => { isDraggingRef.current = false; }}
-        className="group relative w-full h-24 sm:h-28 flex items-center justify-between gap-[3px] sm:gap-1.5 px-3 py-2 rounded-2xl bg-bg-panel/40 hover:bg-bg-panel/70 border border-border-color/40 hover:border-border-color transition-all cursor-ew-resize overflow-hidden shadow-inner"
-      >
+      {/* Sound Wave Bar Panel */}
+      <div className="group relative w-full h-24 sm:h-28 flex flex-col justify-between rounded-2xl bg-bg-panel/40 hover:bg-bg-panel/70 border border-border-color/40 hover:border-border-color transition-all overflow-hidden shadow-inner select-none">
         {/* Subtle ambient dynamic background glow */}
         <div
           className={`absolute inset-0 bg-gradient-to-r from-accent-bg/10 via-accent-bg/5 to-transparent transition-opacity duration-500 pointer-events-none ${
@@ -283,43 +272,68 @@ export function AuthAudioGuide() {
           }`}
         />
 
-        {/* 28 Formant frequency wave bars */}
-        {Array.from({ length: BARS_COUNT }).map((_, i) => (
-          <div
-            key={i}
-            ref={(el) => {
-              barRefs.current[i] = el;
-            }}
-            style={{ height: "12%" }}
-            className="flex-1 rounded-full transition-[height] duration-75 relative z-10 bg-text-primary pointer-events-none min-h-[5px]"
-          />
-        ))}
+        {/* ── Upper ~90%: Waveform bars + Play/Pause button (Clicking plays/pauses, does NOT seek) ── */}
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label={isPlaying ? "Pause audio" : "Play audio"}
+          onClick={togglePlay}
+          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && togglePlay()}
+          className="relative flex-1 w-full flex items-center justify-between gap-[3px] sm:gap-1.5 px-3 pt-3 pb-1 cursor-pointer outline-none z-10"
+        >
+          {/* 28 Formant frequency wave bars */}
+          {Array.from({ length: BARS_COUNT }).map((_, i) => (
+            <div
+              key={i}
+              ref={(el) => {
+                barRefs.current[i] = el;
+              }}
+              style={{ height: "12%" }}
+              className="flex-1 rounded-full transition-[height] duration-75 relative z-10 bg-text-primary pointer-events-none min-h-[5px]"
+            />
+          ))}
 
-        {/* Integrated scrub line across the bottom of the bar panel */}
-        <div className="absolute bottom-0 left-0 right-0 h-1 bg-border-color/20 pointer-events-none">
-          <div
-            className="h-full bg-accent-bg transition-[width] duration-75"
-            style={{ width: `${progressPercent}%` }}
-          />
+          {/* Center Play / Pause button */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+            <div className="w-12 h-12 rounded-full bg-bg-base/90 border border-border-color shadow-2xl flex items-center justify-center text-text-primary backdrop-blur-md transition-transform group-hover:scale-110 active:scale-95">
+              {isPlaying ? (
+                <Pause size={18} fill="currentColor" />
+              ) : (
+                <Play size={18} fill="currentColor" className="ml-0.5" />
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Center Play / Pause button */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              togglePlay();
-            }}
-            className="pointer-events-auto w-12 h-12 rounded-full bg-bg-base/90 border border-border-color shadow-2xl flex items-center justify-center text-text-primary backdrop-blur-md transition-transform hover:scale-110 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-            aria-label={isPlaying ? "Pause audio" : "Play audio"}
-          >
-            {isPlaying ? (
-              <Pause size={18} fill="currentColor" />
-            ) : (
-              <Play size={18} fill="currentColor" className="ml-0.5" />
-            )}
-          </button>
+        {/* ── Meager bottom part (~10%): Dedicated seeking track ONLY ── */}
+        <div
+          ref={scrubTrackRef}
+          role="slider"
+          tabIndex={0}
+          aria-label="Seek timeline"
+          aria-valuemin={0}
+          aria-valuemax={duration || 63}
+          aria-valuenow={currentTime}
+          onMouseDown={handleScrubMouseDown}
+          onTouchStart={handleScrubTouchStart}
+          onTouchMove={handleScrubTouchMove}
+          onTouchEnd={() => { isDraggingRef.current = false; }}
+          className="relative w-full h-3.5 sm:h-4 flex items-center px-2 cursor-ew-resize group/scrub z-30 bg-transparent hover:bg-border-color/10 transition-colors"
+          title="Drag or click to seek"
+        >
+          {/* Scrubber track background */}
+          <div className="w-full h-1 group-hover/scrub:h-1.5 rounded-full bg-border-color/30 overflow-hidden transition-all relative">
+            <div
+              className="h-full bg-accent-bg transition-[width] duration-75"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+
+          {/* Scrubber thumb handle (visible on hover) */}
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-accent-bg border border-bg-base shadow-md opacity-0 group-hover/scrub:opacity-100 transition-opacity pointer-events-none -ml-1"
+            style={{ left: `${progressPercent}%` }}
+          />
         </div>
       </div>
     </div>
