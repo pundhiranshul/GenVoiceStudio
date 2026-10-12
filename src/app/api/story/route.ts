@@ -156,6 +156,13 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error("Story Gen Error:", error);
+    const msg = error.message || "";
+    if (msg.includes('403') || msg.toLowerCase().includes('verif') || msg.toLowerCase().includes('identity') || msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied')) {
+      return NextResponse.json({ 
+        error: "Kaggle Identity Verification required: Google Gemini AI features require camera verification at https://www.kaggle.com/settings to prevent bot abuse.",
+        requiresPersona: true
+      }, { status: 403 });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

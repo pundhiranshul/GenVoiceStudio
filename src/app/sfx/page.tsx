@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Sparkles, Loader2, Download, Terminal, X, Key, Wand2, AudioLines, Shield, Info, Check, Sun, Moon, Copy, Eye, EyeOff } from "lucide-react";
+import { Sparkles, Loader2, Download, Terminal, X, Key, Wand2, AudioLines, Shield, Info, Check, Sun, Moon, Copy, Eye, EyeOff, ExternalLink } from "lucide-react";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { CustomModelSelect, AVAILABLE_AI_MODELS } from "@/components/CustomModelSelect";
 type Status = "idle" | "pushing" | "generating" | "downloading" | "complete" | "error";
@@ -66,6 +66,8 @@ export default function SFXStudio() {
   const [verifyScreen, setVerifyScreen] = useState(false);
   const [verifyStatus, setVerifyStatus] = useState<'pending' | 'internet' | 'gpu' | 'success' | 'error'>('pending');
   const [verifyError, setVerifyError] = useState("");
+  const [personaStatus, setPersonaStatus] = useState<'idle' | 'checking' | 'verified' | 'unverified'>('idle');
+  const [personaError, setPersonaError] = useState("");
   const [isEditorOpen, setIsEditorOpen] = useState(false);  const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [showLogs, setShowLogs] = useState(false);
@@ -374,8 +376,14 @@ export default function SFXStudio() {
           <div className="max-w-xl w-full bg-bg-panel border border-border-color rounded-3xl p-8 sm:p-10 shadow-xl my-auto flex flex-col gap-6">
             <div className="flex flex-col items-center gap-3 mb-4">
               <GenVoiceLogo size={48} animate={verifyStatus === 'pending' || verifyStatus === 'internet' || verifyStatus === 'gpu'} />
-              <h1 className="text-xl font-semibold tracking-tight mt-2">Verifying Kaggle Environment</h1>
-              <p className="text-sm text-text-muted text-center leading-relaxed">This takes about 30-60 seconds as a test kernel is provisioned.</p>
+              <h1 className="text-xl font-semibold tracking-tight mt-2">
+                {verifyStatus === 'success' ? "Kaggle Environment Ready" : "Verifying Kaggle Environment"}
+              </h1>
+              <p className="text-sm text-text-muted text-center leading-relaxed">
+                {verifyStatus === 'success'
+                  ? "Internet & GPU verified! You can now verify AI features or skip to start using GenVoice."
+                  : "This takes about 30-60 seconds as a test kernel is provisioned."}
+              </p>
             </div>
 
             <div className="space-y-4">
@@ -403,6 +411,113 @@ export default function SFXStudio() {
                 )}
               </div>
             </div>
+
+            {verifyStatus === 'success' && (
+              <div className="p-5 bg-accent-bg/5 border border-accent-bg/15 rounded-2xl flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={16} className="text-accent-bg shrink-0" />
+                    <span className="font-semibold text-sm text-text-primary">AI Features (AI Prompt / Write / Optimize)</span>
+                  </div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent-bg/15 text-accent-bg border border-accent-bg/20">Optional</span>
+                </div>
+                
+                <p className="text-xs text-text-secondary leading-relaxed">
+                  Google &amp; Kaggle require camera identity verification to prevent bot abuse before accessing Gemini AI features. Sound generation works without this.
+                </p>
+
+                <div className="flex items-center gap-1.5 text-xs">
+                  <a 
+                    href="https://www.kaggle.com/settings" 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="text-accent-bg hover:underline font-medium inline-flex items-center gap-1"
+                  >
+                    Complete "Identity verification" at kaggle.com/settings
+                    <ExternalLink size={12} />
+                  </a>
+                </div>
+
+                {personaStatus === 'verified' && (
+                  <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-xs text-green-500 font-medium">
+                    <Check size={14} className="shrink-0" />
+                    <span>Identity verified! AI features unlocked. Entering Studio...</span>
+                  </div>
+                )}
+
+                {personaStatus === 'unverified' && (
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-500 flex flex-col gap-1">
+                    <span className="font-semibold">Verification not detected</span>
+                    <span>{personaError || "Camera verification was not detected on Kaggle. You can complete it in Kaggle settings and check again, or skip for now."}</span>
+                  </div>
+                )}
+
+                <div className="flex gap-3 mt-2">
+                  <button
+                    onClick={() => {
+                      setVerifyScreen(false);
+                      setIsVerifying(false);
+                      localStorage.setItem('kaggleUsername', kaggleUsername);
+                      localStorage.setItem('kaggleKey', kaggleKey);
+                      localStorage.removeItem('appPassword');
+                      setPassword('');
+                      setHasCredentials(true);
+                      setStatus("idle");
+                      setMessage("");
+                    }}
+                    className="flex-1 bg-bg-input text-text-primary font-medium py-3 rounded-xl hover:bg-bg-hover transition-all text-xs sm:text-sm flex items-center justify-center border border-border-color"
+                  >
+                    Skip &amp; Enter Studio
+                  </button>
+                  <button
+                    disabled={personaStatus === 'checking' || personaStatus === 'verified'}
+                    onClick={async () => {
+                      setPersonaStatus('checking');
+                      setPersonaError("");
+                      try {
+                        const res = await fetch('/api/verifyKagglePersona', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ kaggleUsername, kaggleKey })
+                        });
+                        const data = await res.json();
+                        if (data.verified) {
+                          setPersonaStatus('verified');
+                          if (data.modelProxyKey && data.modelProxyExpiresAt) {
+                            localStorage.setItem('modelProxyKey', data.modelProxyKey);
+                            localStorage.setItem('modelProxyExpiresAt', data.modelProxyExpiresAt);
+                            if (data.modelProxyBaseUri) {
+                              localStorage.setItem('modelProxyBaseUri', data.modelProxyBaseUri);
+                            }
+                          }
+                          setTimeout(() => {
+                            setVerifyScreen(false);
+                            setIsVerifying(false);
+                            localStorage.setItem('kaggleUsername', kaggleUsername);
+                            localStorage.setItem('kaggleKey', kaggleKey);
+                            localStorage.removeItem('appPassword');
+                            setPassword('');
+                            setHasCredentials(true);
+                            setStatus("idle");
+                            setMessage("");
+                          }, 1200);
+                        } else {
+                          setPersonaStatus('unverified');
+                          setPersonaError(data.error || "Identity verification not completed yet. Please verify via camera in Kaggle settings.");
+                        }
+                      } catch (e: any) {
+                        setPersonaStatus('unverified');
+                        setPersonaError("Failed to check verification status. Please check your network.");
+                      }
+                    }}
+                    className="flex-1 bg-accent-bg text-accent-text font-medium py-3 rounded-xl hover:bg-accent-bg/90 transition-all text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                  >
+                    {personaStatus === 'checking' ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                    {personaStatus === 'checking' ? "Checking..." : personaStatus === 'verified' ? "Verified" : "Check Status"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {verifyStatus === 'error' && (
               <div className="flex flex-col gap-4">
@@ -435,6 +550,8 @@ export default function SFXStudio() {
                       // Just re-trigger the same onClick flow from the start button
                       setVerifyStatus('pending');
                       setVerifyError("");
+                      setPersonaStatus('idle');
+                      setPersonaError("");
                       
                       try {
                         const startRes = await fetch('/api/verifyKaggleStart', {
@@ -480,17 +597,6 @@ export default function SFXStudio() {
                             
                             if (results.internet && results.gpu) {
                               setVerifyStatus('success');
-                              setTimeout(() => {
-                                setVerifyScreen(false);
-                                setIsVerifying(false);
-                                localStorage.setItem('kaggleUsername', kaggleUsername);
-                                localStorage.setItem('kaggleKey', kaggleKey);
-                                localStorage.removeItem('appPassword');
-                                setPassword('');
-                                setHasCredentials(true);
-                                setStatus("idle");
-                                setMessage("");
-                              }, 1000);
                             } else {
                               setVerifyStatus('error');
                               let friendlyError = "Verification failed. Internet or GPU not available.";
@@ -581,7 +687,7 @@ export default function SFXStudio() {
                     <li><strong>Important:</strong> You must verify your phone number. This is required by Kaggle to allow internet access (to download the AI models) and to use their free GPUs. Go to <a href="https://www.kaggle.com/settings" target="_blank" rel="noreferrer" className="text-accent-bg underline underline-offset-2 hover:opacity-80">kaggle.com/settings</a>, find <strong>"Phone verify"</strong> under Phone verification, and follow the steps.</li>
                     <li>On the same settings page, your username is listed under <strong>"Your username"</strong>.</li>
                     <li>Then go to <a href="https://www.kaggle.com/settings/api" target="_blank" rel="noreferrer" className="text-accent-bg underline underline-offset-2 hover:opacity-80">kaggle.com/settings/api</a>.</li>
-                    <li>Click <strong>"Create New Token"</strong>, enter <strong>"GenVoice"</strong> as the Token Name, click <strong>Generate</strong>, and copy the API Key.</li>
+                    <li>Click <strong>"Generate new token"</strong>, enter <strong>"GenVoice"</strong> as the Token Name, click <strong>Generate</strong>, and copy the API token.</li>
                   </ol>
                 </div>
               </div>
@@ -596,7 +702,7 @@ export default function SFXStudio() {
                 <div className="relative">
                   <input
                     type={showKaggleKey ? "text" : "password"}
-                    placeholder="Kaggle API Key"
+                    placeholder="Kaggle API Token"
                     value={kaggleKey}
                     onChange={e => setKaggleKey(e.target.value)}
                     className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 pr-12 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
@@ -646,6 +752,8 @@ export default function SFXStudio() {
                 setVerifyScreen(true);
                 setVerifyStatus('pending');
                 setVerifyError("");
+                setPersonaStatus('idle');
+                setPersonaError("");
                 
                 try {
                   const startRes = await fetch('/api/verifyKaggleStart', {
@@ -692,17 +800,6 @@ export default function SFXStudio() {
                       
                       if (results.internet && results.gpu) {
                         setVerifyStatus('success');
-                        setTimeout(() => {
-                          setVerifyScreen(false);
-                          setIsVerifying(false);
-                          localStorage.setItem('kaggleUsername', kaggleUsername);
-                          localStorage.setItem('kaggleKey', kaggleKey);
-                          localStorage.removeItem('appPassword');
-                          setPassword('');
-                          setHasCredentials(true);
-                          setStatus("idle");
-                          setMessage("");
-                        }, 1000);
                       } else {
                         setVerifyStatus('error');
                         let friendlyError = "Verification failed. Internet or GPU not available.";
@@ -823,7 +920,7 @@ export default function SFXStudio() {
           <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-2xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">
             <AudioLines size={16} className="text-accent-bg shrink-0 mt-0.5" />
             <span>
-              <strong>Sound Effects Generation</strong> creates high-quality cinematic sound effects using Stable Audio Open 1.0, powered by zero-cost Kaggle GPUs. Describe an acoustic environment, tone, or texture.
+              <strong>Sound Effects Generation</strong> creates high-quality cinematic sound effects, powered by zero-cost Kaggle GPUs. Describe an acoustic environment, tone, or texture.
             </span>
           </div>
 

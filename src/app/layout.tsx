@@ -12,7 +12,7 @@ import { SidebarLayout } from "@/components/SidebarLayout";
 
 export const metadata: Metadata = {
   title: "GenVoice — AI Voice Cloning",
-  description: "Generate realistic AI voices from text using Breeze TTS 2, powered by Kaggle GPU.",
+  description: "Generate realistic AI voices from text, powered by Kaggle GPU.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
