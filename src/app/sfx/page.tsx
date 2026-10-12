@@ -636,16 +636,16 @@ export default function SFXStudio() {
         <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 px-4 sm:px-8 lg:px-12 relative z-10">
 
           {/* ── Left: Voice waves & branding integrated into the site (no panel) ── */}
-          <div className="flex-1 w-full max-w-xl flex flex-col justify-center items-start gap-6 sm:gap-8 py-2">
-            <div className="w-full flex flex-col items-start gap-4">
+          <div className="flex-1 w-full max-w-xl flex flex-col justify-center items-center gap-6 sm:gap-8 py-2 text-center">
+            <div className="w-full flex flex-col items-center gap-3 text-center">
               {/* Logo justified center with respect to the left space */}
               <div className="w-full flex justify-center mb-1">
                 <GenVoiceLogo size={62} className="shrink-0" />
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-text-primary">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-text-primary text-center">
                 Welcome to GenVoice
               </h1>
-              <p className="text-sm sm:text-base text-text-muted leading-relaxed max-w-lg">
+              <p className="text-sm sm:text-base text-text-muted leading-relaxed max-w-lg text-center">
                 Experience ultra-realistic AI voice synthesis, custom voice clones, and sound effects with Kaggle GPUs.
               </p>
             </div>
