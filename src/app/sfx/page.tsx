@@ -426,17 +426,9 @@ export default function SFXStudio() {
                   Google &amp; Kaggle require camera identity verification to prevent bot abuse before accessing Gemini AI features. Sound generation works without this.
                 </p>
 
-                <div className="flex items-center gap-1.5 text-xs">
-                  <a 
-                    href="https://www.kaggle.com/settings" 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="text-accent-bg hover:underline font-medium inline-flex items-center gap-1"
-                  >
-                    Complete "Identity verification" at kaggle.com/settings
-                    <ExternalLink size={12} />
-                  </a>
-                </div>
+                <p className="text-xs text-text-secondary leading-relaxed">
+                  Go to <a href="https://www.kaggle.com/settings" target="_blank" rel="noreferrer" className="text-accent-bg underline underline-offset-2 hover:opacity-80 inline-flex items-center gap-0.5">kaggle.com/settings <ExternalLink size={11} className="inline" /></a>, find <strong>"Identity verification"</strong> and follow the steps to verify your identity.
+                </p>
 
                 {personaStatus === 'verified' && (
                   <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-xs text-green-500 font-medium">
