@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { LogOut, X, ShieldCheck, AlertTriangle } from "lucide-react";
+import { LogOut, X, ShieldCheck, AlertTriangle, Trash2 } from "lucide-react";
 import { executeSignOut } from "@/lib/auth";
 
 interface SignOutModalProps {
@@ -10,6 +10,8 @@ interface SignOutModalProps {
 
 export function SignOutModal({ onClose }: SignOutModalProps) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [clearLibrary, setClearLibrary] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined" && (window as any).isGenerating) {
@@ -25,15 +27,19 @@ export function SignOutModal({ onClose }: SignOutModalProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  const handleConfirm = () => {
-    executeSignOut({ reload: true });
+  const handleConfirm = async () => {
+    setIsSubmitting(true);
+    await executeSignOut({
+      clearLibrary,
+      redirectToLanding: true,
+    });
   };
 
   return (
     <div 
       className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !isSubmitting) onClose();
       }}
     >
       <div 
@@ -59,7 +65,8 @@ export function SignOutModal({ onClose }: SignOutModalProps) {
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+            disabled={isSubmitting}
+            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color disabled:opacity-50"
             aria-label="Close dialog"
           >
             <X size={18} />
@@ -82,16 +89,47 @@ export function SignOutModal({ onClose }: SignOutModalProps) {
             </div>
           )}
 
-          {/* Data Preservation Assurance */}
-          <div className="p-3.5 bg-accent-bg/5 border border-accent-bg/15 rounded-xl flex items-start gap-2.5 text-xs text-text-secondary leading-relaxed">
-            <ShieldCheck size={17} className="text-emerald-400 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-medium text-text-primary block mb-0.5">Your library is preserved</span>
-              <span>
-                Your authentication tokens will be cleared, but all your generated audio files, custom voices, and library items will remain safely stored on this device.
+          {/* Option to clear library too */}
+          <label className="flex items-start gap-3 p-3.5 rounded-xl border border-border-color bg-bg-input/40 hover:bg-bg-input/70 cursor-pointer transition-colors select-none">
+            <input
+              type="checkbox"
+              checked={clearLibrary}
+              onChange={(e) => setClearLibrary(e.target.checked)}
+              disabled={isSubmitting}
+              className="mt-0.5 w-4 h-4 rounded border-border-color text-red-500 accent-red-500 cursor-pointer shrink-0"
+            />
+            <div className="flex flex-col text-xs leading-relaxed">
+              <span className="font-medium text-text-primary">
+                Clear local library and generated items too
+              </span>
+              <span className="text-text-muted mt-0.5">
+                Permanently deletes all voice clones, sound effects, and audio history saved on this device.
               </span>
             </div>
-          </div>
+          </label>
+
+          {/* Data Preservation or Deletion Notice */}
+          {!clearLibrary ? (
+            <div className="p-3.5 bg-accent-bg/5 border border-accent-bg/15 rounded-xl flex items-start gap-2.5 text-xs text-text-secondary leading-relaxed transition-all">
+              <ShieldCheck size={17} className="text-emerald-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-medium text-text-primary block mb-0.5">Your library is preserved</span>
+                <span>
+                  Your authentication tokens will be cleared, but all your generated audio files, custom voices, and library items will remain safely stored on this device.
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2.5 text-xs text-red-400 leading-relaxed transition-all">
+              <Trash2 size={17} className="text-red-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-medium text-red-300 block mb-0.5">Library will be permanently deleted</span>
+                <span>
+                  All your generated audio files, custom voices, and library items stored on this device will be erased upon signing out.
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer Actions */}
@@ -99,17 +137,19 @@ export function SignOutModal({ onClose }: SignOutModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover border border-border-color rounded-xl transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+            disabled={isSubmitting}
+            className="px-4 py-2 text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover border border-border-color rounded-xl transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            className="px-4 py-2 text-xs font-medium text-white bg-red-500 hover:bg-red-600 active:scale-[0.98] rounded-xl transition-all shadow-sm flex items-center gap-1.5 outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            disabled={isSubmitting}
+            className="px-4 py-2 text-xs font-medium text-white bg-red-500 hover:bg-red-600 active:scale-[0.98] rounded-xl transition-all shadow-sm flex items-center gap-1.5 outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:opacity-50"
           >
             <LogOut size={13} />
-            <span>Sign Out</span>
+            <span>{isSubmitting ? "Signing out..." : "Sign Out"}</span>
           </button>
         </div>
       </div>

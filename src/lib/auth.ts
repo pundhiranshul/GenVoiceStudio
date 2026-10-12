@@ -62,14 +62,43 @@ export function requestSignOut(): void {
 }
 
 /**
- * Executes the actual flush of authentication credentials and reloads the session.
+ * Executes the actual flush of authentication credentials, optionally clears the library,
+ * and redirects to the landing page.
  */
-export function executeSignOut(options: { reload?: boolean } = {}): void {
-  const { reload = true } = options;
+export async function executeSignOut(options: {
+  reload?: boolean;
+  clearLibrary?: boolean;
+  redirectToLanding?: boolean;
+} = {}): Promise<void> {
+  const { clearLibrary = false, redirectToLanding = true } = options;
   clearAuthCredentials();
+
+  if (clearLibrary) {
+    try {
+      const { clearHistory } = await import('@/lib/history');
+      await clearHistory();
+    } catch (e) {
+      console.error('Failed to clear library on sign out', e);
+    }
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('voice_text');
+      localStorage.removeItem('voice_design_text');
+      localStorage.removeItem('voice_design_prompt');
+      localStorage.removeItem('voice_design_name');
+      localStorage.removeItem('sfx_prompt');
+    }
+  }
+
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('auth-changed'));
-    if (reload) {
+    if (redirectToLanding) {
+      if (window.location.pathname === '/') {
+        window.location.reload();
+      } else {
+        window.location.href = '/';
+      }
+    } else if (options.reload) {
       window.location.reload();
     }
   }
