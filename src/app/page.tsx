@@ -1279,30 +1279,30 @@ export default function Home() {
     }
 
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 animate-in fade-in duration-500 overflow-y-auto">
-        {/* Single unified card — left = voice pane, right = auth form */}
-        <div className={`max-w-4xl w-full my-auto bg-bg-panel border border-border-color rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row ${status === 'error' ? 'animate-shake' : ''} relative`}>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 md:p-10 lg:p-12 animate-in fade-in duration-500 overflow-y-auto">
+        {/* Layout container: left = site integrated voice hero (no panel), right = auth panel */}
+        <div className="max-w-5xl w-full my-auto flex flex-col lg:flex-row items-center lg:items-stretch justify-between gap-8 lg:gap-14 relative z-10">
 
-          {/* ── Left: Voice visualizer + branding ─────────────────── */}
-          <div className="relative flex flex-col gap-6 p-8 sm:p-10 lg:w-[44%] shrink-0 border-b lg:border-b-0 lg:border-r border-border-color/60 bg-bg-input/30">
-            {/* Subtle ambient glow */}
-            <div className="absolute inset-0 bg-gradient-to-b from-accent-bg/5 via-transparent to-transparent pointer-events-none" />
-
-            {/* Logo + copy */}
-            <div className="flex flex-col gap-2 relative z-10">
-              <GenVoiceLogo size={40} />
-              <h1 className="text-xl font-semibold tracking-tight mt-1">Welcome to GenVoice</h1>
-              <p className="text-sm text-text-muted leading-relaxed">Choose how to authenticate and start creating.</p>
+          {/* ── Left: Voice waves & branding integrated into the site (no panel) ── */}
+          <div className="flex-1 w-full max-w-lg flex flex-col justify-center gap-6 sm:gap-8 py-2">
+            <div className="flex flex-col gap-3">
+              <GenVoiceLogo size={46} />
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-text-primary">
+                Welcome to GenVoice
+              </h1>
+              <p className="text-sm sm:text-base text-text-muted leading-relaxed">
+                Experience ultra-realistic AI voice synthesis, custom voice clones, and sound effects with Kaggle GPUs.
+              </p>
             </div>
 
-            {/* Voice visualizer pane */}
-            <div className="flex-1 min-h-[180px] lg:min-h-0 relative z-10">
+            {/* Voice visualizer seamlessly embedded into the site canvas */}
+            <div className="w-full">
               <AuthAudioGuide />
             </div>
           </div>
 
-          {/* ── Right: Auth form ───────────────────────────────────── */}
-          <div className="flex-1 flex flex-col p-8 sm:p-10 relative">
+          {/* ── Right: Auth panel card ─────────────────────────────── */}
+          <div className={`w-full max-w-md lg:max-w-[460px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-6 sm:p-8 flex flex-col relative shrink-0 ${status === 'error' ? 'animate-shake' : ''}`}>
           {canCancelAuth && !verifyScreen && (
             <div className="absolute top-6 right-6 flex items-center gap-2">
               <button
@@ -1328,6 +1328,13 @@ export default function Home() {
               </button>
             </div>
           )}
+
+          {/* Shifted heading to the right auth panel */}
+          <div className="mb-6">
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-text-primary">
+              Choose how to authenticate and start creating
+            </h2>
+          </div>
 
           <div className="flex bg-bg-input p-1 rounded-lg border border-border-color mb-8">
             <button 
@@ -1546,8 +1553,8 @@ export default function Home() {
               </button>
             </div>
           )}
-          </div>{/* end right auth pane */}
-        </div>{/* end unified card */}
+          </div>{/* end right auth panel card */}
+        </div>{/* end layout container */}
       </div>
     );
   }
