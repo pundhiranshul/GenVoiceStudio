@@ -72,8 +72,8 @@ When generating speech, the neural acoustic pipeline interprets embedded vocal m
 
 Listen to this long-form dramatic narration generated entirely end-to-end on GenVoice Studio (*The Autobiography of Albert Einstein*):
 
-- [▶️ **Play Audio Sample**](https://gen-voice-eight.vercel.app/genvoice_voice_1791392674247.mp3)
-- [⬇️ **Download Audio File (MP3, 1.7 MB)**](https://github.com/pundhiranshul/GenVoiceStudio/raw/main/genvoice_voice_1791392674247.mp3)
+- [▶️ **Play Audio Sample**](https://gen-voice-eight.vercel.app/samples/genvoice_voice_1791392674247.mp3)
+- [⬇️ **Download Audio File (MP3, 1.7 MB)**](https://github.com/pundhiranshul/GenVoiceStudio/raw/main/public/samples/genvoice_voice_1791392674247.mp3)
 
 ---
 
