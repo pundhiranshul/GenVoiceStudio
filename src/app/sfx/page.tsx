@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Sparkles, Loader2, Download, Terminal, X, Key, Wand2, AudioLines, Shield, Info, Check, Sun, Moon, Copy, Eye, EyeOff, ExternalLink, LogOut } from "lucide-react";
 import { handleSignOut } from "@/lib/auth";
 import { AudioPlayer } from "@/components/AudioPlayer";
+import { AuthAudioGuide } from "@/components/AuthAudioGuide";
 import { CustomModelSelect, AVAILABLE_AI_MODELS } from "@/components/CustomModelSelect";
 type Status = "idle" | "pushing" | "generating" | "downloading" | "complete" | "error";
 
@@ -659,11 +660,13 @@ export default function SFXStudio() {
             </div>
           )}
 
-          <div className="flex flex-col items-center gap-3 mb-8">
+          <div className="flex flex-col items-center gap-3 mb-6">
             <GenVoiceLogo size={48} />
             <h1 className="text-2xl font-semibold tracking-tight mt-2">Welcome to GenVoice</h1>
             <p className="text-sm text-text-muted text-center leading-relaxed">Choose how you want to authenticate to run your inferences.</p>
           </div>
+
+          <AuthAudioGuide />
 
           <div className="flex bg-bg-input p-1 rounded-lg border border-border-color mb-8">
             <button 

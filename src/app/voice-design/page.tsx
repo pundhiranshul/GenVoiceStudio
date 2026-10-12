@@ -6,6 +6,7 @@ import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Su
 import { handleSignOut } from "@/lib/auth";
 import { VoiceSelector, Voice } from "@/components/VoiceSelector";
 import { AudioPlayer } from "@/components/AudioPlayer";
+import { AuthAudioGuide } from "@/components/AuthAudioGuide";
 import { stitchChunks } from "@/utils/audioEditor";
 import { VOCAL_TAGS, AUDIO_TAGS_STRING } from "@/utils/audioTags";
 
@@ -1373,11 +1374,13 @@ export default function Home() {
             </div>
           )}
 
-          <div className="flex flex-col items-center gap-3 mb-8">
+          <div className="flex flex-col items-center gap-3 mb-6">
             <GenVoiceLogo size={48} />
             <h1 className="text-2xl font-semibold tracking-tight mt-2">Welcome to GenVoice</h1>
             <p className="text-sm text-text-muted text-center leading-relaxed">Choose how you want to authenticate to run your inferences.</p>
           </div>
+
+          <AuthAudioGuide />
 
           <div className="flex bg-bg-input p-1 rounded-lg border border-border-color mb-8">
             <button 
