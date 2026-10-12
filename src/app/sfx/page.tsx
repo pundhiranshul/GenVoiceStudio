@@ -152,7 +152,7 @@ export default function SFXStudio() {
     try {
       const payload: any = {
         text: prompt,
-        instruction: "Optimize this prompt for Stable Audio Open 1.0 sound effect generation. Enhance it by adding descriptive words about the acoustic environment, tone, and texture. Keep it under 2 sentences.",
+        instruction: "Optimize this prompt for sound effect generation. Enhance it by adding descriptive words about the acoustic environment, tone, and texture. Keep it under 2 sentences.",
         aiModel: aiModel
       };
 
@@ -202,7 +202,7 @@ export default function SFXStudio() {
     try {
       const payload: any = {
         text: writeTopic,
-        instruction: "You are an expert sound designer. Write a highly detailed, cinematic prompt for Stable Audio Open 1.0 based on the user's premise. Describe the acoustic environment, tone, and texture. Just output the prompt itself, nothing else. Keep it under 2 sentences.",
+        instruction: "You are an expert sound designer. Write a highly detailed, cinematic prompt for sound effect generation based on the user's premise. Describe the acoustic environment, tone, and texture. Just output the prompt itself, nothing else. Keep it under 2 sentences.",
         aiModel: aiModel
       };
 
@@ -1131,7 +1131,7 @@ export default function SFXStudio() {
                 <Sparkles size={20} className="text-accent-bg" /> AI Write Prompt
               </h2>
               <p className="text-sm text-text-muted mt-1">
-                Vaguely describe your idea and the AI will augment it into a highly detailed cinematic prompt for Stable Audio.
+                Vaguely describe your idea and the AI will augment it into a highly detailed cinematic sound effect prompt.
               </p>
             </div>
             
