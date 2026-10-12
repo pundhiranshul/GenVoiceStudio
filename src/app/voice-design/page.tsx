@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { get, set } from "idb-keyval";
-import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User, ArrowLeft, Mic, ChevronDown, Menu, AudioLines, LayoutTemplate, Eye, EyeOff, ExternalLink } from 'lucide-react';
+import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User, ArrowLeft, Mic, ChevronDown, Menu, AudioLines, LayoutTemplate, Eye, EyeOff, ExternalLink, LogOut } from 'lucide-react';
+import { handleSignOut } from "@/lib/auth";
 import { VoiceSelector, Voice } from "@/components/VoiceSelector";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { stitchChunks } from "@/utils/audioEditor";
@@ -1347,18 +1348,29 @@ export default function Home() {
         <div className={`max-w-xl w-full bg-bg-panel border border-border-color rounded-3xl p-8 sm:p-10 shadow-xl my-auto ${status === 'error' ? 'animate-shake' : ''} relative`}>
           
           {canCancelAuth && !verifyScreen && (
-            <button
-              onClick={() => {
-                setKaggleUsername(localStorage.getItem('kaggleUsername') || '');
-                setKaggleKey(localStorage.getItem('kaggleKey') || '');
-                setPassword(localStorage.getItem('appPassword') || '');
-                setHasCredentials(true);
-              }}
-              className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
-              aria-label="Close"
-            >
-              <X size={20} />
-            </button>
+            <div className="absolute top-6 right-6 flex items-center gap-2">
+              <button
+                onClick={() => handleSignOut()}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-text-muted hover:text-red-400 hover:bg-bg-hover rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                title="Sign Out (flushes auth, keeps your generated items)"
+                aria-label="Sign Out"
+              >
+                <LogOut size={13} />
+                <span>Sign Out</span>
+              </button>
+              <button
+                onClick={() => {
+                  setKaggleUsername(localStorage.getItem('kaggleUsername') || '');
+                  setKaggleKey(localStorage.getItem('kaggleKey') || '');
+                  setPassword(localStorage.getItem('appPassword') || '');
+                  setHasCredentials(true);
+                }}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
+            </div>
           )}
 
           <div className="flex flex-col items-center gap-3 mb-8">
@@ -1571,6 +1583,19 @@ export default function Home() {
           </button>
           
           {status === 'error' && <p className="text-red-400 text-xs text-center mt-4 animate-in fade-in">{message}</p>}
+
+          {(typeof window !== 'undefined' && (localStorage.getItem('kaggleUsername') || localStorage.getItem('appPassword'))) && (
+            <div className="mt-4 pt-3 border-t border-border-color/50 text-center">
+              <button
+                onClick={() => handleSignOut()}
+                className="text-xs text-text-muted hover:text-red-400 transition-colors inline-flex items-center gap-1.5"
+                title="Flushes authentication credentials while preserving your library generations"
+              >
+                <LogOut size={13} />
+                Sign out and flush authentication
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1614,6 +1639,16 @@ export default function Home() {
           >
             <Key size={14} />
             <span className="hidden sm:inline">Auth</span>
+          </button>
+
+          <button
+            onClick={() => handleSignOut()}
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-red-400 hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+            aria-label="Sign Out"
+            title="Sign Out (flushes auth, keeps your generated items)"
+          >
+            <LogOut size={14} />
+            <span className="hidden sm:inline">Sign Out</span>
           </button>
         </div>
       </header>

@@ -4,7 +4,8 @@ import { AboutModal } from "@/components/AboutModal";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Mic, AudioLines, Bug, Info, ChevronLeft, ChevronRight, Menu, X, User, Wand2, Library } from "lucide-react";
+import { Mic, AudioLines, Bug, Info, ChevronLeft, ChevronRight, Menu, X, User, Wand2, Library, LogOut } from "lucide-react";
+import { getAuthInfo, handleSignOut } from "@/lib/auth";
 
 const GenVoiceLogo = ({ size = 24, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 200 200" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
@@ -31,7 +32,11 @@ const GenVoiceLogo = ({ size = 24, className = "" }) => (
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [username, setUsername] = useState("");
+  const [authInfo, setAuthInfo] = useState<{ isAuthenticated: boolean; username: string; authType: 'kaggle' | 'admin' | null }>({
+    isAuthenticated: false,
+    username: '',
+    authType: null,
+  });
   const [showAbout, setShowAbout] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -48,16 +53,17 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    const u = localStorage.getItem("kaggleUsername");
-    if (u) setUsername(u);
-    
-    // Poll for username changes (simple sync across tabs/components)
-    const interval = setInterval(() => {
-      const current = localStorage.getItem("kaggleUsername");
-      if (current !== username) setUsername(current || "");
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [username]);
+    const update = () => {
+      setAuthInfo(getAuthInfo());
+    };
+    update();
+    const interval = setInterval(update, 2000);
+    window.addEventListener('auth-changed', update);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('auth-changed', update);
+    };
+  }, []);
 
     useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -200,15 +206,31 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* User Profile */}
-        <div className={`p-4 border-t border-border-color bg-bg-panel/50 flex items-center gap-3 overflow-hidden ${isCollapsed ? 'justify-center' : ''}`}>
-          <div className="w-8 h-8 rounded-lg bg-border-color/30 flex items-center justify-center shrink-0 border border-border-color/50">
-            <User size={15} className="text-text-secondary" />
-          </div>
-          {!isCollapsed && (
-            <div className="flex flex-col truncate">
-              <span className="text-xs font-semibold text-text-primary truncate leading-tight">{username || 'Studio User'}</span>
-              <span className="text-[10px] text-text-muted font-medium tracking-wide">Kaggle Authenticated</span>
+        <div className={`p-3.5 border-t border-border-color bg-bg-panel/50 flex ${isCollapsed ? 'flex-col items-center gap-2' : 'items-center justify-between gap-2'} overflow-hidden`}>
+          <div className="flex items-center gap-2.5 min-w-0 truncate">
+            <div className="w-8 h-8 rounded-lg bg-border-color/30 flex items-center justify-center shrink-0 border border-border-color/50" title={isCollapsed ? (authInfo.username || 'Studio User') : undefined}>
+              <User size={15} className="text-text-secondary" />
             </div>
+            {!isCollapsed && (
+              <div className="flex flex-col truncate">
+                <span className="text-xs font-semibold text-text-primary truncate leading-tight">
+                  {authInfo.username || 'Studio User'}
+                </span>
+                <span className="text-[10px] text-text-muted font-medium tracking-wide">
+                  {authInfo.authType === 'kaggle' ? 'Kaggle Authenticated' : authInfo.authType === 'admin' ? 'Admin Access' : 'Not Signed In'}
+                </span>
+              </div>
+            )}
+          </div>
+          {authInfo.isAuthenticated && (
+            <button
+              onClick={() => handleSignOut()}
+              className="p-1.5 text-text-muted hover:text-red-400 hover:bg-bg-hover rounded-lg transition-colors shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              title="Sign Out (flushes auth, keeps your generated items)"
+              aria-label="Sign Out"
+            >
+              <LogOut size={16} />
+            </button>
           )}
         </div>
 
