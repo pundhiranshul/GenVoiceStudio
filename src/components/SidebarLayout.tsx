@@ -1,5 +1,6 @@
 "use client";
 import { AboutModal } from "@/components/AboutModal";
+import { SignOutModal } from "@/components/SignOutModal";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -38,13 +39,19 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
     authType: null,
   });
   const [showAbout, setShowAbout] = useState(false);
+  const [showSignOut, setShowSignOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
     const handleOpenAbout = () => setShowAbout(true);
+    const handleOpenSignOut = () => setShowSignOut(true);
     window.addEventListener('open-architecture', handleOpenAbout);
-    return () => window.removeEventListener('open-architecture', handleOpenAbout);
+    window.addEventListener('open-signout', handleOpenSignOut);
+    return () => {
+      window.removeEventListener('open-architecture', handleOpenAbout);
+      window.removeEventListener('open-signout', handleOpenSignOut);
+    };
   }, []);
 
   // Close mobile sidebar when pathname changes
@@ -224,7 +231,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
           </div>
           {authInfo.isAuthenticated && (
             <button
-              onClick={() => handleSignOut()}
+              onClick={() => setShowSignOut(true)}
               className="p-1.5 text-text-muted hover:text-red-400 hover:bg-bg-hover rounded-lg transition-colors shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
               title="Sign Out (flushes auth, keeps your generated items)"
               aria-label="Sign Out"
@@ -264,6 +271,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+      {showSignOut && <SignOutModal onClose={() => setShowSignOut(false)} />}
     </div>
   );
 }

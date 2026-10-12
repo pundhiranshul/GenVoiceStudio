@@ -53,27 +53,27 @@ export function getAuthInfo(): {
   return { isAuthenticated: false, username: '', authType: null };
 }
 
-export function handleSignOut(options: { confirmPrompt?: boolean; reload?: boolean } = {}): boolean {
-  const { confirmPrompt = true, reload = true } = options;
+/**
+ * Triggers the in-app confirmation modal (no browser popups).
+ */
+export function requestSignOut(): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new Event('open-signout'));
+}
 
-  if (typeof window !== 'undefined' && (window as any).isGenerating) {
-    if (!window.confirm("You have an active generation running. Are you sure you want to sign out? Progress will be lost.")) {
-      return false;
+/**
+ * Executes the actual flush of authentication credentials and reloads the session.
+ */
+export function executeSignOut(options: { reload?: boolean } = {}): void {
+  const { reload = true } = options;
+  clearAuthCredentials();
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('auth-changed'));
+    if (reload) {
+      window.location.reload();
     }
   }
-
-  if (confirmPrompt) {
-    const ok = window.confirm(
-      "Are you sure you want to sign out?\n\nYour authentication credentials will be flushed, but all your generated audios, custom voices, and library items will be preserved safely."
-    );
-    if (!ok) return false;
-  }
-
-  clearAuthCredentials();
-  window.dispatchEvent(new Event('auth-changed'));
-
-  if (reload) {
-    window.location.reload();
-  }
-  return true;
 }
+
+// Alias for backwards compatibility with existing UI handlers
+export const handleSignOut = requestSignOut;
