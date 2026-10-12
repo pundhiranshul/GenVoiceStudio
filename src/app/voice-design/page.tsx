@@ -1602,13 +1602,20 @@ export default function Home() {
                 setTimeout(() => setStatus("idle"), 3000);
               }
             }}
-            className="w-full mt-8 bg-accent-bg text-accent-text font-medium py-3.5 rounded-xl hover:opacity-90 active:scale-[0.98] transition-all shadow-sm flex items-center justify-center gap-2"
+            className="w-full mt-6 bg-accent-bg text-accent-text font-medium py-3.5 rounded-xl hover:opacity-90 active:scale-[0.98] transition-all shadow-sm flex items-center justify-center gap-2"
           >
             {isVerifying ? <Loader2 size={16} className="animate-spin" /> : null}
             {isVerifying ? "Verifying..." : "Enter Studio"}
           </button>
           
-          {status === 'error' && <p className="text-red-400 text-xs text-center mt-4 animate-in fade-in">{message}</p>}
+          {/* Reserved error slot — prevents card height jump and left panel shift */}
+          <div className="min-h-[24px] mt-2.5 flex items-center justify-center">
+            {status === 'error' && (
+              <p className="text-red-400 text-xs text-center animate-in fade-in">
+                {message}
+              </p>
+            )}
+          </div>
 
           {(typeof window !== 'undefined' && (localStorage.getItem('kaggleUsername') || localStorage.getItem('appPassword'))) && (
             <div className="mt-4 pt-3 border-t border-border-color/50 text-center">
