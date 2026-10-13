@@ -103,12 +103,11 @@ export async function GET(req: NextRequest) {
 
   const providedKey = rawKey ? decodeURIComponent(rawKey).trim() : '';
 
-  // If unauthorized, return 401 JSON so browser shows clear status instead of Vercel's generic 404 page
+  // If unauthorized, return funny punchy message
   if (!providedKey || providedKey !== adminSecret) {
     return NextResponse.json(
       {
-        error: 'Unauthorized',
-        message: 'Invalid or missing admin secret. Append ?secret=YOUR_APP_PASSWORD to the URL.',
+        message: "You are lost. Call your parents.",
       },
       { status: 401 }
     );
