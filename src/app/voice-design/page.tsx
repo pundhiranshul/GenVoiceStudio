@@ -1168,7 +1168,7 @@ export default function Home() {
             </div>
 
             {/* ── Right: Verification card (fixed min-height matching auth panel) ── */}
-            <div className="w-full max-w-[550px] lg:w-[550px] min-h-[580px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col justify-between relative shrink-0">
+            <div className="w-full max-w-[550px] lg:w-[550px] min-h-[700px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col justify-between relative shrink-0">
               <div className="flex flex-col gap-6">
 
             <div className="space-y-4">
@@ -1486,7 +1486,7 @@ export default function Home() {
           </div>
 
           {/* ── Right: Auth panel card (fixed min-height to eliminate tab layout shift) ── */}
-          <div className="w-full max-w-[550px] lg:w-[550px] min-h-[580px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col justify-between relative shrink-0">
+          <div className="w-full max-w-[550px] lg:w-[550px] min-h-[700px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col justify-between relative shrink-0">
           {canCancelAuth && !verifyScreen && (
             <div className="absolute top-6 right-6 flex items-center">
               <button
@@ -1527,7 +1527,7 @@ export default function Home() {
           </div>
 
           {authMode === 'byok' ? (
-            <div className="flex-1 min-h-[290px] flex flex-col justify-center gap-4 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex-1 min-h-[395px] flex flex-col justify-center gap-4 animate-in fade-in slide-in-from-bottom-2">
               <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-xl flex items-start gap-3 text-xs text-text-secondary leading-relaxed mb-2">
                 <Info size={16} className="text-accent-bg shrink-0 mt-0.5" />
                 <div className="flex flex-col gap-1.5">
@@ -1568,7 +1568,7 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 min-h-[290px] flex flex-col justify-center gap-4 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex-1 min-h-[395px] flex flex-col justify-center gap-4 animate-in fade-in slide-in-from-bottom-2">
               <div className="p-4 bg-bg-hover border border-border-color rounded-xl flex items-start gap-3 text-xs text-text-secondary leading-relaxed mb-2">
                 <Shield size={16} className="text-text-muted shrink-0 mt-0.5" />
                 <div className="flex flex-col gap-1">
