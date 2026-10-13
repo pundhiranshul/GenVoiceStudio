@@ -1058,7 +1058,7 @@ export default function Home() {
 
               {/* Voice visualizer seamlessly embedded into the site canvas (Guide 2) */}
               <div className="w-full">
-                <AuthAudioGuide key="verify-guide-2" src="/samples/AuthenticationGuide_2.wav" />
+                <AuthAudioGuide key="verify-guide-2" src="/samples/AuthenticationGuide_2.wav?v=2" />
               </div>
             </div>
 
