@@ -396,13 +396,15 @@ export default function SFXStudio() {
               <div className="w-full flex flex-col items-center gap-3 text-center">
                 {/* Logo justified center with respect to the left space */}
                 <div className="w-full flex justify-center mb-1">
-                  <GenVoiceLogo size={62} className="shrink-0" />
+                  <GenVoiceLogo size={62} animate={verifyStatus === 'pending' || verifyStatus === 'internet' || verifyStatus === 'gpu'} className="shrink-0" />
                 </div>
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-text-primary text-center">
-                  Welcome to GenVoice
+                  {verifyStatus === 'success' ? "Kaggle Environment Ready" : "Verifying Kaggle Environment"}
                 </h1>
                 <p className="text-sm sm:text-base text-text-muted leading-relaxed max-w-lg text-center">
-                  Experience ultra-realistic AI voice synthesis, custom voice clones, and sound effects with Kaggle GPUs.
+                  {verifyStatus === 'success'
+                    ? "Internet & GPU verified! You can now verify AI features or skip to start using GenVoice."
+                    : "This takes about 30-60 seconds as a test kernel is provisioned."}
                 </p>
               </div>
 
@@ -415,17 +417,6 @@ export default function SFXStudio() {
             {/* ── Right: Verification card (fixed min-height matching auth panel) ── */}
             <div className="w-full max-w-[550px] lg:w-[550px] min-h-[580px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col justify-between relative shrink-0">
               <div className="flex flex-col gap-6">
-                <div className="flex flex-col items-center gap-3 mb-2">
-                  <GenVoiceLogo size={48} animate={verifyStatus === 'pending' || verifyStatus === 'internet' || verifyStatus === 'gpu'} />
-                  <h2 className="text-xl font-semibold tracking-tight mt-2 text-center">
-                    {verifyStatus === 'success' ? "Kaggle Environment Ready" : "Verifying Kaggle Environment"}
-                  </h2>
-                  <p className="text-sm text-text-muted text-center leading-relaxed">
-                    {verifyStatus === 'success'
-                      ? "Internet & GPU verified! You can now verify AI features or skip to start using GenVoice."
-                      : "This takes about 30-60 seconds as a test kernel is provisioned."}
-                  </p>
-                </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-bg-input rounded-xl border border-border-color">
