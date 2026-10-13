@@ -387,19 +387,45 @@ export default function SFXStudio() {
   if (!hasCredentials) {
     if (verifyScreen) {
       return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-6 animate-in fade-in duration-500 overflow-y-auto">
-          <div className="max-w-xl w-full bg-bg-panel border border-border-color rounded-3xl p-8 sm:p-10 shadow-xl my-auto flex flex-col gap-6">
-            <div className="flex flex-col items-center gap-3 mb-4">
-              <GenVoiceLogo size={48} animate={verifyStatus === 'pending' || verifyStatus === 'internet' || verifyStatus === 'gpu'} />
-              <h1 className="text-xl font-semibold tracking-tight mt-2">
-                {verifyStatus === 'success' ? "Kaggle Environment Ready" : "Verifying Kaggle Environment"}
-              </h1>
-              <p className="text-sm text-text-muted text-center leading-relaxed">
-                {verifyStatus === 'success'
-                  ? "Internet & GPU verified! You can now verify AI features or skip to start using GenVoice."
-                  : "This takes about 30-60 seconds as a test kernel is provisioned."}
-              </p>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 md:p-8 lg:p-10 animate-in fade-in duration-500 overflow-y-auto [scrollbar-gutter:stable]">
+          {/* Layout container: left = site integrated voice hero (no panel), right = verification card */}
+          <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 px-4 sm:px-8 lg:px-12 relative z-10">
+
+            {/* ── Left: Voice waves & branding integrated into the site (no panel) ── */}
+            <div className="flex-1 w-full max-w-xl flex flex-col justify-center items-center gap-6 sm:gap-8 py-2 text-center">
+              <div className="w-full flex flex-col items-center gap-3 text-center">
+                {/* Logo justified center with respect to the left space */}
+                <div className="w-full flex justify-center mb-1">
+                  <GenVoiceLogo size={62} className="shrink-0" />
+                </div>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-text-primary text-center">
+                  Welcome to GenVoice
+                </h1>
+                <p className="text-sm sm:text-base text-text-muted leading-relaxed max-w-lg text-center">
+                  Experience ultra-realistic AI voice synthesis, custom voice clones, and sound effects with Kaggle GPUs.
+                </p>
+              </div>
+
+              {/* Voice visualizer seamlessly embedded into the site canvas (Guide 2) */}
+              <div className="w-full">
+                <AuthAudioGuide key="verify-guide-2" src="/samples/AuthenticationGuide_2.wav" />
+              </div>
             </div>
+
+            {/* ── Right: Verification card (fixed min-height matching auth panel) ── */}
+            <div className="w-full max-w-[550px] lg:w-[550px] min-h-[580px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col justify-between relative shrink-0">
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col items-center gap-3 mb-2">
+                  <GenVoiceLogo size={48} animate={verifyStatus === 'pending' || verifyStatus === 'internet' || verifyStatus === 'gpu'} />
+                  <h2 className="text-xl font-semibold tracking-tight mt-2 text-center">
+                    {verifyStatus === 'success' ? "Kaggle Environment Ready" : "Verifying Kaggle Environment"}
+                  </h2>
+                  <p className="text-sm text-text-muted text-center leading-relaxed">
+                    {verifyStatus === 'success'
+                      ? "Internet & GPU verified! You can now verify AI features or skip to start using GenVoice."
+                      : "This takes about 30-60 seconds as a test kernel is provisioned."}
+                  </p>
+                </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-bg-input rounded-xl border border-border-color">
@@ -638,6 +664,22 @@ export default function SFXStudio() {
                 </div>
               </div>
             )}
+              </div>
+
+              {(verifyStatus === 'pending' || verifyStatus === 'internet' || verifyStatus === 'gpu') && (
+                <div className="mt-auto pt-6 text-center">
+                  <button
+                    onClick={() => {
+                      setVerifyScreen(false);
+                      setIsVerifying(false);
+                    }}
+                    className="text-xs text-text-muted hover:text-text-primary transition-colors inline-flex items-center gap-1.5"
+                  >
+                    Cancel &amp; Return to Setup
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       );

@@ -2,13 +2,12 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Play, Pause, RotateCcw, Volume2, VolumeX } from "lucide-react";
-import {
-  AUDIO_DURATION,
-  AUDIO_FPS,
-  BARS_COUNT,
-  TOTAL_FRAMES,
-  getFrameBars
-} from "@/data/authAudioFeatures";
+import * as authAudio from "@/data/authAudioFeatures";
+import * as verifyAudio from "@/data/verifyAudioFeatures";
+
+interface AuthAudioGuideProps {
+  src?: string;
+}
 
 /**
  * High-performance, acoustic feature-driven voice wave component.
@@ -17,12 +16,19 @@ import {
  * - Only the meager bottom part has the seeking / scrubbing feature.
  * - Replay and Mute/Unmute buttons are located on the top right.
  */
-export function AuthAudioGuide() {
+export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: AuthAudioGuideProps) {
+  const isGuide2 = src.includes("AuthenticationGuide_2");
+  const audioData = isGuide2 ? verifyAudio : authAudio;
+  const { BARS_COUNT } = audioData;
+
   const audioRef = useRef<HTMLAudioElement>(null);
   const scrubTrackRef = useRef<HTMLDivElement>(null);
   const barRefs = useRef<(HTMLDivElement | null)[]>([]);
   const animationFrameRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
+
+  const audioDataRef = useRef(audioData);
+  audioDataRef.current = audioData;
 
   // Smooth bars buffer for interpolation
   const currentBarsRef = useRef<number[]>(new Array(BARS_COUNT).fill(20));
@@ -32,7 +38,7 @@ export function AuthAudioGuide() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(AUDIO_DURATION || 63);
+  const [duration, setDuration] = useState(audioData.AUDIO_DURATION || 63);
   const [isMuted, setIsMuted] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
 
@@ -51,6 +57,19 @@ export function AuthAudioGuide() {
   useEffect(() => {
     attemptPlay();
   }, [attemptPlay]);
+
+  // Handle src changes smoothly
+  useEffect(() => {
+    setDuration(audioData.AUDIO_DURATION || 63);
+    setCurrentTime(0);
+    currentBarsRef.current = new Array(BARS_COUNT).fill(20);
+    pauseHeightsRef.current = new Array(BARS_COUNT).fill(20);
+    const audio = audioRef.current;
+    if (audio) {
+      audio.currentTime = 0;
+      attemptPlay();
+    }
+  }, [src, audioData.AUDIO_DURATION, BARS_COUNT, attemptPlay]);
 
   // First user interaction resume
   useEffect(() => {
@@ -79,13 +98,14 @@ export function AuthAudioGuide() {
       if (playing && audio) {
         wasPlayingRef.current = true;
         const cur = audio.currentTime;
+        const { TOTAL_FRAMES, AUDIO_FPS, BARS_COUNT: count, getFrameBars, AUDIO_DURATION: fallbackDuration } = audioDataRef.current;
         const frameIdx = Math.min(TOTAL_FRAMES - 1, Math.floor(cur * AUDIO_FPS));
         const targetBars = getFrameBars(frameIdx);
-        const progressRatio = (audio.duration || duration || 63) > 0
-          ? cur / (audio.duration || duration || 63)
+        const progressRatio = (audio.duration || duration || fallbackDuration || 63) > 0
+          ? cur / (audio.duration || duration || fallbackDuration || 63)
           : 0;
 
-        for (let b = 0; b < BARS_COUNT; b++) {
+        for (let b = 0; b < count; b++) {
           const target = targetBars[b] || 8;
           const factor = target > currentBarsRef.current[b] ? 0.55 : 0.28;
           currentBarsRef.current[b] += (target - currentBarsRef.current[b]) * factor;
@@ -94,7 +114,7 @@ export function AuthAudioGuide() {
           if (el) {
             const h = Math.max(8, Math.min(100, currentBarsRef.current[b]));
             el.style.height = `${h}%`;
-            const isPassed = (b / BARS_COUNT) <= progressRatio;
+            const isPassed = (b / count) <= progressRatio;
             el.style.opacity = isPassed ? "1" : "0.35";
           }
         }
@@ -116,7 +136,8 @@ export function AuthAudioGuide() {
         const blend = isTransitioning ? transitionElapsed / 350 : 1;
         const ease = blend * blend * (3 - 2 * blend); // cubic smoothstep curve
 
-        for (let b = 0; b < BARS_COUNT; b++) {
+        const { BARS_COUNT: count } = audioDataRef.current;
+        for (let b = 0; b < count; b++) {
           // Both fundamental and octave harmonic share the same direction (- b * 0.26) for zero interference jitter
           const theta = t - b * 0.26;
           const wave = Math.sin(theta) * 0.85 + Math.sin(theta * 2) * 0.15;
@@ -132,7 +153,7 @@ export function AuthAudioGuide() {
           const el = barRefs.current[b];
           if (el) {
             el.style.height = `${h}%`;
-            const isPassed = cur > 0.05 && (b / BARS_COUNT) <= progressRatio;
+            const isPassed = cur > 0.05 && (b / count) <= progressRatio;
             el.style.opacity = cur > 0.05 ? (isPassed ? "0.85" : "0.35") : "0.55";
           }
         }
@@ -176,7 +197,7 @@ export function AuthAudioGuide() {
     const rect = track.getBoundingClientRect();
     const clickX = Math.max(0, Math.min(rect.width, clientX - rect.left));
     const ratio = clickX / rect.width;
-    const totalDur = audio.duration && isFinite(audio.duration) ? audio.duration : duration || 63;
+    const totalDur = audio.duration && isFinite(audio.duration) ? audio.duration : duration || audioDataRef.current.AUDIO_DURATION || 63;
     const target = ratio * totalDur;
     audio.currentTime = target;
     setCurrentTime(target);
@@ -231,7 +252,7 @@ export function AuthAudioGuide() {
     <div className="w-full flex flex-col gap-3 text-text-primary select-none">
       <audio
         ref={audioRef}
-        src="/samples/AuthenticationGuide_1.wav"
+        src={src}
         preload="auto"
         onTimeUpdate={() => {
           if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
