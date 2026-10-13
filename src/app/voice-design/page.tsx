@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { get, set } from "idb-keyval";
-import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User, ArrowLeft, Mic, ChevronDown, Menu, AudioLines, LayoutTemplate, Eye, EyeOff, ExternalLink, LogOut } from 'lucide-react';
+import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User, ArrowLeft, Mic, ChevronDown, Menu, AudioLines, LayoutTemplate, Eye, EyeOff, ExternalLink, LogOut, RotateCcw } from 'lucide-react';
 import { handleSignOut } from "@/lib/auth";
 import { VoiceSelector, Voice } from "@/components/VoiceSelector";
 import { AudioPlayer } from "@/components/AudioPlayer";
@@ -255,6 +255,46 @@ export default function Home() {
   const [verifyError, setVerifyError] = useState("");
   const [personaStatus, setPersonaStatus] = useState<'idle' | 'checking' | 'verified' | 'unverified'>('idle');
   const [personaError, setPersonaError] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
+  const retryCountRef = useRef(0);
+  const [retryCooldown, setRetryCooldown] = useState(0);
+  const [retryTotalDuration, setRetryTotalDuration] = useState(0);
+  const retryEndTimeRef = useRef<number>(0);
+
+  // Anti-abuse retry cooldown: 15-20s jitter on error, increasing by 10s per retry press
+  useEffect(() => {
+    if (verifyStatus === 'error') {
+      const now = Date.now();
+      if (!retryEndTimeRef.current || retryEndTimeRef.current <= now) {
+        const jitter = Math.floor(Math.random() * 6) + 15; // 15 to 20 seconds
+        const duration = jitter + (retryCountRef.current * 10);
+        setRetryTotalDuration(duration);
+        setRetryCooldown(duration);
+        retryEndTimeRef.current = now + duration * 1000;
+      }
+    } else if (verifyStatus === 'success') {
+      retryCountRef.current = 0;
+      setRetryCount(0);
+      setRetryCooldown(0);
+      setRetryTotalDuration(0);
+      retryEndTimeRef.current = 0;
+    }
+  }, [verifyStatus]);
+
+  // Tick the countdown timer while cooldown is active
+  useEffect(() => {
+    if (retryCooldown <= 0) return;
+
+    const timer = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((retryEndTimeRef.current - Date.now()) / 1000));
+      setRetryCooldown(remaining);
+      if (remaining <= 0) {
+        retryEndTimeRef.current = 0;
+      }
+    }, 250);
+
+    return () => clearInterval(timer);
+  }, [retryCooldown > 0]);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   
   const [password, setPassword]   = useState("");
@@ -1283,7 +1323,14 @@ export default function Home() {
                     Go Back
                   </button>
                   <button 
+                    disabled={retryCooldown > 0}
                     onClick={async () => {
+                      if (retryCooldown > 0) return;
+                      retryCountRef.current += 1;
+                      setRetryCount(retryCountRef.current);
+                      retryEndTimeRef.current = 0;
+                      setRetryCooldown(0);
+                      
                       // Just re-trigger the same onClick flow from the start button
                       setVerifyStatus('pending');
                       setVerifyError("");
@@ -1361,9 +1408,32 @@ export default function Home() {
                         setVerifyError(msg);
                       }
                     }}
-                    className="flex-1 bg-accent-bg text-accent-text font-medium py-3.5 rounded-xl hover:bg-accent-bg/90 transition-all shadow-sm flex items-center justify-center gap-2"
+                    className={`relative overflow-hidden flex-1 font-medium py-3.5 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 text-xs sm:text-sm select-none ${
+                      retryCooldown > 0
+                        ? "bg-bg-input text-text-muted border border-border-color cursor-not-allowed opacity-60"
+                        : "bg-accent-bg text-accent-text hover:bg-accent-bg/90 cursor-pointer"
+                    }`}
                   >
-                    Retry Verification
+                    {retryCooldown > 0 && retryTotalDuration > 0 && (
+                      <div
+                        className="absolute inset-y-0 left-0 bg-accent-bg/15 pointer-events-none transition-all duration-300 ease-linear"
+                        style={{
+                          width: `${Math.max(0, Math.min(100, ((retryTotalDuration - retryCooldown) / retryTotalDuration) * 100))}%`,
+                        }}
+                      />
+                    )}
+                    <RotateCcw size={15} className={`shrink-0 relative z-10 ${retryCooldown > 0 ? "opacity-60" : ""}`} />
+                    <span className="relative z-10 truncate">
+                      {retryCooldown > 0 ? (
+                        <>
+                          <span className="hidden sm:inline">Retry Verification </span>
+                          <span className="sm:hidden">Retry </span>
+                          <span>({retryCooldown}s)</span>
+                        </>
+                      ) : (
+                        "Retry Verification"
+                      )}
+                    </span>
                   </button>
                 </div>
               </div>
