@@ -366,7 +366,15 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
                 isVolumeOpen || isDraggingVolume ? "w-20 sm:w-24 opacity-100 mr-1.5" : "w-0 opacity-0 mr-0"
               }`}
             >
-              <div className="relative w-full flex items-center h-5 px-0.5">
+              <div className="relative w-full flex items-center h-5 px-1">
+                {/* Fine greyed-out horizontal line track */}
+                <div className="absolute left-1 right-1 h-0.5 bg-neutral-300 dark:bg-neutral-600 rounded-full pointer-events-none overflow-hidden">
+                  {/* Subtle active fill tracking current loudness */}
+                  <div
+                    className="h-full bg-accent-bg rounded-full transition-all duration-75"
+                    style={{ width: `${(isMuted ? 0 : volume) * 100}%` }}
+                  />
+                </div>
                 <input
                   type="range"
                   min="0"
@@ -376,7 +384,7 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
                   onChange={handleVolumeChange}
                   onMouseDown={() => setIsDraggingVolume(true)}
                   onTouchStart={() => setIsDraggingVolume(true)}
-                  className="w-full h-1 bg-border-color/60 hover:bg-border-color rounded-full appearance-none cursor-pointer accent-accent-bg outline-none"
+                  className="w-full h-5 relative z-10 appearance-none bg-transparent cursor-pointer outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent-bg [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:active:scale-125 [&::-webkit-slider-thumb]:transition-transform [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent-bg [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:shadow-md"
                   aria-label="Volume slider"
                   title={`Volume: ${Math.round((isMuted ? 0 : volume) * 100)}%`}
                 />

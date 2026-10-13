@@ -1607,9 +1607,16 @@ export default function Home() {
           )}
 
           <button
-            disabled={isVerifying}
+            disabled={isVerifying || (authMode === 'byok' && retryCooldown > 0)}
             onClick={async () => {
+              if (authMode === 'byok' && retryCooldown > 0) return;
               if (authMode === 'byok' && kaggleUsername && kaggleKey) {
+                if (retryCountRef.current > 0 || retryTotalDuration > 0) {
+                  retryCountRef.current += 1;
+                  setRetryCount(retryCountRef.current);
+                }
+                retryEndTimeRef.current = 0;
+                setRetryCooldown(0);
                 setIsVerifying(true);
                 setVerifyScreen(true);
                 setVerifyStatus('pending');
@@ -1720,10 +1727,32 @@ export default function Home() {
                 setTimeout(() => setStatus("idle"), 3000);
               }
             }}
-            className="w-full mt-6 bg-accent-bg text-accent-text font-medium py-3.5 rounded-xl hover:opacity-90 active:scale-[0.98] transition-all shadow-sm flex items-center justify-center gap-2"
+            className={`w-full mt-6 font-medium py-3.5 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 relative overflow-hidden select-none ${
+              authMode === 'byok' && retryCooldown > 0
+                ? "bg-bg-input text-text-muted border border-border-color cursor-not-allowed opacity-60"
+                : "bg-accent-bg text-accent-text hover:opacity-90 active:scale-[0.98] cursor-pointer"
+            }`}
           >
-            {isVerifying ? <Loader2 size={16} className="animate-spin" /> : null}
-            {isVerifying ? "Verifying..." : "Enter Studio"}
+            {authMode === 'byok' && retryCooldown > 0 && retryTotalDuration > 0 && (
+              <div
+                className="absolute inset-y-0 left-0 bg-accent-bg/15 pointer-events-none transition-all duration-300 ease-linear"
+                style={{
+                  width: `${Math.max(0, Math.min(100, ((retryTotalDuration - retryCooldown) / retryTotalDuration) * 100))}%`,
+                }}
+              />
+            )}
+            {isVerifying ? (
+              <Loader2 size={16} className="animate-spin relative z-10" />
+            ) : authMode === 'byok' && retryCooldown > 0 ? (
+              <RotateCcw size={15} className="shrink-0 relative z-10 opacity-60" />
+            ) : null}
+            <span className="relative z-10 truncate">
+              {isVerifying
+                ? "Verifying..."
+                : authMode === 'byok' && retryCooldown > 0
+                ? `Enter Studio (${retryCooldown}s)`
+                : "Enter Studio"}
+            </span>
           </button>
           
           {/* Reserved error slot — prevents card height jump and left panel shift */}
