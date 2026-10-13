@@ -750,10 +750,10 @@ export default function SFXStudio() {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto [scrollbar-gutter:stable]">
         {/* Layout container: left = site integrated voice hero (no panel), right = auth panel */}
-        <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 px-4 sm:px-8 lg:px-12 relative z-10">
+        <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 px-4 sm:px-8 lg:px-12 relative z-10 lg:min-h-[720px]">
 
           {/* ── Left: Voice waves & branding integrated into the site (no panel) ── */}
-          <div className="flex-1 w-full max-w-xl flex flex-col justify-center items-center gap-6 sm:gap-8 py-2 text-center">
+          <div className="flex-1 w-full max-w-xl flex flex-col justify-center items-center gap-6 sm:gap-8 py-2 text-center lg:self-center">
             <div className="w-full flex flex-col items-center gap-3 text-center">
               {/* Logo justified center with respect to the left space */}
               <div className="w-full flex justify-center mb-1">
@@ -773,8 +773,8 @@ export default function SFXStudio() {
             </div>
           </div>
 
-          {/* ── Right: Auth panel card (fixed min-height to eliminate tab layout shift) ── */}
-          <div className="w-full max-w-[550px] lg:w-[550px] min-h-[700px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col justify-between relative shrink-0">
+          {/* ── Right: Auth panel card (natural height, stable row centering) ── */}
+          <div className="w-full max-w-[550px] lg:w-[550px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col relative shrink-0 lg:self-center">
           {canCancelAuth && !verifyScreen && (
             <div className="absolute top-6 right-6 flex items-center">
               <button
@@ -815,7 +815,7 @@ export default function SFXStudio() {
           </div>
 
           {authMode === 'byok' ? (
-            <div className="flex-1 min-h-[395px] flex flex-col justify-center gap-4 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2">
               <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-xl flex items-start gap-3 text-xs text-text-secondary leading-relaxed mb-2">
                 <Info size={16} className="text-accent-bg shrink-0 mt-0.5" />
                 <div className="flex flex-col gap-1.5">
@@ -856,7 +856,7 @@ export default function SFXStudio() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 min-h-[395px] flex flex-col justify-center gap-4 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2">
               <div className="p-4 bg-bg-hover border border-border-color rounded-xl flex items-start gap-3 text-xs text-text-secondary leading-relaxed mb-2">
                 <Shield size={16} className="text-text-muted shrink-0 mt-0.5" />
                 <div className="flex flex-col gap-1">
