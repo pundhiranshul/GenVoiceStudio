@@ -91,29 +91,36 @@ export function AuthAudioGuide() {
 
           const el = barRefs.current[b];
           if (el) {
-            const h = Math.max(6, Math.min(100, currentBarsRef.current[b]));
-            el.style.height = `${h}%`;
+            const h = Math.max(8, Math.min(100, currentBarsRef.current[b]));
+            el.style.height = `${h.toFixed(1)}%`;
             const isPassed = (b / BARS_COUNT) <= progressRatio;
             el.style.opacity = isPassed ? "1" : "0.35";
           }
         }
       } else {
-        // Idle breathing ambient wave
-        const t = now / 650;
+        // Idle breathing ambient wave - silky smooth continuous traveling wave
+        const t = now / 600;
         const audio = audioRef.current;
         const cur = audio?.currentTime || 0;
         const progressRatio = (duration || 63) > 0 ? cur / (duration || 63) : 0;
 
         for (let b = 0; b < BARS_COUNT; b++) {
-          const idle = 12 + Math.sin(t + b * 0.38) * 8;
-          currentBarsRef.current[b] += (idle - currentBarsRef.current[b]) * 0.15;
+          // Continuous harmonic wave traveling left-to-right
+          const primary = Math.sin(t - b * 0.28);
+          const secondary = Math.sin(t * 0.5 + b * 0.14) * 0.3;
+          const wave = primary + secondary;
+          // Undulates smoothly between ~8% and ~30%, so bars never hit minimum flat clipping
+          const idleTarget = 19 + wave * 8.5;
+
+          // Smooth interpolation from any previous height state
+          currentBarsRef.current[b] += (idleTarget - currentBarsRef.current[b]) * 0.2;
 
           const el = barRefs.current[b];
           if (el) {
-            const h = Math.max(6, Math.min(100, currentBarsRef.current[b]));
-            el.style.height = `${h}%`;
-            const isPassed = (b / BARS_COUNT) <= progressRatio;
-            el.style.opacity = isPassed ? "0.85" : "0.35";
+            const h = Math.max(8, Math.min(100, currentBarsRef.current[b]));
+            el.style.height = `${h.toFixed(1)}%`;
+            const isPassed = cur > 0.1 && (b / BARS_COUNT) <= progressRatio;
+            el.style.opacity = cur > 0.1 ? (isPassed ? "0.85" : "0.35") : "0.55";
           }
         }
       }
@@ -289,7 +296,7 @@ export function AuthAudioGuide() {
                 barRefs.current[i] = el;
               }}
               style={{ height: "12%" }}
-              className="flex-1 rounded-full transition-[height] duration-75 relative z-10 bg-text-primary pointer-events-none min-h-[5px]"
+              className="flex-1 rounded-full relative z-10 bg-text-primary pointer-events-none min-h-[6px]"
             />
           ))}
 
