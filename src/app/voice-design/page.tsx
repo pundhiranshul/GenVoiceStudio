@@ -854,11 +854,23 @@ export default function Home() {
             } catch (err) {}
           });
         }
-      } else if (data.status === "failed") {
-        setStatus("error"); setMessage(`Kaggle Error`); addLog(`ERROR: ${data.error || 'Failed'}`);
-      } else if (["cancel", "cancel_requested", "cancel_acknowledged"].includes(data.rawStatus || '')) {
-        setStatus("idle"); setMessage(`Generation cancelled.`); addLog(`CANCELLED: ${data.rawStatus}`);
+      } else if (
+        data.status === "cancelled" ||
+        ["cancel", "cancelled", "canceled", "cancel_requested", "cancel_acknowledged"].includes((data.rawStatus || '').toLowerCase()) ||
+        (data.rawStatus || '').toLowerCase().includes("cancel") ||
+        (data.rawStatus || '').toLowerCase().includes("stop")
+      ) {
+        setStatus("error");
+        setMessage("Session was stopped or cancelled on Kaggle.");
+        addLog(`CANCELLED: Session stopped on Kaggle (${data.rawStatus || 'CANCELLED'})`);
         isStoppedRef.current = true;
+        localStorage.removeItem('voice_design_kernel');
+      } else if (data.status === "failed") {
+        setStatus("error");
+        setMessage(data.failureMessage || data.error || "Generation failed on Kaggle");
+        addLog(`ERROR: ${data.failureMessage || data.error || 'Failed'}`);
+        isStoppedRef.current = true;
+        localStorage.removeItem('voice_design_kernel');
       } else {
         const info = ` (${data.rawStatus || data.status || 'polling'})`;
         setMessage(`Generating${info}...`);
@@ -1746,8 +1758,16 @@ export default function Home() {
 
           {/* Error */}
           {status === "error" && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
-              <strong className="font-semibold block mb-0.5">Generation Failed:</strong>
+            <div className={`p-3 rounded-xl text-sm ${
+              message.toLowerCase().includes("cancel") || message.toLowerCase().includes("stopped")
+                ? "bg-amber-500/10 border border-amber-500/20 text-amber-500"
+                : "bg-red-500/10 border border-red-500/20 text-red-500"
+            }`}>
+              <strong className="font-semibold block mb-0.5">
+                {message.toLowerCase().includes("cancel") || message.toLowerCase().includes("stopped")
+                  ? "Generation Cancelled:"
+                  : "Generation Failed:"}
+              </strong>
               {message}
             </div>
           )}

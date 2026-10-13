@@ -784,8 +784,23 @@ export default function Home() {
             }
           });
         }
+      } else if (
+        data.status === "cancelled" ||
+        ["cancel", "cancelled", "canceled", "cancel_requested", "cancel_acknowledged"].includes((data.rawStatus || '').toLowerCase()) ||
+        (data.rawStatus || '').toLowerCase().includes("cancel") ||
+        (data.rawStatus || '').toLowerCase().includes("stop")
+      ) {
+        setStatus("error");
+        setMessage("Session was stopped or cancelled on Kaggle.");
+        addLog(`CANCELLED: Session stopped on Kaggle (${data.rawStatus || 'CANCELLED'})`);
+        isStoppedRef.current = true;
+        localStorage.removeItem('voice_kernel');
       } else if (data.status === "failed") {
-        setStatus("error"); setMessage(`Generation failed`); addLog(`ERROR: ${data.error || 'Failed'}`);
+        setStatus("error");
+        setMessage(data.failureMessage || data.error || "Generation failed on Kaggle");
+        addLog(`ERROR: ${data.failureMessage || data.error || 'Failed'}`);
+        isStoppedRef.current = true;
+        localStorage.removeItem('voice_kernel');
       } else {
         const info = ` (${data.rawStatus || data.status || 'polling'})`;
         setMessage(`Generating${info}...`);
@@ -1734,8 +1749,16 @@ export default function Home() {
 
 
                 {status === "error" && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm">
-                    <strong className="font-semibold">Generation Failed: </strong>
+                  <div className={`p-3 rounded-xl text-sm ${
+                    message.toLowerCase().includes("cancel") || message.toLowerCase().includes("stopped")
+                      ? "bg-amber-500/10 border border-amber-500/20 text-amber-500"
+                      : "bg-red-500/10 border border-red-500/20 text-red-500"
+                  }`}>
+                    <strong className="font-semibold">
+                      {message.toLowerCase().includes("cancel") || message.toLowerCase().includes("stopped")
+                        ? "Generation Cancelled: "
+                        : "Generation Failed: "}
+                    </strong>
                     {message}
                   </div>
                 )}

@@ -49,8 +49,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: 'running' });
     }
 
-    if (currentStatus === 'cancel') {
-      return NextResponse.json({ status: 'error', error: 'Verification was cancelled.' });
+    if (currentStatus.includes('cancel') || currentStatus.includes('stop')) {
+      return NextResponse.json({ status: 'error', error: 'Verification was cancelled on Kaggle.' });
     }
 
     // Attempt to fetch logs regardless if complete or error, because Kaggle might output why it failed in the logs.

@@ -2,11 +2,23 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-// Maps Kaggle's kernel run statuses to our simple three-state model
-function mapKaggleStatus(kaggleStatus: string): 'running' | 'done' | 'failed' {
+// Maps Kaggle's kernel run statuses to our model
+function mapKaggleStatus(kaggleStatus: string): 'running' | 'done' | 'failed' | 'cancelled' {
   const s = (kaggleStatus || '').toLowerCase();
   if (s === 'complete') return 'done';
-  if (s === 'error' || s === 'cancel' || s === 'cancel_requested' || s === 'cancel_acknowledged') return 'failed';
+  if (
+    s === 'cancel' ||
+    s === 'cancelled' ||
+    s === 'canceled' ||
+    s === 'cancel_requested' ||
+    s === 'cancel_acknowledged' ||
+    s.includes('cancel') ||
+    s.includes('stop') ||
+    s.includes('abort')
+  ) {
+    return 'cancelled';
+  }
+  if (s === 'error') return 'failed';
   return 'running'; // queued, running, etc.
 }
 
@@ -64,10 +76,25 @@ export async function GET(req: Request) {
     const kernelData = await statusRes.json();
     // Kaggle returns { "status": "COMPLETE", "failureMessage": ... }
     const rawStatus: string = kernelData?.status || 'queued';
+    const failureMsg: string = kernelData?.failureMessage || '';
 
-    const status = mapKaggleStatus(rawStatus);
+    let status = mapKaggleStatus(rawStatus);
+    const failureLower = failureMsg.toLowerCase();
+    if (
+      status === 'failed' &&
+      (failureLower.includes('cancel') ||
+       failureLower.includes('stop') ||
+       failureLower.includes('abort') ||
+       failureLower.includes('terminated'))
+    ) {
+      status = 'cancelled';
+    }
 
-    return NextResponse.json({ status, rawStatus });
+    return NextResponse.json({
+      status,
+      rawStatus,
+      failureMessage: failureMsg || (status === 'cancelled' ? 'Session was stopped or cancelled on Kaggle.' : undefined)
+    });
   } catch (err: any) {
     console.error('[STATUS API] Error:', err);
     return NextResponse.json({ error: `Internal error: ${err.message}` }, { status: 500 });
