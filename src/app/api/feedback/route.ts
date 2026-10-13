@@ -98,8 +98,11 @@ export async function GET(req: NextRequest) {
   // Dedicated FEED_PASSWORD for feedback access (separated from APP_PASSWORD)
   const feedbackSecret = (
     process.env.FEED_PASSWORD ||
+    process.env.feed_password ||
     process.env.FEEDBACK_PASSWORD ||
+    process.env.feedback_password ||
     process.env.FEED_SECRET ||
+    process.env.FEEDPASSWORD ||
     (process.env.NODE_ENV === 'development' ? 'secret' : '')
   ).trim();
 
@@ -112,6 +115,7 @@ export async function GET(req: NextRequest) {
     req.headers.get('authorization')?.replace('Bearer ', '');
 
   const providedKey = rawKey ? decodeURIComponent(rawKey).trim() : '';
+  const isAuthorized = Boolean(feedbackSecret && providedKey && providedKey === feedbackSecret);
 
   // Determine whether request is from a browser viewing the page
   const format = req.nextUrl.searchParams.get('format');
@@ -119,7 +123,7 @@ export async function GET(req: NextRequest) {
   const isBrowserHtml = (accept.includes('text/html') || format === 'html') && format !== 'json';
 
   // If unauthorized or FEED_PASSWORD not matched, return punchy message with no-cache headers
-  if (!feedbackSecret || !providedKey || providedKey !== feedbackSecret) {
+  if (!isAuthorized) {
     if (isBrowserHtml) {
       return new NextResponse(renderUnauthorizedHtml(), {
         status: 401,
