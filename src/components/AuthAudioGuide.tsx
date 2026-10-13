@@ -1,9 +1,36 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Play, Pause, RotateCcw, Volume2, Volume1, VolumeX } from "lucide-react";
+import { Play, Pause, RotateCcw, Volume2, Volume1, VolumeX, X, Headphones } from "lucide-react";
 import * as authAudio from "@/data/authAudioFeatures";
 import * as verifyAudio from "@/data/verifyAudioFeatures";
+
+const DONT_REMIND_KEY = "genvoice_audio_guide_dont_remind";
+const DISMISSED_SESSION_KEY = "genvoice_audio_guide_dismissed";
+const HAS_PLAYED_KEY = "genvoice_audio_guide_has_played";
+
+const GUIDE_PLAY_HINTS = [
+  "Click play for a step-by-step audio walkthrough",
+  "Tap play to listen to our interactive voice guide",
+  "Prefer listening? Click play to hear setup instructions",
+  "Hit play for a spoken overview of the setup steps",
+  "Click play to hear our quick audio onboarding guide",
+  "Tap play to listen along while setting up your credentials",
+  "Need assistance? Hit play for spoken walkthrough guidance",
+  "Press play to hear tips on generating your Kaggle API key",
+  "Click play to listen to the audio walkthrough",
+  "Turn up your sound and tap play for guided instructions",
+  "Hit play anytime to hear audio walkthrough instructions",
+  "Tap play to hear a quick explanation of the authentication steps",
+  "Listen to the audio guide for a quick walkthrough",
+  "Click play to hear voice tips on getting started with GenVoice",
+  "Press play to listen to step-by-step Kaggle setup tips",
+  "Prefer audio? Tap play to hear spoken instructions",
+  "Hit play for a quick audio walkthrough of this page",
+  "Click play to hear our friendly voice guide you through setup",
+  "Tap play for audio-guided assistance with your Kaggle token",
+  "Press play to start the spoken audio guide",
+];
 
 interface AuthAudioGuideProps {
   src?: string;
@@ -47,23 +74,42 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
   const isHoveringVolumeRef = useRef(false);
   const [hasInteracted, setHasInteracted] = useState(false);
 
-  // Attempt autoplay safely
-  const attemptPlay = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.play().then(() => {
-      setIsPlaying(true);
-    }).catch(() => {
-      // Autoplay blocked by browser policy until interaction
-      setIsPlaying(false);
-    });
-  }, []);
+  // Play guide hint callout state
+  const [showPlayHint, setShowPlayHint] = useState(false);
+  const [hintMessage, setHintMessage] = useState("");
 
   useEffect(() => {
-    attemptPlay();
-  }, [attemptPlay]);
+    if (typeof window === "undefined") return;
+    try {
+      const dontRemind = localStorage.getItem(DONT_REMIND_KEY) === "true";
+      const hasPlayed = localStorage.getItem(HAS_PLAYED_KEY) === "true";
+      const sessionDismissed = sessionStorage.getItem(DISMISSED_SESSION_KEY) === "true";
 
-  // Handle src changes smoothly
+      if (!dontRemind && !hasPlayed && !sessionDismissed) {
+        const randomIndex = Math.floor(Math.random() * GUIDE_PLAY_HINTS.length);
+        setHintMessage(GUIDE_PLAY_HINTS[randomIndex]);
+        setShowPlayHint(true);
+      }
+    } catch {}
+  }, []);
+
+  const handleDismissHint = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowPlayHint(false);
+    try {
+      sessionStorage.setItem(DISMISSED_SESSION_KEY, "true");
+    } catch {}
+  };
+
+  const handleNeverRemind = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowPlayHint(false);
+    try {
+      localStorage.setItem(DONT_REMIND_KEY, "true");
+    } catch {}
+  };
+
+  // Handle src changes smoothly (no autoplay)
   useEffect(() => {
     setDuration(audioData.AUDIO_DURATION || 63);
     setCurrentTime(0);
@@ -72,9 +118,10 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
     const audio = audioRef.current;
     if (audio) {
       audio.currentTime = 0;
-      attemptPlay();
+      audio.pause();
+      setIsPlaying(false);
     }
-  }, [src, audioData.AUDIO_DURATION, BARS_COUNT, attemptPlay]);
+  }, [src, audioData.AUDIO_DURATION, BARS_COUNT]);
 
 
   // High-performance 60fps render loop with direct DOM updates (no React re-renders)
@@ -160,6 +207,12 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
     const audio = audioRef.current;
     if (!audio) return;
     setHasInteracted(true);
+    if (showPlayHint) {
+      setShowPlayHint(false);
+      try {
+        localStorage.setItem(HAS_PLAYED_KEY, "true");
+      } catch {}
+    }
     if (isPlaying) {
       audio.pause();
       setIsPlaying(false);
@@ -172,6 +225,12 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
     e.stopPropagation();
     const audio = audioRef.current;
     if (!audio) return;
+    if (showPlayHint) {
+      setShowPlayHint(false);
+      try {
+        localStorage.setItem(HAS_PLAYED_KEY, "true");
+      } catch {}
+    }
     audio.currentTime = 0;
     setCurrentTime(0);
     audio.play().then(() => setIsPlaying(true)).catch(() => {});
@@ -394,8 +453,56 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
         </div>
       </div>
 
-      {/* Sound Wave Bar Panel */}
-      <div className="group relative w-full h-24 sm:h-28 flex flex-col justify-between rounded-2xl bg-bg-panel/40 hover:bg-bg-panel/70 border border-border-color/40 hover:border-border-color transition-all overflow-hidden shadow-inner select-none">
+      {/* Sound Wave Bar Panel Wrapper */}
+      <div className="relative w-full">
+        {/* Play Guide Callout Tooltip directing user to play */}
+        {showPlayHint && !isPlaying && (
+          <div
+            className="absolute -top-14 sm:-top-16 left-1/2 -translate-x-1/2 z-40 max-w-[96%] sm:max-w-md w-max bg-bg-panel/95 backdrop-blur-md border border-border-color rounded-full px-3 sm:px-3.5 py-1.5 shadow-xl flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200 pointer-events-auto"
+            role="status"
+            aria-live="polite"
+          >
+            {/* Audio indicator icon */}
+            <div className="w-5 h-5 rounded-full bg-accent-bg/15 text-accent-bg flex items-center justify-center shrink-0">
+              <Headphones size={11} className="animate-pulse" />
+            </div>
+
+            {/* Hint message text */}
+            <span className="text-[11px] sm:text-xs font-medium text-text-primary leading-tight truncate sm:whitespace-normal">
+              {hintMessage}
+            </span>
+
+            {/* Divider */}
+            <div className="w-px h-3 bg-border-color/60 shrink-0" />
+
+            {/* Don't remind button */}
+            <button
+              type="button"
+              onClick={handleNeverRemind}
+              className="text-[10px] text-text-muted hover:text-text-primary whitespace-nowrap transition-colors outline-none shrink-0"
+              title="Don't remind me again"
+            >
+              Don&apos;t remind
+            </button>
+
+            {/* Close 'X' button */}
+            <button
+              type="button"
+              onClick={handleDismissHint}
+              className="p-0.5 text-text-muted hover:text-text-primary hover:bg-bg-hover rounded-full transition-colors outline-none shrink-0"
+              aria-label="Dismiss hint"
+              title="Dismiss"
+            >
+              <X size={13} />
+            </button>
+
+            {/* Downward pointing arrow caret directing to the center play button */}
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-bg-panel border-r border-b border-border-color rotate-45 pointer-events-none" />
+          </div>
+        )}
+
+        {/* Sound Wave Bar Panel */}
+        <div className="group relative w-full h-24 sm:h-28 flex flex-col justify-between rounded-2xl bg-bg-panel/40 hover:bg-bg-panel/70 border border-border-color/40 hover:border-border-color transition-all overflow-hidden shadow-inner select-none">
         {/* Subtle ambient dynamic background glow */}
         <div
           className={`absolute inset-0 bg-gradient-to-r from-accent-bg/10 via-accent-bg/5 to-transparent transition-opacity duration-500 pointer-events-none ${
@@ -468,5 +575,6 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
         </div>
       </div>
     </div>
+  </div>
   );
 }
