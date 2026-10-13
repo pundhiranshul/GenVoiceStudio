@@ -1142,10 +1142,10 @@ export default function Home() {
       return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 md:p-8 lg:p-10 animate-in fade-in duration-500 overflow-y-auto [scrollbar-gutter:stable]">
           {/* Layout container: left = site integrated voice hero (no panel), right = verification card */}
-          <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 px-4 sm:px-8 lg:px-12 relative z-10">
+          <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 px-4 sm:px-8 lg:px-12 relative z-10 lg:min-h-[780px]">
 
             {/* ── Left: Voice waves & branding integrated into the site (no panel) ── */}
-            <div className="flex-1 w-full max-w-xl flex flex-col justify-center items-center gap-6 sm:gap-8 py-2 text-center">
+            <div className="flex-1 w-full max-w-xl flex flex-col justify-center items-center gap-6 sm:gap-8 py-2 text-center lg:self-center">
               <div className="w-full flex flex-col items-center gap-3 text-center">
                 {/* Logo justified center with respect to the left space */}
                 <div className="w-full flex justify-center mb-1">
@@ -1167,8 +1167,8 @@ export default function Home() {
               </div>
             </div>
 
-            {/* ── Right: Verification card (fixed min-height matching auth panel) ── */}
-            <div className="w-full max-w-[550px] lg:w-[550px] min-h-[700px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col justify-between relative shrink-0">
+            {/* ── Right: Verification card (natural height, stable row centering) ── */}
+            <div className="w-full max-w-[550px] lg:w-[550px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col relative shrink-0 lg:self-center">
               <div className="flex flex-col gap-6">
 
             <div className="space-y-4">
@@ -1441,13 +1441,13 @@ export default function Home() {
               </div>
 
               {(verifyStatus === 'pending' || verifyStatus === 'internet' || verifyStatus === 'gpu') && (
-                <div className="mt-auto pt-6 text-center">
+                <div className="pt-6 text-center">
                   <button
                     onClick={() => {
                       setVerifyScreen(false);
                       setIsVerifying(false);
                     }}
-                    className="text-xs text-text-muted hover:text-text-primary transition-colors inline-flex items-center gap-1.5"
+                    className="text-xs text-text-muted hover:text-text-primary transition-colors inline-flex items-center gap-1.5 cursor-pointer"
                   >
                     Cancel &amp; Return to Setup
                   </button>
