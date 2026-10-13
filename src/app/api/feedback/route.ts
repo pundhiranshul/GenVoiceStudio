@@ -110,7 +110,7 @@ export async function GET(req: NextRequest) {
   if (!providedKey || providedKey !== adminSecret) {
     return NextResponse.json(
       {
-        message: "Damn boy, are you lost? Call your parents.",
+        message: "Damn boy, are you lost or something? Call your parents.",
       },
       {
         status: 401,
