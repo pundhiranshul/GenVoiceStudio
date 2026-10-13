@@ -17,6 +17,10 @@
 }
 
 @layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+
   :root {
     --bg-base: #F4EFE6;
     --bg-panel: #FAF5ED;

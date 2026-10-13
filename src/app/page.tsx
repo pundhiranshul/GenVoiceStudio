@@ -1279,7 +1279,7 @@ export default function Home() {
     }
 
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 md:p-10 lg:p-12 animate-in fade-in duration-500 overflow-y-auto">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 md:p-8 lg:p-10 animate-in fade-in duration-500 overflow-y-auto [scrollbar-gutter:stable]">
         {/* Layout container: left = site integrated voice hero (no panel), right = auth panel */}
         <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 px-4 sm:px-8 lg:px-12 relative z-10">
 
@@ -1304,8 +1304,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* ── Right: Auth panel card ─────────────────────────────── */}
-          <div className={`w-full max-w-[550px] lg:w-[550px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col relative shrink-0 ${status === 'error' ? 'animate-shake' : ''}`}>
+          {/* ── Right: Auth panel card (fixed min-height to eliminate tab layout shift) ── */}
+          <div className={`w-full max-w-[550px] lg:w-[550px] min-h-[580px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col justify-between relative shrink-0 ${status === 'error' ? 'animate-shake' : ''}`}>
           {canCancelAuth && !verifyScreen && (
             <div className="absolute top-6 right-6 flex items-center gap-2">
               <button
@@ -1339,7 +1339,7 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="flex bg-bg-input p-1 rounded-lg border border-border-color mb-8">
+          <div className="flex bg-bg-input p-1 rounded-lg border border-border-color mb-6">
             <button 
               onClick={() => setAuthMode('byok')}
               className={`flex-1 py-2 text-xs font-medium rounded-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${authMode === 'byok' ? 'bg-bg-panel text-text-primary shadow-sm border border-border-color' : 'text-text-muted hover:text-text-secondary border border-transparent'}`}
@@ -1355,7 +1355,7 @@ export default function Home() {
           </div>
 
           {authMode === 'byok' ? (
-            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex-1 min-h-[290px] flex flex-col justify-center gap-4 animate-in fade-in slide-in-from-bottom-2">
               <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-xl flex items-start gap-3 text-xs text-text-secondary leading-relaxed mb-2">
                 <Info size={16} className="text-accent-bg shrink-0 mt-0.5" />
                 <div className="flex flex-col gap-1.5">
@@ -1396,10 +1396,13 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2">
+            <div className="flex-1 min-h-[290px] flex flex-col justify-center gap-4 animate-in fade-in slide-in-from-bottom-2">
               <div className="p-4 bg-bg-hover border border-border-color rounded-xl flex items-start gap-3 text-xs text-text-secondary leading-relaxed mb-2">
                 <Shield size={16} className="text-text-muted shrink-0 mt-0.5" />
-                <span>Access the shared hosted instance. This requires the master App Password.</span>
+                <div className="flex flex-col gap-1">
+                  <span className="font-medium text-text-primary">Shared Deployment Access</span>
+                  <span>Access the shared hosted instance. This requires the master App Password. Individual Kaggle credentials are not required.</span>
+                </div>
               </div>
               <div className="space-y-3">
                 <div className="relative">
