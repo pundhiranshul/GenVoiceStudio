@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Play, Pause, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { Play, Pause, RotateCcw, Volume2, Volume1, VolumeX } from "lucide-react";
 import * as authAudio from "@/data/authAudioFeatures";
 import * as verifyAudio from "@/data/verifyAudioFeatures";
 
@@ -40,6 +40,11 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(audioData.AUDIO_DURATION || 63);
   const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [isVolumeOpen, setIsVolumeOpen] = useState(false);
+  const [isDraggingVolume, setIsDraggingVolume] = useState(false);
+  const prevVolumeRef = useRef(1);
+  const isHoveringVolumeRef = useRef(false);
   const [hasInteracted, setHasInteracted] = useState(false);
 
   // Attempt autoplay safely
@@ -189,6 +194,55 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
     audio.play().then(() => setIsPlaying(true)).catch(() => {});
   };
 
+  const handleToggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (isMuted || volume === 0) {
+      const restored = prevVolumeRef.current > 0 ? prevVolumeRef.current : 1;
+      audio.muted = false;
+      audio.volume = restored;
+      setVolume(restored);
+      setIsMuted(false);
+    } else {
+      prevVolumeRef.current = volume;
+      audio.muted = true;
+      setIsMuted(true);
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    setVolume(val);
+    const audio = audioRef.current;
+    if (audio) {
+      audio.volume = val;
+      if (val === 0) {
+        audio.muted = true;
+        setIsMuted(true);
+      } else {
+        audio.muted = false;
+        setIsMuted(false);
+        prevVolumeRef.current = val;
+      }
+    }
+  };
+
+  useEffect(() => {
+    const onGlobalMouseUp = () => {
+      setIsDraggingVolume(false);
+      if (!isHoveringVolumeRef.current) {
+        setIsVolumeOpen(false);
+      }
+    };
+    window.addEventListener("mouseup", onGlobalMouseUp);
+    window.addEventListener("touchend", onGlobalMouseUp);
+    return () => {
+      window.removeEventListener("mouseup", onGlobalMouseUp);
+      window.removeEventListener("touchend", onGlobalMouseUp);
+    };
+  }, []);
+
   // Seeking restricted exclusively to the meager bottom scrub track
   const seekFromClientX = useCallback((clientX: number) => {
     const track = scrubTrackRef.current;
@@ -258,8 +312,12 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
           if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
         }}
         onLoadedMetadata={() => {
-          if (audioRef.current && isFinite(audioRef.current.duration)) {
-            setDuration(audioRef.current.duration);
+          if (audioRef.current) {
+            if (isFinite(audioRef.current.duration)) {
+              setDuration(audioRef.current.duration);
+            }
+            audioRef.current.volume = volume;
+            audioRef.current.muted = isMuted;
           }
         }}
         onPlay={() => setIsPlaying(true)}
@@ -276,31 +334,72 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
           {formatTime(currentTime)} / {formatTime(duration)}
         </span>
 
-        {/* Replay and Sound off/on buttons on top right */}
+        {/* Replay and Sound controls on top right */}
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={handleRestart}
-            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-bg-panel/60 rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-bg-panel/60 rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color shrink-0"
             title="Replay audio from start"
             aria-label="Replay audio"
           >
             <RotateCcw size={15} />
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (audioRef.current) {
-                audioRef.current.muted = !isMuted;
-                setIsMuted((prev) => !prev);
+
+          {/* Volume container: on hover, expands horizontally to the left, shifting restart button */}
+          <div
+            className="flex items-center rounded-lg transition-colors"
+            onMouseEnter={() => {
+              isHoveringVolumeRef.current = true;
+              setIsVolumeOpen(true);
+            }}
+            onMouseLeave={() => {
+              isHoveringVolumeRef.current = false;
+              if (!isDraggingVolume) {
+                setIsVolumeOpen(false);
               }
             }}
-            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-bg-panel/60 rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-            title={isMuted ? "Unmute audio" : "Mute audio"}
-            aria-label={isMuted ? "Unmute audio" : "Mute audio"}
           >
-            {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
-          </button>
+            {/* Horizontal slider container that smoothly animates width, shifting restart button to the left */}
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-out flex items-center ${
+                isVolumeOpen || isDraggingVolume ? "w-20 sm:w-24 opacity-100 mr-1.5" : "w-0 opacity-0 mr-0"
+              }`}
+            >
+              <div className="relative w-full flex items-center h-5 px-0.5">
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.02"
+                  value={isMuted ? 0 : volume}
+                  onChange={handleVolumeChange}
+                  onMouseDown={() => setIsDraggingVolume(true)}
+                  onTouchStart={() => setIsDraggingVolume(true)}
+                  className="w-full h-1 bg-border-color/60 hover:bg-border-color rounded-full appearance-none cursor-pointer accent-accent-bg outline-none"
+                  aria-label="Volume slider"
+                  title={`Volume: ${Math.round((isMuted ? 0 : volume) * 100)}%`}
+                />
+              </div>
+            </div>
+
+            {/* Speaker Mute/Unmute button */}
+            <button
+              type="button"
+              onClick={handleToggleMute}
+              className="p-1.5 text-text-muted hover:text-text-primary hover:bg-bg-panel/60 rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color shrink-0"
+              title={isMuted || volume === 0 ? "Unmute audio" : `Mute audio (${Math.round(volume * 100)}%)`}
+              aria-label={isMuted || volume === 0 ? "Unmute audio" : "Mute audio"}
+            >
+              {isMuted || volume === 0 ? (
+                <VolumeX size={15} />
+              ) : volume < 0.5 ? (
+                <Volume1 size={15} />
+              ) : (
+                <Volume2 size={15} />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
