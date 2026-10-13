@@ -95,7 +95,13 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const adminSecret = (process.env.ADMIN_SECRET || process.env.APP_PASSWORD || 'secret').trim();
+  // Dedicated FEED_PASSWORD for feedback access (separated from APP_PASSWORD)
+  const feedbackSecret = (
+    process.env.FEED_PASSWORD ||
+    process.env.FEEDBACK_PASSWORD ||
+    process.env.FEED_SECRET ||
+    (process.env.NODE_ENV === 'development' ? 'secret' : '')
+  ).trim();
 
   // Accept secret, password, or pass query params, or header tokens
   const rawKey =
@@ -112,8 +118,8 @@ export async function GET(req: NextRequest) {
   const accept = req.headers.get('accept') || '';
   const isBrowserHtml = (accept.includes('text/html') || format === 'html') && format !== 'json';
 
-  // If unauthorized, return punchy message with no-cache headers (or sleek styled 401 page for browser)
-  if (!providedKey || providedKey !== adminSecret) {
+  // If unauthorized or FEED_PASSWORD not matched, return punchy message with no-cache headers
+  if (!feedbackSecret || !providedKey || providedKey !== feedbackSecret) {
     if (isBrowserHtml) {
       return new NextResponse(renderUnauthorizedHtml(), {
         status: 401,
