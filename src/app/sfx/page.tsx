@@ -750,7 +750,7 @@ export default function SFXStudio() {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto [scrollbar-gutter:stable]">
         {/* Layout container: left = site integrated voice hero (no panel), right = auth panel */}
-        <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 px-4 sm:px-8 lg:px-12 relative z-10 lg:min-h-[720px]">
+        <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 px-4 sm:px-8 lg:px-12 relative z-10 lg:min-h-[780px]">
 
           {/* ── Left: Voice waves & branding integrated into the site (no panel) ── */}
           <div className="flex-1 w-full max-w-xl flex flex-col justify-center items-center gap-6 sm:gap-8 py-2 text-center lg:self-center">
