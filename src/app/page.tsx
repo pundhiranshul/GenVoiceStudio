@@ -1397,7 +1397,7 @@ export default function Home() {
     }
 
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 md:p-8 lg:p-10 animate-in fade-in duration-500 overflow-y-auto [scrollbar-gutter:stable]">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto [scrollbar-gutter:stable]">
         {/* Layout container: left = site integrated voice hero (no panel), right = auth panel */}
         <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 px-4 sm:px-8 lg:px-12 relative z-10">
 
@@ -1423,18 +1423,9 @@ export default function Home() {
           </div>
 
           {/* ── Right: Auth panel card (fixed min-height to eliminate tab layout shift) ── */}
-          <div className={`w-full max-w-[550px] lg:w-[550px] min-h-[580px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col justify-between relative shrink-0 ${status === 'error' ? 'animate-shake' : ''}`}>
+          <div className="w-full max-w-[550px] lg:w-[550px] min-h-[580px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col justify-between relative shrink-0">
           {canCancelAuth && !verifyScreen && (
-            <div className="absolute top-6 right-6 flex items-center gap-2">
-              <button
-                onClick={() => handleSignOut()}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-text-muted hover:text-red-400 hover:bg-bg-hover rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                title="Sign Out (flushes auth, keeps your generated items)"
-                aria-label="Sign Out"
-              >
-                <LogOut size={13} />
-                <span>Sign Out</span>
-              </button>
+            <div className="absolute top-6 right-6 flex items-center">
               <button
                 onClick={() => {
                   setKaggleUsername(localStorage.getItem('kaggleUsername') || '');
@@ -1749,6 +1740,9 @@ export default function Home() {
           
           <button
             onClick={() => {
+              setStatus("idle");
+              setMessage("");
+              setVerifyScreen(false);
               setHasCredentials(false);
               setCanCancelAuth(true);
             }}

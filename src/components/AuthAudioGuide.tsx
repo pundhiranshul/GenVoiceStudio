@@ -76,23 +76,6 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
     }
   }, [src, audioData.AUDIO_DURATION, BARS_COUNT, attemptPlay]);
 
-  // First user interaction resume
-  useEffect(() => {
-    const onUserGesture = () => {
-      if (!hasInteracted) {
-        setHasInteracted(true);
-        if (audioRef.current?.paused) {
-          attemptPlay();
-        }
-      }
-    };
-    window.addEventListener("click", onUserGesture, { once: true });
-    window.addEventListener("keydown", onUserGesture, { once: true });
-    return () => {
-      window.removeEventListener("click", onUserGesture);
-      window.removeEventListener("keydown", onUserGesture);
-    };
-  }, [hasInteracted, attemptPlay]);
 
   // High-performance 60fps render loop with direct DOM updates (no React re-renders)
   useEffect(() => {
@@ -436,7 +419,7 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
               ref={(el) => {
                 barRefs.current[i] = el;
               }}
-              style={{ height: "12%" }}
+              style={{ height: `${20 + Math.sin(-i * 0.26) * 9}%` }}
               className="flex-1 rounded-full relative z-10 bg-text-primary pointer-events-none min-h-[6px] will-change-[height]"
             />
           ))}
