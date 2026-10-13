@@ -14,97 +14,31 @@ export function renderUnauthorizedHtml(): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Unauthorized • Feedback</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Unauthorized</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: #121013;
       color: #EDEDED;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
-    }
-    .card {
-      background: #1A181C;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 32px 28px;
-      max-width: 440px;
-      width: 100%;
+      padding: 24px;
       text-align: center;
     }
-    h1 {
-      font-size: 20px;
-      font-weight: 700;
-      color: #EDEDED;
-      margin-bottom: 8px;
-      line-height: 1.3;
-    }
     p {
-      color: #71717A;
-      font-size: 13px;
-      margin-bottom: 24px;
-    }
-    .input-row {
-      display: flex;
-      gap: 8px;
-    }
-    input {
-      flex: 1;
-      background: #242226;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
-      padding: 9px 12px;
-      font-size: 13px;
+      font-size: 18px;
+      font-weight: 500;
       color: #EDEDED;
-      outline: none;
-    }
-    input:focus {
-      border-color: rgba(255, 255, 255, 0.25);
-    }
-    button {
-      background: #EAE5DB;
-      color: #111111;
-      border: none;
-      border-radius: 8px;
-      padding: 0 16px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #FFFFFF;
+      letter-spacing: -0.01em;
+      line-height: 1.5;
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Damn boy, are you lost or something? Call your parents.</h1>
-    <p>Enter the admin password to view feedback.</p>
-    <div class="input-row">
-      <input type="password" id="secretInput" placeholder="Password..." autocomplete="off" />
-      <button onclick="unlock()">Unlock</button>
-    </div>
-  </div>
-
-  <script>
-    function unlock() {
-      const val = document.getElementById('secretInput').value.trim();
-      if (!val) return;
-      const url = new URL(window.location.href);
-      url.searchParams.set('secret', val);
-      window.location.href = url.toString();
-    }
-    document.getElementById('secretInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') unlock();
-    });
-  </script>
+  <p>Damn boy, are you lost or something? Call your parents.</p>
 </body>
 </html>`;
 }
