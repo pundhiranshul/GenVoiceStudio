@@ -6,9 +6,11 @@ import * as authAudio from "@/data/authAudioFeatures";
 import * as verifyAudio from "@/data/verifyAudioFeatures";
 
 const DONT_REMIND_KEY = "genvoice_audio_guide_dont_remind";
-const CURRENT_HINT_SESSION_KEY = "genvoice_audio_guide_current_hint";
+const GUIDE_1_HINT_SESSION_KEY = "genvoice_audio_guide_1_hint";
+const GUIDE_2_HINT_SESSION_KEY = "genvoice_audio_guide_2_hint";
 
-const GUIDE_PLAY_HINTS = [
+// 20 distinct, friendly, and contextual messages for Setup & Authentication (Guide 1)
+const GUIDE_1_PLAY_HINTS = [
   "Click play for a step-by-step audio walkthrough",
   "Tap play to listen to our interactive voice guide",
   "Prefer listening? Click play to hear setup instructions",
@@ -29,6 +31,30 @@ const GUIDE_PLAY_HINTS = [
   "Click play to hear our friendly voice guide you through setup",
   "Tap play for audio-guided assistance with your Kaggle token",
   "Press play to start the spoken audio guide",
+];
+
+// 20 distinct, friendly, and contextual messages for Kaggle Verification (Guide 2)
+const GUIDE_2_PLAY_HINTS = [
+  "Click play to hear what Kaggle environment verification does",
+  "Hit play for an audio walkthrough of the verification process",
+  "Tap play to listen to what's happening behind the scenes",
+  "Click play to hear audio tips while your test kernel provisions",
+  "Turn up your sound and tap play for guided verification tips",
+  "Prefer listening? Hit play for a spoken overview of this step",
+  "Click play for an interactive audio guide to the verification step",
+  "Press play to learn what internet and GPU quotas mean",
+  "Tap play to hear our voice guide explain the verification checks",
+  "Hit play to listen along while your environment is checked",
+  "Listen to the audio guide for a quick walkthrough of this step",
+  "Click play to hear voice tips while provisioning completes",
+  "Press play to listen to audio guidance for this verification",
+  "Tap play for spoken walkthrough assistance while you wait",
+  "Hit play for a quick audio explanation of GPU allocation",
+  "Click play to hear our friendly voice guide you through verification",
+  "Prefer audio? Tap play to hear spoken verification tips",
+  "Press play to hear how Kaggle kernels power your voice models",
+  "Tap play to listen to helpful audio tips while waiting",
+  "Press play to start the spoken audio verification guide",
 ];
 
 interface AuthAudioGuideProps {
@@ -81,6 +107,12 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
+      setShowPlayHint(false);
+      setIsSpawned(false);
+
+      // Clean up any legacy shared hint key from previous iterations
+      sessionStorage.removeItem("genvoice_audio_guide_hint");
+
       const dontRemind = localStorage.getItem(DONT_REMIND_KEY) === "true";
       if (dontRemind) return;
 
@@ -92,12 +124,21 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
       const isDismissed = sessionStorage.getItem(dismissKey) === "true";
       if (isDismissed) return;
 
-      // Select or reuse the current session's hint message so verification window shows the exact same message
-      let activeMsg = sessionStorage.getItem(CURRENT_HINT_SESSION_KEY);
-      if (!activeMsg || !GUIDE_PLAY_HINTS.includes(activeMsg)) {
-        const randomIndex = Math.floor(Math.random() * GUIDE_PLAY_HINTS.length);
-        activeMsg = GUIDE_PLAY_HINTS[randomIndex];
-        sessionStorage.setItem(CURRENT_HINT_SESSION_KEY, activeMsg);
+      // Select contextual pool for Guide 1 vs Guide 2 and ensure verification gets a DIFFERENT message
+      const pool = isGuide2 ? GUIDE_2_PLAY_HINTS : GUIDE_1_PLAY_HINTS;
+      const sessionKey = isGuide2 ? GUIDE_2_HINT_SESSION_KEY : GUIDE_1_HINT_SESSION_KEY;
+      const otherGuideMsg = isGuide2
+        ? sessionStorage.getItem(GUIDE_1_HINT_SESSION_KEY)
+        : sessionStorage.getItem(GUIDE_2_HINT_SESSION_KEY);
+
+      let activeMsg = sessionStorage.getItem(sessionKey);
+      if (!activeMsg || !pool.includes(activeMsg) || activeMsg === otherGuideMsg) {
+        // Guarantee a different message from the other screen
+        const candidates = pool.filter((msg) => msg !== otherGuideMsg);
+        const listToPick = candidates.length > 0 ? candidates : pool;
+        const randomIndex = Math.floor(Math.random() * listToPick.length);
+        activeMsg = listToPick[randomIndex];
+        sessionStorage.setItem(sessionKey, activeMsg);
       }
       setHintMessage(activeMsg);
 
@@ -109,7 +150,11 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
         }, 50);
       }, 1000);
 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        setShowPlayHint(false);
+        setIsSpawned(false);
+      };
     } catch {}
   }, [isGuide2]);
 
@@ -417,35 +462,42 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
       />
 
       {/* Play Guide Callout Tooltip in empty space above player controls */}
-      <div className="w-full flex justify-center min-h-[38px] relative z-40">
+      <div className="w-full flex justify-center min-h-[42px] mb-1 relative z-40">
         {showPlayHint && (
           <div
-            className={`relative max-w-[96%] sm:max-w-md w-max bg-bg-panel/95 backdrop-blur-md border border-border-color rounded-full px-3.5 py-1.5 shadow-xl flex items-center gap-2 pointer-events-auto transition-all duration-500 ease-out transform ${
+            onClick={togglePlay}
+            className={`group/hint cursor-pointer relative max-w-[96%] sm:max-w-xl md:max-w-2xl w-max bg-gradient-to-r from-white via-white to-[#FDFBF7] dark:from-[#1E1C22] dark:via-[#1E1C22] dark:to-[#252029] backdrop-blur-md border border-[#E2DBD0] dark:border-neutral-700/80 ring-1 ring-black/[0.03] dark:ring-white/[0.06] rounded-full pl-2.5 pr-3 py-1.5 shadow-[0_10px_26px_-4px_rgba(45,35,25,0.12),0_2px_8px_-1px_rgba(45,35,25,0.06)] dark:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.65),0_0_1px_1px_rgba(255,255,255,0.08)] flex items-center gap-2.5 pointer-events-auto transition-all duration-500 ease-out transform hover:scale-[1.012] hover:border-[#D5CDBC] dark:hover:border-neutral-600 ${
               isSpawned
                 ? "opacity-100 translate-y-0 scale-100"
                 : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
             }`}
             role="status"
             aria-live="polite"
+            title="Click to play audio walkthrough"
           >
-            {/* Audio indicator icon */}
-            <div className="w-5 h-5 rounded-full bg-accent-bg/15 text-accent-bg flex items-center justify-center shrink-0">
-              <Headphones size={11} className="animate-pulse" />
+            {/* High-contrast audio focal badge with live studio indicator */}
+            <div className="relative w-6 h-6 rounded-full bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 flex items-center justify-center shrink-0 shadow-sm group-hover/hint:scale-105 transition-transform">
+              <Headphones size={12} className="group-hover/hint:hidden shrink-0" />
+              <Play size={11} fill="currentColor" className="hidden group-hover/hint:block ml-0.5 shrink-0" />
+              <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2 pointer-events-none">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              </span>
             </div>
 
             {/* Hint message text */}
-            <span className="text-[11px] sm:text-xs font-medium text-text-primary leading-tight truncate sm:whitespace-normal">
+            <span className="text-xs sm:text-[13px] font-medium text-neutral-800 dark:text-neutral-100 leading-tight sm:whitespace-nowrap select-none">
               {hintMessage}
             </span>
 
             {/* Divider */}
-            <div className="w-px h-3 bg-border-color/60 shrink-0" />
+            <div className="w-px h-3.5 bg-[#E8E2D8] dark:bg-neutral-700 shrink-0 mx-0.5" />
 
             {/* Don't remind button */}
             <button
               type="button"
               onClick={handleNeverRemind}
-              className="text-[10px] text-text-muted hover:text-text-primary whitespace-nowrap transition-colors outline-none shrink-0 cursor-pointer"
+              className="text-[11px] text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 whitespace-nowrap transition-colors outline-none px-1 py-0.5 rounded hover:bg-black/[0.04] dark:hover:bg-white/[0.06] shrink-0 cursor-pointer select-none"
               title="Don't remind me again"
             >
               Don&apos;t remind
@@ -455,15 +507,15 @@ export function AuthAudioGuide({ src = "/samples/AuthenticationGuide_1.wav" }: A
             <button
               type="button"
               onClick={handleDismissHint}
-              className="p-0.5 text-text-muted hover:text-text-primary hover:bg-bg-hover rounded-full transition-colors outline-none shrink-0 cursor-pointer"
+              className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] rounded-full transition-colors outline-none shrink-0 cursor-pointer"
               aria-label="Dismiss hint"
               title="Dismiss"
             >
-              <X size={13} />
+              <X size={12} />
             </button>
 
             {/* Downward pointing arrow caret directing to the center play button */}
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-bg-panel border-r border-b border-border-color rotate-45 pointer-events-none" />
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white dark:bg-[#1E1C22] border-r border-b border-[#E2DBD0] dark:border-neutral-700/80 rotate-45 pointer-events-none" />
           </div>
         )}
       </div>

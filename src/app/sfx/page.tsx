@@ -769,7 +769,7 @@ export default function SFXStudio() {
 
             {/* Voice visualizer seamlessly embedded into the site canvas */}
             <div className="w-full">
-              <AuthAudioGuide />
+              <AuthAudioGuide key="auth-guide-1" />
             </div>
           </div>
 
