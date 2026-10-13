@@ -697,9 +697,9 @@ export default function SFXStudio() {
             </div>
           )}
 
-          {/* Shifted heading to the right auth panel — single line */}
-          <div className="mb-6">
-            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-text-primary whitespace-nowrap">
+          {/* Shifted heading to the right auth panel — centered */}
+          <div className="mb-6 text-center">
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-text-primary text-center">
               Choose how to authenticate and start creating
             </h2>
           </div>
