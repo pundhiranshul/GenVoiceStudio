@@ -174,7 +174,7 @@ export function FeedbackModal({
       : "What purpose are you using GenVoice for?";
 
   const subtitleText = autoSubmit
-    ? "Select an option below to help us tailor future voice models (auto-submits instantly, no typing):"
+    ? "Select an option below to help us tailor future voice models:"
     : "Select your primary use case below and click Submit to help shape upcoming features:";
 
   return (
