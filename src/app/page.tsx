@@ -510,6 +510,42 @@ export default function Home() {
     }
   }, [kaggleUsername, hasCredentials]);
 
+  // Exit-intent feedback detection (trying to exit voice generation tab without generating voice)
+  useEffect(() => {
+    const handleMouseLeave = (e: MouseEvent) => {
+      if (typeof window === "undefined") return;
+      // Cursor moving up towards the tab bar / close button / address bar
+      if (e.clientY <= 0 || (e.relatedTarget === null && e.clientY < 20)) {
+        const hasGen = localStorage.getItem('genvoice_has_generated_voice');
+        const hasFeedback = localStorage.getItem('genvoice_feedback_submitted');
+        const exitShown = sessionStorage.getItem('genvoice_exit_feedback_shown');
+        if (!hasGen && !hasFeedback && !exitShown) {
+          sessionStorage.setItem('genvoice_exit_feedback_shown', 'true');
+          window.dispatchEvent(new CustomEvent('open-feedback', {
+            detail: { trigger: 'exit', autoSubmit: true }
+          }));
+        }
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      if (typeof window === "undefined") return;
+      const hasGen = localStorage.getItem('genvoice_has_generated_voice');
+      const hasFeedback = localStorage.getItem('genvoice_feedback_submitted');
+      // If closing tab without generating voice or answering feedback, dock it for return
+      if (!hasGen && !hasFeedback) {
+        localStorage.setItem('genvoice_feedback_docked', 'true');
+      }
+    };
+
+    document.addEventListener('mouseleave', handleMouseLeave);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      document.removeEventListener('mouseleave', handleMouseLeave);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
   const toggleTheme = () => {
     if (document.documentElement.classList.contains('dark')) {
       document.documentElement.classList.remove('dark');
@@ -823,6 +859,19 @@ export default function Home() {
               console.error("Failed to save to history:", err);
             }
           });
+        }
+
+        // Trigger Feedback Form on first voice generation
+        if (typeof window !== "undefined") {
+          const hasGenBefore = localStorage.getItem('genvoice_has_generated_voice');
+          localStorage.setItem('genvoice_has_generated_voice', 'true');
+          if (!hasGenBefore && !localStorage.getItem('genvoice_feedback_submitted')) {
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('open-feedback', {
+                detail: { trigger: 'generation', autoSubmit: true }
+              }));
+            }, 1400);
+          }
         }
       } else if (
         data.status === "cancelled" ||

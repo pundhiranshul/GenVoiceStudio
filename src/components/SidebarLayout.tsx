@@ -1,11 +1,12 @@
 "use client";
 import { AboutModal } from "@/components/AboutModal";
 import { SignOutModal } from "@/components/SignOutModal";
+import { FeedbackModal } from "@/components/FeedbackModal";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Mic, AudioLines, Bug, Info, ChevronLeft, ChevronRight, Menu, X, User, Wand2, Library, LogOut } from "lucide-react";
+import { Mic, AudioLines, Bug, Info, ChevronLeft, ChevronRight, Menu, X, User, Wand2, Library, LogOut, MessageSquareHeart } from "lucide-react";
 import { getAuthInfo, handleSignOut } from "@/lib/auth";
 
 const GenVoiceLogo = ({ size = 24, className = "" }) => (
@@ -40,19 +41,72 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
   });
   const [showAbout, setShowAbout] = useState(false);
   const [showSignOut, setShowSignOut] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackTrigger, setFeedbackTrigger] = useState<'generation' | 'exit' | 'manual'>('manual');
+  const [feedbackAutoSubmit, setFeedbackAutoSubmit] = useState(false);
+  const [isFeedbackDocked, setIsFeedbackDocked] = useState(false);
+  const [isFeedbackSubmitted, setIsFeedbackSubmitted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const submitted = Boolean(localStorage.getItem('genvoice_feedback_submitted'));
+    setIsFeedbackSubmitted(submitted);
+    if (!submitted) {
+      setIsFeedbackDocked(localStorage.getItem('genvoice_feedback_docked') === 'true');
+    } else {
+      setIsFeedbackDocked(false);
+    }
+  }, []);
+
+  useEffect(() => {
     const handleOpenAbout = () => setShowAbout(true);
     const handleOpenSignOut = () => setShowSignOut(true);
+    const handleOpenFeedback = (e: any) => {
+      if (typeof window !== "undefined" && localStorage.getItem('genvoice_feedback_submitted')) return;
+      const detail = e.detail || {};
+      setFeedbackTrigger(detail.trigger || 'manual');
+      setFeedbackAutoSubmit(Boolean(detail.autoSubmit));
+      setShowFeedback(true);
+    };
+    const handleFeedbackSubmitted = () => {
+      setIsFeedbackSubmitted(true);
+      setIsFeedbackDocked(false);
+      setShowFeedback(false);
+    };
+    const handleFeedbackDocked = () => {
+      setIsFeedbackDocked(true);
+    };
+
     window.addEventListener('open-architecture', handleOpenAbout);
     window.addEventListener('open-signout', handleOpenSignOut);
+    window.addEventListener('open-feedback', handleOpenFeedback);
+    window.addEventListener('feedback-submitted', handleFeedbackSubmitted);
+    window.addEventListener('feedback-docked-changed', handleFeedbackDocked);
+
     return () => {
       window.removeEventListener('open-architecture', handleOpenAbout);
       window.removeEventListener('open-signout', handleOpenSignOut);
+      window.removeEventListener('open-feedback', handleOpenFeedback);
+      window.removeEventListener('feedback-submitted', handleFeedbackSubmitted);
+      window.removeEventListener('feedback-docked-changed', handleFeedbackDocked);
     };
   }, []);
+
+  const handleCloseFeedback = () => {
+    setShowFeedback(false);
+    if (typeof window !== "undefined" && !localStorage.getItem('genvoice_feedback_submitted')) {
+      setIsFeedbackDocked(true);
+      localStorage.setItem('genvoice_feedback_docked', 'true');
+    }
+  };
+
+  const handleOpenManualFeedback = () => {
+    setFeedbackTrigger('manual');
+    setFeedbackAutoSubmit(false);
+    setShowFeedback(true);
+  };
 
   // Close mobile sidebar when pathname changes
   useEffect(() => {
@@ -166,6 +220,20 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
                       return;
                     }
                   }
+                  // If navigating away from voice generation tab without generating voice
+                  if (pathname === "/" && item.href !== "/") {
+                    const hasGen = typeof window !== "undefined" ? localStorage.getItem('genvoice_has_generated_voice') : null;
+                    const hasFeedback = typeof window !== "undefined" ? localStorage.getItem('genvoice_feedback_submitted') : null;
+                    const exitShown = typeof window !== "undefined" ? sessionStorage.getItem('genvoice_exit_feedback_shown') : null;
+                    if (!hasGen && !hasFeedback && !exitShown) {
+                      e.preventDefault();
+                      sessionStorage.setItem('genvoice_exit_feedback_shown', 'true');
+                      setFeedbackTrigger('exit');
+                      setFeedbackAutoSubmit(true);
+                      setShowFeedback(true);
+                      return;
+                    }
+                  }
                 }}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors outline-none
                   ${isActive 
@@ -182,6 +250,27 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
+
+        {/* Docked Feedback Button in Left Panel */}
+        {isFeedbackDocked && !isFeedbackSubmitted && (
+          <div className="px-3 pb-2 pt-1 border-t border-border-color">
+            <button
+              onClick={handleOpenManualFeedback}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all outline-none border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium group cursor-pointer ${
+                isCollapsed ? "justify-center px-0" : ""
+              }`}
+              title="Give Feedback"
+            >
+              <MessageSquareHeart size={18} className="shrink-0 text-amber-500 group-hover:scale-110 transition-transform" />
+              {!isCollapsed && (
+                <div className="flex items-center justify-between w-full min-w-0">
+                  <span className="text-sm font-semibold truncate">Give Feedback</span>
+                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                </div>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Bottom Area (About & Report Bug) */}
         <div className="p-3 border-t border-border-color flex flex-col gap-1">
@@ -272,6 +361,16 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
       </div>
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
       {showSignOut && <SignOutModal onClose={() => setShowSignOut(false)} />}
+      <FeedbackModal
+        isOpen={showFeedback}
+        trigger={feedbackTrigger}
+        autoSubmit={feedbackAutoSubmit}
+        onClose={handleCloseFeedback}
+        onSubmitSuccess={() => {
+          setIsFeedbackSubmitted(true);
+          setIsFeedbackDocked(false);
+        }}
+      />
     </div>
   );
 }
