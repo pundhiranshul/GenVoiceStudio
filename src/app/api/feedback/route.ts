@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const DATA_DIR = path.join(process.cwd(), 'data');
 const FEEDBACK_FILE = path.join(DATA_DIR, 'feedback.json');
 const TMP_FEEDBACK_FILE = '/tmp/feedback.json';
@@ -103,13 +106,18 @@ export async function GET(req: NextRequest) {
 
   const providedKey = rawKey ? decodeURIComponent(rawKey).trim() : '';
 
-  // If unauthorized, return funny punchy message
+  // If unauthorized, return punchy message with no-cache headers
   if (!providedKey || providedKey !== adminSecret) {
     return NextResponse.json(
       {
-        message: "You are lost. Call your parents.",
+        message: "Damn boy, are you lost? Call your parents.",
       },
-      { status: 401 }
+      {
+        status: 401,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
     );
   }
 
@@ -120,19 +128,41 @@ export async function GET(req: NextRequest) {
       const raw = fs.readFileSync(targetFile, 'utf8');
       const data = JSON.parse(raw);
       if (Array.isArray(data)) {
-        return NextResponse.json({
-          total: data.length,
-          feedbacks: data,
-          message: data.length === 0 ? 'No user feedback recorded yet.' : undefined,
-        });
+        return NextResponse.json(
+          {
+            total: data.length,
+            feedbacks: data,
+            message: data.length === 0 ? 'No user feedback recorded yet.' : undefined,
+          },
+          {
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            },
+          }
+        );
       }
     }
-    return NextResponse.json({
-      total: 0,
-      feedbacks: [],
-      message: 'No user feedback recorded yet.',
-    });
+    return NextResponse.json(
+      {
+        total: 0,
+        feedbacks: [],
+        message: 'No user feedback recorded yet.',
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (err: any) {
-    return NextResponse.json({ error: 'Failed to read feedback: ' + err.message }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to read feedback: ' + err.message },
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   }
 }
