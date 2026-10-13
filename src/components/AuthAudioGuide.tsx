@@ -25,7 +25,10 @@ export function AuthAudioGuide() {
   const isDraggingRef = useRef(false);
 
   // Smooth bars buffer for interpolation
-  const currentBarsRef = useRef<number[]>(new Array(BARS_COUNT).fill(12));
+  const currentBarsRef = useRef<number[]>(new Array(BARS_COUNT).fill(20));
+  const wasPlayingRef = useRef(false);
+  const pauseStartRef = useRef(0);
+  const pauseHeightsRef = useRef<number[]>(new Array(BARS_COUNT).fill(20));
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -69,14 +72,12 @@ export function AuthAudioGuide() {
 
   // High-performance 60fps render loop with direct DOM updates (no React re-renders)
   useEffect(() => {
-    let lastTime = performance.now();
-
     const tick = (now: number) => {
-      lastTime = now;
       const audio = audioRef.current;
       const playing = audio ? !audio.paused && !audio.ended : false;
 
       if (playing && audio) {
+        wasPlayingRef.current = true;
         const cur = audio.currentTime;
         const frameIdx = Math.min(TOTAL_FRAMES - 1, Math.floor(cur * AUDIO_FPS));
         const targetBars = getFrameBars(frameIdx);
@@ -92,35 +93,47 @@ export function AuthAudioGuide() {
           const el = barRefs.current[b];
           if (el) {
             const h = Math.max(8, Math.min(100, currentBarsRef.current[b]));
-            el.style.height = `${h.toFixed(1)}%`;
+            el.style.height = `${h}%`;
             const isPassed = (b / BARS_COUNT) <= progressRatio;
             el.style.opacity = isPassed ? "1" : "0.35";
           }
         }
       } else {
-        // Idle breathing ambient wave - silky smooth continuous traveling wave
-        const t = now / 600;
+        if (wasPlayingRef.current) {
+          // Just paused: smoothly crossfade from speech heights into the idle wave
+          wasPlayingRef.current = false;
+          pauseStartRef.current = now;
+          pauseHeightsRef.current = [...currentBarsRef.current];
+        }
+
+        // Pure unidirectional traveling wave: constant phase velocity moving left-to-right
+        const t = now * 0.0022; // smooth soothing speed (~3.5s per cycle across all bars)
         const audio = audioRef.current;
         const cur = audio?.currentTime || 0;
         const progressRatio = (duration || 63) > 0 ? cur / (duration || 63) : 0;
+        const transitionElapsed = now - pauseStartRef.current;
+        const isTransitioning = pauseStartRef.current > 0 && transitionElapsed < 350;
+        const blend = isTransitioning ? transitionElapsed / 350 : 1;
+        const ease = blend * blend * (3 - 2 * blend); // cubic smoothstep curve
 
         for (let b = 0; b < BARS_COUNT; b++) {
-          // Continuous harmonic wave traveling left-to-right
-          const primary = Math.sin(t - b * 0.28);
-          const secondary = Math.sin(t * 0.5 + b * 0.14) * 0.3;
-          const wave = primary + secondary;
-          // Undulates smoothly between ~8% and ~30%, so bars never hit minimum flat clipping
-          const idleTarget = 19 + wave * 8.5;
+          // Both fundamental and octave harmonic share the same direction (- b * 0.26) for zero interference jitter
+          const theta = t - b * 0.26;
+          const wave = Math.sin(theta) * 0.85 + Math.sin(theta * 2) * 0.15;
+          // Smoothly undulates between 9% and 31% with float precision (no dead zones or flat dashes)
+          const idleTarget = 20 + wave * 11;
 
-          // Smooth interpolation from any previous height state
-          currentBarsRef.current[b] += (idleTarget - currentBarsRef.current[b]) * 0.2;
+          let h = idleTarget;
+          if (isTransitioning) {
+            h = pauseHeightsRef.current[b] * (1 - ease) + idleTarget * ease;
+          }
+          currentBarsRef.current[b] = h;
 
           const el = barRefs.current[b];
           if (el) {
-            const h = Math.max(8, Math.min(100, currentBarsRef.current[b]));
-            el.style.height = `${h.toFixed(1)}%`;
-            const isPassed = cur > 0.1 && (b / BARS_COUNT) <= progressRatio;
-            el.style.opacity = cur > 0.1 ? (isPassed ? "0.85" : "0.35") : "0.55";
+            el.style.height = `${h}%`;
+            const isPassed = cur > 0.05 && (b / BARS_COUNT) <= progressRatio;
+            el.style.opacity = cur > 0.05 ? (isPassed ? "0.85" : "0.35") : "0.55";
           }
         }
       }
@@ -296,7 +309,7 @@ export function AuthAudioGuide() {
                 barRefs.current[i] = el;
               }}
               style={{ height: "12%" }}
-              className="flex-1 rounded-full relative z-10 bg-text-primary pointer-events-none min-h-[6px]"
+              className="flex-1 rounded-full relative z-10 bg-text-primary pointer-events-none min-h-[6px] will-change-[height]"
             />
           ))}
 
