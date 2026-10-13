@@ -90,32 +90,50 @@ export async function POST(req: NextRequest) {
   }
 }
 
-/**
- * Protected GET endpoint:
- * Strictly blocked for public visitors (returns 404).
- * Only accessible by admin with valid x-admin-key header or ?secret= param.
- */
 export async function GET(req: NextRequest) {
-  const adminSecret = process.env.ADMIN_SECRET || process.env.APP_PASSWORD || 'secret';
-  const providedKey =
-    req.headers.get('x-admin-key') ||
-    req.headers.get('authorization')?.replace('Bearer ', '') ||
-    req.nextUrl.searchParams.get('secret');
+  const adminSecret = (process.env.ADMIN_SECRET || process.env.APP_PASSWORD || 'secret').trim();
 
-  // If unauthorized, return 404 so unauthorized visitors cannot see this endpoint exists
+  // Accept secret, password, or pass query params, or header tokens
+  const rawKey =
+    req.nextUrl.searchParams.get('secret') ||
+    req.nextUrl.searchParams.get('password') ||
+    req.nextUrl.searchParams.get('pass') ||
+    req.headers.get('x-admin-key') ||
+    req.headers.get('authorization')?.replace('Bearer ', '');
+
+  const providedKey = rawKey ? decodeURIComponent(rawKey).trim() : '';
+
+  // If unauthorized, return 401 JSON so browser shows clear status instead of Vercel's generic 404 page
   if (!providedKey || providedKey !== adminSecret) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json(
+      {
+        error: 'Unauthorized',
+        message: 'Invalid or missing admin secret. Append ?secret=YOUR_APP_PASSWORD to the URL.',
+      },
+      { status: 401 }
+    );
   }
 
-  // Return the private feedback list to the authorized admin
+  // Return private feedback list to the authorized admin
   try {
     const targetFile = fs.existsSync(FEEDBACK_FILE) ? FEEDBACK_FILE : TMP_FEEDBACK_FILE;
     if (fs.existsSync(targetFile)) {
-      const data = JSON.parse(fs.readFileSync(targetFile, 'utf8'));
-      return NextResponse.json({ total: data.length, feedbacks: data });
+      const raw = fs.readFileSync(targetFile, 'utf8');
+      const data = JSON.parse(raw);
+      if (Array.isArray(data)) {
+        return NextResponse.json({
+          total: data.length,
+          feedbacks: data,
+          message: data.length === 0 ? 'No user feedback recorded yet.' : undefined,
+        });
+      }
     }
-    return NextResponse.json({ total: 0, feedbacks: [] });
+    return NextResponse.json({
+      total: 0,
+      feedbacks: [],
+      message: 'No user feedback recorded yet.',
+    });
   } catch (err: any) {
-    return NextResponse.json({ error: 'Failed to read feedback' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to read feedback: ' + err.message }, { status: 500 });
   }
 }
