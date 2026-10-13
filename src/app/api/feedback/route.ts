@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { renderDashboardHtml, renderUnauthorizedHtml } from './renderDashboard';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -106,8 +107,23 @@ export async function GET(req: NextRequest) {
 
   const providedKey = rawKey ? decodeURIComponent(rawKey).trim() : '';
 
-  // If unauthorized, return punchy message with no-cache headers
+  // Determine whether request is from a browser viewing the page
+  const format = req.nextUrl.searchParams.get('format');
+  const accept = req.headers.get('accept') || '';
+  const isBrowserHtml = (accept.includes('text/html') || format === 'html') && format !== 'json';
+
+  // If unauthorized, return punchy message with no-cache headers (or sleek styled 401 page for browser)
   if (!providedKey || providedKey !== adminSecret) {
+    if (isBrowserHtml) {
+      return new NextResponse(renderUnauthorizedHtml(), {
+        status: 401,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      });
+    }
+
     return NextResponse.json(
       {
         message: "Damn boy, are you lost or something? Call your parents.",
@@ -123,30 +139,35 @@ export async function GET(req: NextRequest) {
 
   // Return private feedback list to the authorized admin
   try {
+    let feedbacks: any[] = [];
     const targetFile = fs.existsSync(FEEDBACK_FILE) ? FEEDBACK_FILE : TMP_FEEDBACK_FILE;
     if (fs.existsSync(targetFile)) {
-      const raw = fs.readFileSync(targetFile, 'utf8');
-      const data = JSON.parse(raw);
-      if (Array.isArray(data)) {
-        return NextResponse.json(
-          {
-            total: data.length,
-            feedbacks: data,
-            message: data.length === 0 ? 'No user feedback recorded yet.' : undefined,
-          },
-          {
-            headers: {
-              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-            },
-          }
-        );
+      try {
+        const raw = fs.readFileSync(targetFile, 'utf8');
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) feedbacks = parsed;
+      } catch {
+        feedbacks = [];
       }
     }
+
+    // If viewed in browser, serve the beautified GenVoice Studio telemetry dashboard
+    if (isBrowserHtml) {
+      return new NextResponse(renderDashboardHtml(feedbacks, providedKey), {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      });
+    }
+
+    // Default JSON format for automated tooling / curl
     return NextResponse.json(
       {
-        total: 0,
-        feedbacks: [],
-        message: 'No user feedback recorded yet.',
+        total: feedbacks.length,
+        feedbacks,
+        message: feedbacks.length === 0 ? 'No user feedback recorded yet.' : undefined,
       },
       {
         headers: {
@@ -155,6 +176,19 @@ export async function GET(req: NextRequest) {
       }
     );
   } catch (err: any) {
+    if (isBrowserHtml) {
+      return new NextResponse(
+        `<div style="background:#121013;color:#f87171;padding:40px;font-family:sans-serif"><h3>Failed to read feedback telemetry</h3><p>${err.message}</p></div>`,
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Failed to read feedback: ' + err.message },
       {
