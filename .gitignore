@@ -45,3 +45,6 @@ venv/
 .venv/
 __pycache__/
 *.pyc
+
+# user feedback & private storage
+/data/
