@@ -2036,15 +2036,13 @@ export default function Home() {
                       Higher values strengthen prompt adherence. Recommended: 4.0 for Voice Design.
                     </p>
                   </div>
-                  <div className="relative flex items-center h-5 w-full">
-                    {/* Explicit visible continuous line track */}
-                    <div className="absolute inset-x-0 h-0.5 rounded-full bg-neutral-900 dark:bg-neutral-100 pointer-events-none" />
+                  <div className="w-full flex items-center h-6">
                     <input
                       type="range"
                       min="1" max="10" step="0.1"
                       value={guidanceScale}
                       onChange={(e) => setGuidanceScale(parseFloat(e.target.value))}
-                      className="black-bob-slider relative z-10 w-full h-5 appearance-none bg-transparent cursor-pointer outline-none"
+                      className="black-bob-slider"
                     />
                   </div>
                 </div>
