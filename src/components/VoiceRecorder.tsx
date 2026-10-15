@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, Square, Play, Pause, RotateCcw, Check, Sparkles, AlertCircle, Clock, Scissors, ShieldCheck } from 'lucide-react';
+import { Mic, Square, Play, Pause, RotateCcw, Check, Sparkles, AlertCircle, Clock, Scissors, ShieldCheck, ChevronDown } from 'lucide-react';
 import {
   decodeBlobToAudioBuffer,
   detectSpeechBoundaries,
@@ -438,60 +438,56 @@ export function VoiceRecorder({
         />
       </div>
 
-      {/* Suggested Reading Scripts (Compact pills without adjectives/titles) */}
+      {/* Suggested Reading Prompt Dropdown (Clean, full sentences, not shaky) */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
           <label className="text-[10px] font-bold tracking-wider text-text-muted uppercase">
-            Prompts to Read Aloud
+            Prompt to Read Aloud
           </label>
-          <span className="text-[10px] text-text-muted">Click to select</span>
+          <span className="text-[10px] text-text-muted">Select to use as your script</span>
         </div>
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-          {RECORDING_SUGGESTED_SCRIPTS.map((script, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => selectScript(idx)}
-              className={`px-2.5 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap shrink-0 border text-left ${
-                selectedScriptIdx === idx
-                  ? 'bg-accent-bg text-accent-text border-accent-bg font-medium shadow-sm'
-                  : 'bg-bg-input text-text-secondary border-border-subtle hover:bg-bg-hover hover:text-text-primary hover:border-border-color'
-              }`}
-              title={script}
-            >
-              {script.length > 36 ? script.slice(0, 34) + '...' : script}
-            </button>
-          ))}
+        <div className="relative">
+          <select
+            value={selectedScriptIdx !== null ? selectedScriptIdx : ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === '') {
+                setSelectedScriptIdx(null);
+              } else {
+                selectScript(Number(val));
+              }
+            }}
+            className="w-full bg-bg-input border border-border-color hover:border-border-subtle rounded-xl px-3.5 py-2 text-xs sm:text-sm text-text-primary outline-none focus:ring-2 focus:ring-ring-color appearance-none cursor-pointer pr-9 font-medium transition-colors"
+          >
+            {RECORDING_SUGGESTED_SCRIPTS.map((script, idx) => (
+              <option key={idx} value={idx}>
+                {`Prompt ${idx + 1}: "${script}"`}
+              </option>
+            ))}
+          </select>
+          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
         </div>
       </div>
 
       {/* Compact Interactive Recording Bar */}
       <div className="flex flex-col gap-2 p-3 rounded-xl bg-bg-base/70 border border-border-color">
         
-        {/* State 1: IDLE */}
+        {/* State 1: IDLE - Unified Single Record Button */}
         {recordingState === 'idle' && (
           <div className="flex items-center justify-between w-full min-h-[44px]">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={startRecording}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-accent-bg text-accent-text hover:opacity-90 active:scale-95 transition-all shadow-sm outline-none shrink-0"
-                aria-label="Start Recording"
-              >
-                <Mic size={18} />
-              </button>
-              <div className="flex flex-col">
-                <span className="text-xs font-semibold text-text-primary">Click to Record</span>
-                <span className="text-[10px] text-text-muted">Auto-clean & background noise cancellation enabled</span>
-              </div>
-            </div>
             <button
               type="button"
               onClick={startRecording}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-bg-panel border border-border-color text-text-primary hover:bg-bg-hover transition-colors hidden sm:block"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-bg text-accent-text hover:opacity-90 active:scale-95 transition-all shadow-sm outline-none font-semibold text-xs sm:text-sm shrink-0"
+              aria-label="Start Recording"
             >
-              Start
+              <Mic size={16} />
+              <span>Start Recording</span>
             </button>
+            <div className="flex flex-col items-end text-right">
+              <span className="text-[11px] font-medium text-text-secondary">Noise filter & auto-trim active</span>
+              <span className="text-[10px] text-text-muted font-mono">Max duration: 30s</span>
+            </div>
           </div>
         )}
 
