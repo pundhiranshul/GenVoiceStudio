@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, Square, Play, Pause, RotateCcw, Check, Sparkles, AlertCircle, Clock, Scissors, ShieldCheck, ChevronDown, Loader2 } from 'lucide-react';
+import { Mic, Square, Play, Pause, RotateCcw, Check, Sparkles, AlertCircle, Clock, Scissors, ShieldCheck, ChevronDown, Loader2, Copy } from 'lucide-react';
 import {
   decodeBlobToAudioBuffer,
   detectSpeechBoundaries,
@@ -40,6 +40,7 @@ export function VoiceRecorder({
   const [voiceName, setVoiceName] = useState(initialName);
   const [transcript, setTranscript] = useState('');
   const [selectedScriptIdx, setSelectedScriptIdx] = useState<number | null>(0);
+  const [copiedTranscript, setCopiedTranscript] = useState(false);
   const [elapsed, setElapsed] = useState(0);
 
   // Audio & playback state
@@ -467,13 +468,13 @@ export function VoiceRecorder({
   const rawFullDuration = decodedBufferRef.current ? Number(decodedBufferRef.current.duration.toFixed(1)) : audioTotalDuration;
 
   return (
-    <div className={`flex flex-col gap-3.5 sm:gap-4 bg-bg-panel border border-border-color rounded-2xl p-4 sm:p-5 shadow-sm ${className}`}>
+    <div className={`flex flex-col gap-4 sm:gap-5 bg-bg-panel border border-border-color rounded-2xl p-5 sm:p-6 shadow-sm focus-within:ring-2 ring-ring-color transition-all ${className}`}>
       
       {/* Voice Name & Suggested Reading Prompt (Side-by-side on sm+ to save vertical space) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Voice Name Input */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
+          <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">
             Voice Name
           </label>
           <input
@@ -481,14 +482,14 @@ export function VoiceRecorder({
             value={voiceName}
             onChange={(e) => setVoiceName(e.target.value)}
             placeholder="e.g. My Studio Voice, Casual Sam"
-            className="w-full bg-bg-input border border-border-color rounded-xl px-3.5 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted outline-none focus:ring-2 focus:ring-ring-color transition-all"
+            className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-sm sm:text-base text-text-primary placeholder:text-text-muted outline-none focus:border-border-color transition-all"
           />
         </div>
 
         {/* Suggested Reading Prompt Dropdown (Clean, full sentences) */}
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
+            <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">
               Prompt to Read Aloud
             </label>
           </div>
@@ -503,7 +504,7 @@ export function VoiceRecorder({
                   selectScript(Number(val));
                 }
               }}
-              className="w-full bg-bg-input border border-border-color hover:border-border-subtle rounded-xl px-3.5 py-2 text-xs sm:text-sm text-text-primary outline-none focus:ring-2 focus:ring-ring-color appearance-none cursor-pointer pr-9 font-medium transition-colors"
+              className="w-full bg-bg-input border border-border-color hover:border-border-subtle rounded-xl px-4 py-2.5 text-sm text-text-primary outline-none focus:border-border-color appearance-none cursor-pointer pr-9 font-medium transition-colors"
             >
               {RECORDING_SUGGESTED_SCRIPTS.map((script, idx) => (
                 <option key={idx} value={idx}>
@@ -772,12 +773,9 @@ export function VoiceRecorder({
 
       {/* Transcript Field */}
       <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
-          <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase flex items-center gap-1">
-            Exact Transcript <span className="text-red-400">*</span>
-          </label>
-          <span className="text-[11px] text-text-muted">{transcript.length} chars</span>
-        </div>
+        <label className="text-xs font-semibold tracking-wider text-text-muted uppercase flex items-center gap-1">
+          Exact Transcript <span className="text-red-400">*</span>
+        </label>
         
         <textarea
           value={transcript}
@@ -786,12 +784,34 @@ export function VoiceRecorder({
             setSelectedScriptIdx(null);
           }}
           placeholder="Write the exact words and punctuation spoken..."
-          rows={2}
-          className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-xs sm:text-sm text-text-primary outline-none focus:ring-2 focus:ring-ring-color resize-none placeholder:text-text-muted transition-all leading-relaxed"
+          rows={3}
+          className="w-full bg-bg-input border border-border-color rounded-xl p-4 text-sm sm:text-base leading-relaxed text-text-primary outline-none focus:border-border-color resize-none placeholder:text-text-muted transition-all"
         />
-        <span className="text-[11px] text-text-muted leading-tight">
-          Exact matching transcript is required for phoneme alignment in voice cloning.
-        </span>
+        
+        {/* Character Count & Copy (Matching SFX & Voice Design) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-1 text-text-muted">
+          <span className="text-xs text-text-muted leading-tight">
+            Exact matching transcript is required for phoneme alignment in voice cloning.
+          </span>
+          <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
+            <span className="text-xs uppercase tracking-wider font-medium">{transcript.length} chars</span>
+            <button
+              type="button"
+              onClick={() => {
+                if (transcript) {
+                  navigator.clipboard.writeText(transcript);
+                  setCopiedTranscript(true);
+                  setTimeout(() => setCopiedTranscript(false), 2000);
+                }
+              }}
+              disabled={!transcript}
+              className="p-1.5 hover:bg-bg-hover rounded-md transition-colors outline-none disabled:opacity-50"
+              title="Copy transcript"
+            >
+              {copiedTranscript ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Error / Success Alerts */}
