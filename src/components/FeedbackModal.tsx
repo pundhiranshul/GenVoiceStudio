@@ -93,7 +93,7 @@ const REPORT_CATEGORIES: CategoryMeta[] = [
     id: "bug",
     label: "Report Bug",
     subtitle: "Encountered an issue or unexpected error",
-    badge: "Bug Report 🪲",
+    badge: "Bug Report",
     badgeColor: "bg-red-500/10 text-red-400 border-red-500/20",
     icon: Bug,
     placeholder: "What happened? Describe what you were doing, what went wrong, or error message...",
@@ -103,7 +103,7 @@ const REPORT_CATEGORIES: CategoryMeta[] = [
     id: "suggestion",
     label: "Suggestion",
     subtitle: "Ideas, feature requests, or enhancements",
-    badge: "Feature Suggestion 💡",
+    badge: "Feature Suggestion",
     badgeColor: "bg-amber-500/10 text-amber-400 border-amber-500/20",
     icon: Lightbulb,
     placeholder: "What would make GenVoice better? Describe your idea or feature request...",
@@ -113,7 +113,7 @@ const REPORT_CATEGORIES: CategoryMeta[] = [
     id: "other",
     label: "Others",
     subtitle: "General feedback, thoughts, or questions",
-    badge: "General Feedback 💬",
+    badge: "General Feedback",
     badgeColor: "bg-blue-500/10 text-blue-400 border-blue-500/20",
     icon: MessageSquare,
     placeholder: "Tell us what's on your mind or share any thoughts...",
@@ -333,15 +333,15 @@ export function FeedbackModal({
                 <div className="w-14 h-14 rounded-2xl bg-green-500/10 border border-green-500/20 text-green-400 flex items-center justify-center mb-4">
                   <ThumbsUp size={28} />
                 </div>
-                <h3 className="text-xl font-bold text-text-primary mb-1">
-                  Thank You for Your Report!
+                <h3 className="text-lg font-semibold text-text-primary mb-1">
+                  Thank You
                 </h3>
                 <p className="text-sm text-text-secondary max-w-sm leading-relaxed mb-6">
                   {category === "bug"
-                    ? "Our engineering team has received your bug report. We appreciate you helping us make GenVoice Studio better."
+                    ? "Your bug report has been submitted."
                     : category === "suggestion"
-                    ? "Your feature suggestion has been sent directly to the development team."
-                    : "Your feedback has been received and logged. Thank you for your input!"}
+                    ? "Your suggestion has been submitted."
+                    : "Your feedback has been submitted."}
                 </p>
                 <button
                   type="button"
@@ -354,19 +354,10 @@ export function FeedbackModal({
             ) : (
               <form onSubmit={handleSubmitReport} className="flex flex-col gap-4">
                 {/* Header */}
-                <div className="flex flex-col items-start gap-1.5 pr-8">
-                  <div
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${currentCategoryMeta.badgeColor}`}
-                  >
-                    <CategoryIcon size={13} />
-                    <span>{currentCategoryMeta.badge}</span>
-                  </div>
+                <div className="flex flex-col items-start gap-1 pr-8">
                   <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary">
                     Report an Issue or Suggestion
                   </h2>
-                  <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
-                    No GitHub login required. Your submission goes straight to the GenVoice team.
-                  </p>
                 </div>
 
                 {/* Dropdown to pick category: Report Bug, Suggestion, Others */}
@@ -554,10 +545,10 @@ export function FeedbackModal({
             <div className="flex flex-col items-start gap-2.5 mb-6 pr-8">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent-bg/10 text-accent-bg border border-accent-bg/15">
                 {trigger === "generation"
-                  ? "First Voice Generated 🎉"
+                  ? "First Voice Generated"
                   : trigger === "exit"
-                  ? "Quick Question 👋"
-                  : "GenVoice Feedback 💡"}
+                  ? "Quick Question"
+                  : "GenVoice Feedback"}
               </div>
               <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary">
                 {trigger === "generation"
