@@ -83,51 +83,93 @@ export async function decodeBlobToAudioBuffer(blob: Blob): Promise<AudioBuffer> 
 
 /**
  * Automatically detects where vocal speech starts and ends.
- * Skips initial dead air before speaking and trailing silence before clicking stop.
+ * Uses adaptive energy distribution profiling (noise floor vs. vocal dynamic range)
+ * so it reliably trims leading/trailing silence across any microphone, room noise, or volume.
  */
 export function detectSpeechBoundaries(
   buffer: AudioBuffer,
-  thresholdDb = -38,
-  cushionSec = 0.12
+  cushionSec = 0.15
 ): { start: number; end: number } {
   const sampleRate = buffer.sampleRate;
   const channelData = buffer.getChannelData(0);
   const totalDuration = buffer.duration;
-  const windowSize = Math.floor(sampleRate * 0.03); // 30ms window
-  const thresholdLinear = Math.pow(10, thresholdDb / 20);
 
-  let firstSpeechSample = -1;
-  let lastSpeechSample = -1;
-
-  for (let i = 0; i < channelData.length; i += windowSize) {
-    const endWindow = Math.min(channelData.length, i + windowSize);
-    let sumSq = 0;
-    for (let j = i; j < endWindow; j++) {
-      sumSq += channelData[j] * channelData[j];
-    }
-    const rms = Math.sqrt(sumSq / (endWindow - i));
-
-    if (rms >= thresholdLinear) {
-      if (firstSpeechSample === -1) {
-        firstSpeechSample = i;
-      }
-      lastSpeechSample = endWindow;
-    }
-  }
-
-  if (firstSpeechSample === -1 || lastSpeechSample === -1) {
+  if (totalDuration < 0.6) {
     return { start: 0, end: totalDuration };
   }
 
-  const cushionSamples = Math.floor(cushionSec * sampleRate);
-  const startSample = Math.max(0, firstSpeechSample - cushionSamples);
-  const endSample = Math.min(channelData.length, lastSpeechSample + cushionSamples);
+  // 25ms analysis window for high temporal resolution
+  const windowSize = Math.floor(sampleRate * 0.025);
+  const numWindows = Math.floor(channelData.length / windowSize);
 
-  const start = Number((startSample / sampleRate).toFixed(2));
-  const end = Number((endSample / sampleRate).toFixed(2));
+  if (numWindows < 10) {
+    return { start: 0, end: totalDuration };
+  }
 
-  // If detected range is too short (< 0.5s), return full audio
-  if (end - start < 0.5) {
+  // Compute RMS for every 25ms window
+  const windowRms = new Float32Array(numWindows);
+  for (let w = 0; w < numWindows; w++) {
+    const startIdx = w * windowSize;
+    const endIdx = Math.min(channelData.length, startIdx + windowSize);
+    let sumSq = 0;
+    for (let j = startIdx; j < endIdx; j++) {
+      sumSq += channelData[j] * channelData[j];
+    }
+    windowRms[w] = Math.sqrt(sumSq / (endIdx - startIdx));
+  }
+
+  // Sort RMS values to extract energy percentiles
+  const sorted = Array.from(windowRms).sort((a, b) => a - b);
+  const noiseFloor = sorted[Math.floor(sorted.length * 0.15)] || 0.001;
+  const speechEnergy = sorted[Math.floor(sorted.length * 0.85)] || 0.03;
+
+  const dynamicRange = speechEnergy - noiseFloor;
+  // If the audio is completely uniform or silent, cannot trim safely
+  if (dynamicRange < 0.003 && speechEnergy < 0.008) {
+    return { start: 0, end: totalDuration };
+  }
+
+  // Adaptive threshold: 18% into the dynamic range above noise floor
+  const speechThreshold = Math.max(
+    noiseFloor * 1.5,
+    noiseFloor + dynamicRange * 0.18,
+    0.005
+  );
+
+  // Find start: look for at least 2 consecutive windows exceeding speechThreshold
+  let firstSpeechWin = -1;
+  for (let w = 0; w < numWindows - 2; w++) {
+    if (windowRms[w] >= speechThreshold && windowRms[w + 1] >= speechThreshold) {
+      firstSpeechWin = w;
+      break;
+    }
+  }
+
+  // Find end: scan backwards from the end for 2 consecutive windows exceeding speechThreshold
+  let lastSpeechWin = -1;
+  for (let w = numWindows - 1; w >= 2; w--) {
+    if (windowRms[w] >= speechThreshold && windowRms[w - 1] >= speechThreshold) {
+      lastSpeechWin = w;
+      break;
+    }
+  }
+
+  if (firstSpeechWin === -1 || lastSpeechWin === -1 || lastSpeechWin <= firstSpeechWin) {
+    return { start: 0, end: totalDuration };
+  }
+
+  // Convert windows to seconds and apply safety cushion padding
+  const rawStartSec = (firstSpeechWin * windowSize) / sampleRate;
+  const rawEndSec = ((lastSpeechWin + 1) * windowSize) / sampleRate;
+
+  const startSec = Math.max(0, rawStartSec - cushionSec);
+  const endSec = Math.min(totalDuration, rawEndSec + cushionSec);
+
+  const start = Number(startSec.toFixed(2));
+  const end = Number(endSec.toFixed(2));
+
+  // If detected range is too short (< 0.4s), return full audio
+  if (end - start < 0.4) {
     return { start: 0, end: totalDuration };
   }
 
@@ -371,36 +413,37 @@ export async function cleanAudioBuffer(buffer: AudioBuffer): Promise<AudioBuffer
   const source = offlineCtx.createBufferSource();
   source.buffer = spectrallyCleaned;
 
-  // 95Hz High-pass Butterworth filter (AC rumble, mic handling, desk thump)
+  // 80Hz High-pass filter (AC rumble, mic handling, desk thump)
   const highpass = offlineCtx.createBiquadFilter();
   highpass.type = 'highpass';
-  highpass.frequency.value = 95;
-  highpass.Q.value = 0.8;
+  highpass.frequency.value = 80;
+  highpass.Q.value = 0.707;
 
-  // 9.5kHz Low-pass filter (high coil whine, supersonic hiss)
+  // 11.5kHz Low-pass filter (high coil whine, supersonic hiss)
   const lowpass = offlineCtx.createBiquadFilter();
   lowpass.type = 'lowpass';
-  lowpass.frequency.value = 9500;
+  lowpass.frequency.value = 11500;
   lowpass.Q.value = 0.707;
 
-  // High-shelf filter to tame room reflection harshness
-  const highshelf = offlineCtx.createBiquadFilter();
-  highshelf.type = 'highshelf';
-  highshelf.frequency.value = 4500;
-  highshelf.gain.value = -2.5;
+  // Vocal presence boost filter (adds clarity and studio crispness to vocal speech)
+  const presence = offlineCtx.createBiquadFilter();
+  presence.type = 'peaking';
+  presence.frequency.value = 3500;
+  presence.gain.value = 1.8;
+  presence.Q.value = 1.1;
 
   // Vocal dynamics compressor to smooth vocal delivery
   const compressor = offlineCtx.createDynamicsCompressor();
-  compressor.threshold.value = -20;
+  compressor.threshold.value = -18;
   compressor.knee.value = 6;
-  compressor.ratio.value = 2.8;
+  compressor.ratio.value = 3.0;
   compressor.attack.value = 0.003;
-  compressor.release.value = 0.18;
+  compressor.release.value = 0.15;
 
   source.connect(highpass);
   highpass.connect(lowpass);
-  lowpass.connect(highshelf);
-  highshelf.connect(compressor);
+  lowpass.connect(presence);
+  presence.connect(compressor);
   compressor.connect(offlineCtx.destination);
 
   source.start(0);
@@ -426,19 +469,20 @@ export async function cleanAudioBuffer(buffer: AudioBuffer): Promise<AudioBuffer
     }
 
     const sortedRms = [...rmsValues].sort((a, b) => a - b);
-    const floorRms = sortedRms[Math.floor(sortedRms.length * 0.15)] || 0.003;
-    const speechRms = sortedRms[Math.floor(sortedRms.length * 0.85)] || 0.05;
+    const floorRms = sortedRms[Math.floor(sortedRms.length * 0.15)] || 0.002;
+    const speechRms = sortedRms[Math.floor(sortedRms.length * 0.85)] || 0.04;
+    const dynamicRange = Math.max(0.005, speechRms - floorRms);
 
-    // Safety margin for speech threshold
-    const gateThreshold = Math.max(0.008, Math.min(speechRms * 0.28, floorRms * 2.2));
+    // Adaptive speech pause gate threshold: snaps between room noise floor and vocal level
+    const gateThreshold = Math.max(0.004, floorRms + dynamicRange * 0.15);
 
     const windowGains = new Float32Array(numWindows);
     for (let w = 0; w < numWindows; w++) {
       const rms = rmsValues[w];
       if (rms < gateThreshold) {
-        // Attenuate down to 0.03 (-30dB in pauses)
+        // Attenuate down to 0.02 (-34dB in pauses)
         const ratio = rms / gateThreshold;
-        windowGains[w] = Math.max(0.03, ratio * ratio);
+        windowGains[w] = Math.max(0.02, ratio * ratio);
       } else {
         windowGains[w] = 1.0;
       }

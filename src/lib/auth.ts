@@ -17,7 +17,23 @@ export const AUTH_STORAGE_KEYS = [
   'sfx_kernel',
 ] as const;
 
+let _cachedHasCredentials: boolean | null = null;
+
+export function getCachedHasCredentials(): boolean {
+  if (_cachedHasCredentials !== null) return _cachedHasCredentials;
+  if (typeof window !== 'undefined') {
+    _cachedHasCredentials = isUserAuthenticated();
+    return _cachedHasCredentials;
+  }
+  return false;
+}
+
+export function setCachedHasCredentials(val: boolean): void {
+  _cachedHasCredentials = val;
+}
+
 export function clearAuthCredentials(): void {
+  _cachedHasCredentials = false;
   if (typeof window === 'undefined') return;
   for (const key of AUTH_STORAGE_KEYS) {
     localStorage.removeItem(key);

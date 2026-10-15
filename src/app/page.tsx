@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { get, set } from "idb-keyval";
 import { Sparkles, Terminal, Settings2, Shield, Loader2, Square, Wand2, Moon, Sun, Info, X, Key, Copy, Check, Bug, Download, User, ArrowLeft, Mic, ChevronDown, Menu, AudioLines, LayoutTemplate, Eye, EyeOff, ExternalLink, LogOut, RotateCcw } from 'lucide-react';
-import { handleSignOut } from "@/lib/auth";
+import { handleSignOut, getCachedHasCredentials, setCachedHasCredentials } from "@/lib/auth";
 import { VoiceSelector, Voice } from "@/components/VoiceSelector";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { AuthAudioGuide } from "@/components/AuthAudioGuide";
@@ -248,7 +248,19 @@ const CustomModelSelect = ({ value, onChange, options, className = "" }: { value
 export default function Home() {
   const [isDark, setIsDark]         = useState(false);
   const [showSplash, setShowSplash] = useState(false);
-  const [hasCredentials, setHasCredentials] = useState(false);
+  const [hasCredentials, _setHasCredentials] = useState(() => getCachedHasCredentials());
+  const setHasCredentials = (val: boolean | ((prev: boolean) => boolean)) => {
+    if (typeof val === 'function') {
+      _setHasCredentials(prev => {
+        const next = val(prev);
+        setCachedHasCredentials(next);
+        return next;
+      });
+    } else {
+      setCachedHasCredentials(val);
+      _setHasCredentials(val);
+    }
+  };
   const [canCancelAuth, setCanCancelAuth] = useState(false);
   const [authMode, setAuthMode]   = useState<'byok' | 'admin'>('byok');
   const [isVerifying, setIsVerifying] = useState(false);

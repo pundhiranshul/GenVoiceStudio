@@ -132,7 +132,8 @@ export function VoiceRecorder({
     buffer: AudioBuffer,
     clean: boolean,
     start: number,
-    end: number
+    end: number,
+    resumePlaying = false
   ) => {
     try {
       setIsFiltering(true);
@@ -151,14 +152,26 @@ export function VoiceRecorder({
       const wavBlob = audioBufferToWav(sliced);
       processedBlobRef.current = wavBlob;
 
+      const newUrl = URL.createObjectURL(wavBlob);
       setAudioUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev);
-        return URL.createObjectURL(wavBlob);
+        return newUrl;
       });
       setAudioTotalDuration(Number(sliced.duration.toFixed(2)));
       setAudioProgress(0);
       setAudioCurrentTime(0);
-      setIsPlaying(false);
+
+      if (resumePlaying) {
+        setTimeout(() => {
+          if (audioPlayerRef.current) {
+            audioPlayerRef.current.load();
+            audioPlayerRef.current.currentTime = 0;
+            audioPlayerRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+          }
+        }, 50);
+      } else {
+        setIsPlaying(false);
+      }
     } catch (err) {
       console.error("Failed to recompute preview audio:", err);
     } finally {
@@ -367,10 +380,12 @@ export function VoiceRecorder({
   };
 
   const applyAutoTrim = () => {
-    if (autoTrimDetected && decodedBufferRef.current) {
-      setTrimStart(autoTrimDetected.start);
-      setTrimEnd(autoTrimDetected.end);
-      recomputePreview(decodedBufferRef.current, cleanAudioEnabled, autoTrimDetected.start, autoTrimDetected.end);
+    if (decodedBufferRef.current) {
+      const boundaries = detectSpeechBoundaries(decodedBufferRef.current);
+      setAutoTrimDetected(boundaries);
+      setTrimStart(boundaries.start);
+      setTrimEnd(boundaries.end);
+      recomputePreview(decodedBufferRef.current, cleanAudioEnabled, boundaries.start, boundaries.end);
     }
   };
 
@@ -452,63 +467,65 @@ export function VoiceRecorder({
   const rawFullDuration = decodedBufferRef.current ? Number(decodedBufferRef.current.duration.toFixed(1)) : audioTotalDuration;
 
   return (
-    <div className={`flex flex-col gap-4 bg-bg-panel border border-border-color rounded-2xl p-5 sm:p-6 shadow-sm ${className}`}>
+    <div className={`flex flex-col gap-3.5 sm:gap-4 bg-bg-panel border border-border-color rounded-2xl p-4 sm:p-5 shadow-sm ${className}`}>
       
-      {/* Voice Name Input */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
-          Voice Name
-        </label>
-        <input
-          type="text"
-          value={voiceName}
-          onChange={(e) => setVoiceName(e.target.value)}
-          placeholder="e.g. My Studio Voice, Casual Sam"
-          className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-xs sm:text-sm text-text-primary placeholder:text-text-muted outline-none focus:ring-2 focus:ring-ring-color transition-all"
-        />
-      </div>
-
-      {/* Suggested Reading Prompt Dropdown (Clean, full sentences, not shaky) */}
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
+      {/* Voice Name & Suggested Reading Prompt (Side-by-side on sm+ to save vertical space) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Voice Name Input */}
+        <div className="flex flex-col gap-1.5">
           <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
-            Prompt to Read Aloud
+            Voice Name
           </label>
-          <span className="text-[11px] text-text-muted">Select to use as your script</span>
+          <input
+            type="text"
+            value={voiceName}
+            onChange={(e) => setVoiceName(e.target.value)}
+            placeholder="e.g. My Studio Voice, Casual Sam"
+            className="w-full bg-bg-input border border-border-color rounded-xl px-3.5 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted outline-none focus:ring-2 focus:ring-ring-color transition-all"
+          />
         </div>
-        <div className="relative">
-          <select
-            value={selectedScriptIdx !== null ? selectedScriptIdx : ''}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val === '') {
-                setSelectedScriptIdx(null);
-              } else {
-                selectScript(Number(val));
-              }
-            }}
-            className="w-full bg-bg-input border border-border-color hover:border-border-subtle rounded-xl px-4 py-2.5 text-xs sm:text-sm text-text-primary outline-none focus:ring-2 focus:ring-ring-color appearance-none cursor-pointer pr-9 font-medium transition-colors"
-          >
-            {RECORDING_SUGGESTED_SCRIPTS.map((script, idx) => (
-              <option key={idx} value={idx}>
-                {`Prompt ${idx + 1}: "${script}"`}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+
+        {/* Suggested Reading Prompt Dropdown (Clean, full sentences) */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
+              Prompt to Read Aloud
+            </label>
+          </div>
+          <div className="relative">
+            <select
+              value={selectedScriptIdx !== null ? selectedScriptIdx : ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '') {
+                  setSelectedScriptIdx(null);
+                } else {
+                  selectScript(Number(val));
+                }
+              }}
+              className="w-full bg-bg-input border border-border-color hover:border-border-subtle rounded-xl px-3.5 py-2 text-xs sm:text-sm text-text-primary outline-none focus:ring-2 focus:ring-ring-color appearance-none cursor-pointer pr-9 font-medium transition-colors"
+            >
+              {RECORDING_SUGGESTED_SCRIPTS.map((script, idx) => (
+                <option key={idx} value={idx}>
+                  {`Prompt ${idx + 1}: "${script}"`}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+          </div>
         </div>
       </div>
 
       {/* Interactive Recording Bar */}
-      <div className="flex flex-col gap-2.5 p-4 rounded-xl bg-bg-base/70 border border-border-color">
+      <div className="flex flex-col gap-2.5 p-3.5 sm:p-4 rounded-xl bg-bg-base/70 border border-border-color">
         
         {/* State 1: IDLE - Unified Single Record Button */}
         {recordingState === 'idle' && (
-          <div className="flex items-center justify-between w-full min-h-[46px]">
+          <div className="flex items-center justify-between w-full min-h-[44px]">
             <button
               type="button"
               onClick={startRecording}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-bg text-accent-text hover:opacity-90 active:scale-95 transition-all shadow-sm outline-none font-semibold text-xs sm:text-sm shrink-0"
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-accent-bg text-accent-text hover:opacity-90 active:scale-95 transition-all shadow-sm outline-none font-semibold text-xs sm:text-sm shrink-0"
               aria-label="Start Recording"
             >
               <Mic size={16} />
@@ -523,7 +540,7 @@ export function VoiceRecorder({
 
         {/* State 2: RECORDING */}
         {recordingState === 'recording' && (
-          <div className="flex items-center justify-between w-full min-h-[46px]">
+          <div className="flex items-center justify-between w-full min-h-[44px]">
             <div className="flex items-center gap-3">
               <span className="relative flex h-2.5 w-2.5 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -561,6 +578,7 @@ export function VoiceRecorder({
         {recordingState === 'recorded' && audioUrl && (
           <div className="flex flex-col gap-3 w-full">
             <audio
+              key={audioUrl}
               ref={audioPlayerRef}
               src={audioUrl}
               onTimeUpdate={handleAudioTimeUpdate}
@@ -693,7 +711,7 @@ export function VoiceRecorder({
                       if (!cleanAudioEnabled) {
                         setCleanAudioEnabled(true);
                         if (decodedBufferRef.current) {
-                          recomputePreview(decodedBufferRef.current, true, trimStart, trimEnd);
+                          recomputePreview(decodedBufferRef.current, true, trimStart, trimEnd, isPlaying);
                         }
                       }
                     }}
@@ -718,7 +736,7 @@ export function VoiceRecorder({
                       if (cleanAudioEnabled) {
                         setCleanAudioEnabled(false);
                         if (decodedBufferRef.current) {
-                          recomputePreview(decodedBufferRef.current, false, trimStart, trimEnd);
+                          recomputePreview(decodedBufferRef.current, false, trimStart, trimEnd, isPlaying);
                         }
                       }
                     }}

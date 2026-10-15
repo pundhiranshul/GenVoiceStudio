@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Sparkles, Loader2, Download, Terminal, X, Key, Wand2, AudioLines, Shield, Info, Check, Sun, Moon, Copy, Eye, EyeOff, ExternalLink, LogOut, RotateCcw } from "lucide-react";
-import { handleSignOut } from "@/lib/auth";
+import { handleSignOut, getCachedHasCredentials, setCachedHasCredentials } from "@/lib/auth";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { AuthAudioGuide } from "@/components/AuthAudioGuide";
 import { CustomModelSelect, AVAILABLE_AI_MODELS } from "@/components/CustomModelSelect";
@@ -60,7 +60,19 @@ export default function SFXStudio() {
   const [kaggleKey, setKaggleKey] = useState("");
   const [showKaggleKey, setShowKaggleKey] = useState(false);
   const [showAppPassword, setShowAppPassword] = useState(false);
-  const [hasCredentials, setHasCredentials] = useState(false);
+  const [hasCredentials, _setHasCredentials] = useState(() => getCachedHasCredentials());
+  const setHasCredentials = (val: boolean | ((prev: boolean) => boolean)) => {
+    if (typeof val === 'function') {
+      _setHasCredentials(prev => {
+        const next = val(prev);
+        setCachedHasCredentials(next);
+        return next;
+      });
+    } else {
+      setCachedHasCredentials(val);
+      _setHasCredentials(val);
+    }
+  };
   const [canCancelAuth, setCanCancelAuth] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
   const [authMode, setAuthMode]   = useState<'byok' | 'admin'>('byok');
