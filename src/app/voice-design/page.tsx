@@ -492,7 +492,10 @@ export default function Home() {
         const data = reader.result as string;
         const activePrompt = designPrompt.trim();
         const finalName = voiceName.trim() || (activePrompt ? (activePrompt.length > 30 ? activePrompt.substring(0, 30) + "..." : activePrompt) : "Designed Voice");
-        const finalAvatar = aiAvatarUrl || generateAIAvatarUrl(activePrompt || finalName);
+        const promptForAvatar = voiceName.trim() && activePrompt
+          ? `${voiceName.trim()}, ${activePrompt}`
+          : (voiceName.trim() || activePrompt);
+        const finalAvatar = aiAvatarUrl || generateAIAvatarUrl(promptForAvatar);
         const newVoice: CustomVoice = {
           id: `ai_${Date.now()}`,
           name: finalName,
@@ -576,7 +579,7 @@ export default function Home() {
     try {
       const payload: any = {
         text: designPrompt,
-        instruction: "Optimize this prompt for Voice Design. Enhance it by adding descriptive words about the age, gender, accent, tone, and character. Keep it under 2 sentences.",
+        instruction: "Optimize this prompt for Voice Design. Enhance it by adding descriptive words about the age, gender, accent, tone, and character. Also generate an accurate, visually descriptive voice persona name (specifying age, gender, and archetype) suitable for AI portrait avatar generation. Keep the prompt under 2 sentences.",
         aiModel
       };
       const pass = localStorage.getItem('appPassword');
@@ -604,7 +607,11 @@ export default function Home() {
         localStorage.setItem('modelProxyExpiresAt', data.modelProxyExpiresAt);
       }
       setDesignPrompt(data.optimizedText);
-      if (data.suggestedName) setVoiceName(data.suggestedName);
+      if (data.suggestedName) {
+        setVoiceName(data.suggestedName);
+        const avatarPrompt = `${data.suggestedName}, ${data.optimizedText}`;
+        setAiAvatarUrl(generateAIAvatarUrl(avatarPrompt));
+      }
     } catch (err: any) {
       setOptimizeDesignError(err.message);
     } finally {
@@ -619,7 +626,7 @@ export default function Home() {
     try {
       const payload: any = {
         text: writeDesignTopic,
-        instruction: "You are an expert voice actor casting director. Write a highly detailed Voice Design instruction prompt based on the user's premise. Describe the age, gender, accent, tone, and character. Just output the prompt itself, nothing else. Keep it under 2 sentences.",
+        instruction: "You are an expert voice actor casting director. Write a highly detailed Voice Design instruction prompt based on the user's premise. Describe the age, gender, accent, tone, and character. Also provide an accurate, visually descriptive voice persona name (specifying age, gender, and archetype) suitable for AI portrait image creation. Keep the prompt under 2 sentences.",
         aiModel
       };
       const pass = localStorage.getItem('appPassword');
@@ -647,7 +654,11 @@ export default function Home() {
         localStorage.setItem('modelProxyExpiresAt', data.modelProxyExpiresAt);
       }
       setDesignPrompt(data.optimizedText);
-      if (data.suggestedName) setVoiceName(data.suggestedName);
+      if (data.suggestedName) {
+        setVoiceName(data.suggestedName);
+        const avatarPrompt = `${data.suggestedName}, ${data.optimizedText}`;
+        setAiAvatarUrl(generateAIAvatarUrl(avatarPrompt));
+      }
       setShowWriteDesignModal(false);
     } catch (err: any) {
       setWriteDesignError(err.message);
@@ -851,7 +862,9 @@ export default function Home() {
     setStatus("generating"); setMessage("Submitting…");
     
     // Automatically trigger AI model image generation matching the voice persona
-    const promptForAvatar = activeInstructions || voiceName || textToUse;
+    const promptForAvatar = voiceName.trim() && activeInstructions.trim()
+      ? `${voiceName.trim()}, ${activeInstructions.trim()}`
+      : (voiceName.trim() || activeInstructions.trim() || textToUse);
     if (promptForAvatar) {
       setAiAvatarUrl(generateAIAvatarUrl(promptForAvatar));
     }
@@ -1993,7 +2006,7 @@ export default function Home() {
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Grumpy Wizard, Calm Narrator"
+                    placeholder="e.g. Elderly Scottish Storyteller, Young British Detective"
                     value={voiceName}
                     onChange={(e) => setVoiceName(e.target.value)}
                     className="w-full bg-bg-input border border-border-color rounded-xl px-3.5 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color transition-all"
@@ -2170,7 +2183,9 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => {
-                          const prompt = designPrompt.trim() || voiceName.trim() || 'voice persona';
+                          const prompt = voiceName.trim() && designPrompt.trim()
+                            ? `${voiceName.trim()}, ${designPrompt.trim()}`
+                            : (voiceName.trim() || designPrompt.trim() || 'voice persona');
                           const fresh = `${generateAIAvatarUrl(prompt)}&seed=${Date.now()}`;
                           setAiAvatarUrl(fresh);
                         }}

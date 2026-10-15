@@ -37,16 +37,26 @@ async function optimizeDesign(token: string, baseUri: string, text: string, inst
   const cleanBaseUri = baseUri.replace(/\/$/, '');
   const url = `${cleanBaseUri}/openapi/chat/completions`;
   
-  const prompt = `You are a helpful AI assistant for optimizing prompts meant for Voice Design. 
-You are given a rough idea or prompt for a voice.
-Please optimize the prompt by enhancing it with descriptive words about age, gender, accent, tone, and character. Keep the optimized prompt under 2 sentences.
-Additionally, you MUST suggest a short, catchy, and unique name for this voice (e.g. "Grumpy Old Wizard", "Sweet British Nanny", "Energetic Tech Bro", "Serena", "Caleb", etc).
+  const prompt = `You are an expert AI assistant specializing in Voice Design prompt engineering and voice persona creation.
+You are given a rough idea, premise, or draft instruction for a synthetic voice.
+
+Tasks:
+1. OPTIMIZE THE PROMPT ("prompt"):
+   Enhance the voice design prompt with specific vocal characteristics: age, gender, nationality/accent, vocal timbre/tone (e.g. gravelly, warm, crisp, resonant), and speaking style. Keep the prompt concise and under 2 sentences.
+
+2. SUGGEST AN ACCURATE VOICE PERSONA NAME ("name"):
+   IMPORTANT: This voice name is directly used by an AI image generation model to generate an authentic photographic portrait avatar for the designed voice.
+   - The voice name MUST be highly descriptive and accurate to the voice's persona, specifying demographic and visual attributes such as age group, gender, nationality/ethnicity, and character archetype.
+   - Examples of good names: "Elderly Scottish Storyteller", "Young British Female Detective", "Middle-Aged Deep-Voiced Executive", "Wise Buddhist Monk", "Cheerful Californian Surfer Guy", "Warm Southern Grandma".
+   - DO NOT use generic single first names alone (such as "Caleb", "Serena", "David", "Emma") and DO NOT use abstract names (such as "Voice 1", "Echo", "Synthesizer") because an image generation model cannot derive an accurate persona headshot from them.
+   - Keep the name concise: between 2 to 5 descriptive words.
+
 ${instruction ? `User's specific instruction: ${instruction}\n` : ''}
 
 You MUST return the output as a valid JSON object with EXACTLY two keys:
 {
-  "name": "The suggested short name",
-  "prompt": "The optimized voice design prompt"
+  "name": "The suggested accurate, visually descriptive persona name (2-5 words)",
+  "prompt": "The optimized voice design prompt (under 2 sentences)"
 }
 Do NOT return markdown formatting like \`\`\`json. Return ONLY the raw JSON object.
 
@@ -150,10 +160,11 @@ export async function POST(req: Request) {
       parsedResult = JSON.parse(cleanedResult);
     } catch (e) {
       console.error("Failed to parse JSON from AI:", optimizedResult);
-      // Fallback
+      // Fallback: derive a descriptive persona snippet from text
+      const cleanSnippet = text.replace(/[^a-zA-Z0-9\s]/g, ' ').trim().split(/\s+/).slice(0, 4).join(' ');
       parsedResult = {
-        name: "Optimized Voice",
-        prompt: optimizedResult
+        name: cleanSnippet ? `${cleanSnippet} Persona` : "Custom AI Voice Persona",
+        prompt: optimizedResult.replace(/```[\s\S]*?```/g, '').trim() || text
       };
     }
 
