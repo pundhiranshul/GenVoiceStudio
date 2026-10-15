@@ -9,6 +9,8 @@ import { AudioPlayer } from "@/components/AudioPlayer";
 import { AuthAudioGuide } from "@/components/AuthAudioGuide";
 import { stitchChunks } from "@/utils/audioEditor";
 import { VOCAL_TAGS, AUDIO_TAGS_STRING } from "@/utils/audioTags";
+import { AvatarPicker } from "@/components/AvatarPicker";
+import { TEMPLATE_AVATARS } from "@/lib/avatars";
 
 
 const GenVoiceLogo = ({ size = 24, className = "", animate = false }) => {
@@ -86,33 +88,33 @@ const AVAILABLE_AI_MODELS = [
 
 type AppStatus = "idle" | "generating" | "complete" | "error";
 type AudioFile = { name: string; url: string };
-type CustomVoice = { id: string; name: string; data: string; transcript: string; isPreset?: boolean; };
+type CustomVoice = { id: string; name: string; data: string; transcript: string; isPreset?: boolean; avatar?: string; };
 
 const PRESET_VOICES: CustomVoice[] = [
-  { id: "std_S0", name: "Standard AI Voice (S0)", data: "", transcript: "", isPreset: true },
-  { id: "el_v3_15", name: "Ellen - Serious, Direct and Confident", data: "/presets/el_15.mp3", transcript: "Freedom kindles the flames of hope in every heart.", isPreset: true },
-  { id: "el_v3_16", name: "James - Husky, Engaging and Bold", data: "/presets/el_16.mp3", transcript: "Cleanliness is the key to a healthy, happy life.", isPreset: true },
-  { id: "el_v3_17", name: "Amy - Natural and Sweet", data: "/presets/el_17.mp3", transcript: "Life can be funny sometimes with all the hills and valleys, but without the lows, you'd never get to experience the highs.", isPreset: true },
-  { id: "el_v3_18", name: "Juniper - Grounded and Professional", data: "/presets/el_18.mp3", transcript: "Hey everybody. This is Juniper. I think I would be a great choice for your podcast. I'm pretty laid back. I'm pretty casual. Give me a try.", isPreset: true },
-  { id: "el_v3_19", name: "Mark - Natural Conversations", data: "/presets/el_19.mp3", transcript: "I think this is a really nice way to just talk naturally together, you know? Talk plainly. Let's give it a shot.", isPreset: true },
-  { id: "el_v3_20", name: "Arabella - Mysterious and Emotive", data: "/presets/el_20.mp3", transcript: "The people who are crazy enough to think they can change the world are the ones who do.", isPreset: true },
-  { id: "el_v3_21", name: "Jane - Professional Audiobook Reader", data: "/presets/el_21.mp3", transcript: "Hello, I'm Jane. A great voice for any form of narration where you need a strong, older female voice.", isPreset: true },
-  { id: "el_v3_22", name: "Hope - upbeat and clear", data: "/presets/el_22.mp3", transcript: "Hey, are you looking for a fresh and engaging voice for your podcast or social media? Then I'm the voice for you.", isPreset: true },
-  { id: "el_v3_0", name: "Roger - Confident and Deep", data: "/presets/el_0.wav", transcript: "It is not so important to know everything as to appreciate what we learn.", isPreset: true },
-  { id: "el_v3_1", name: "Charlie - Friendly and Conversational", data: "/presets/el_1.wav", transcript: "Love all, trust a few, do wrong to none.", isPreset: true },
-  { id: "el_v3_2", name: "George - Warm and Authoritative", data: "/presets/el_2.wav", transcript: "God has given you one face, and you make yourself another.", isPreset: true },
-  { id: "el_v3_3", name: "Callum - Smooth and Engaging", data: "/presets/el_3.wav", transcript: "Life without love is like a tree without blossoms or fruit.", isPreset: true },
-  { id: "el_v3_4", name: "River - Calm and Neutral", data: "/presets/el_4.wav", transcript: "Nature is a mutable cloud which is always and never the same.", isPreset: true },
-  { id: "el_v3_5", name: "Harry - Bright and Energetic", data: "/presets/el_5.wav", transcript: "Friends show their love in times of trouble, not in happiness.", isPreset: true },
-  { id: "el_v3_6", name: "Liam - Strong and Articulate", data: "/presets/el_6.wav", transcript: "Life isn't about finding yourself. Life is about creating yourself.", isPreset: true },
-  { id: "el_v3_7", name: "Alice - Soft and Sweet", data: "/presets/el_7.wav", transcript: "Just trust yourself, then you will know how to live.", isPreset: true },
-  { id: "el_v3_8", name: "Matilda - Warm and Expressive", data: "/presets/el_8.wav", transcript: "Ideas are the beginning points of all fortunes.", isPreset: true },
-  { id: "el_v3_9", name: "Jessica - Bright and Professional", data: "/presets/el_9.wav", transcript: "If you spend your whole life waiting for the storm, you'll never enjoy the sunshine.", isPreset: true },
-  { id: "el_v3_10", name: "Eric - Deep and Resonant", data: "/presets/el_10.wav", transcript: "Gratitude is riches. Complaint is poverty.", isPreset: true },
-  { id: "el_v3_11", name: "Bella - Clear and Engaging", data: "/presets/el_11.wav", transcript: "In the theater of life, we are all actors sharing the same scene.", isPreset: true },
-  { id: "el_v3_12", name: "Chris - Friendly and Upbeat", data: "/presets/el_12.wav", transcript: "A single rose can be my garden... a single friend, my world.", isPreset: true },
-  { id: "el_v3_13", name: "Brian - Professional and Trustworthy", data: "/presets/el_13.wav", transcript: "The thing always happens that you really believe in; and the belief in a thing makes it happen.", isPreset: true },
-  { id: "el_v3_14", name: "Daniel - Calm and Authoritative", data: "/presets/el_14.wav", transcript: "The world is round, and the place which may seem like the end may also be the beginning.", isPreset: true }
+  { id: "std_S0", name: "Standard AI Voice (S0)", data: "", transcript: "", isPreset: true, avatar: "/avatars/avatar_standard.jpg" },
+  { id: "el_v3_15", name: "Ellen - Serious, Direct and Confident", data: "/presets/el_15.mp3", transcript: "Freedom kindles the flames of hope in every heart.", isPreset: true, avatar: "/avatars/avatar_ellen.jpg" },
+  { id: "el_v3_16", name: "James - Husky, Engaging and Bold", data: "/presets/el_16.mp3", transcript: "Cleanliness is the key to a healthy, happy life.", isPreset: true, avatar: "/avatars/avatar_james.jpg" },
+  { id: "el_v3_17", name: "Amy - Natural and Sweet", data: "/presets/el_17.mp3", transcript: "Life can be funny sometimes with all the hills and valleys, but without the lows, you'd never get to experience the highs.", isPreset: true, avatar: "/avatars/avatar_amy.jpg" },
+  { id: "el_v3_18", name: "Juniper - Grounded and Professional", data: "/presets/el_18.mp3", transcript: "Hey everybody. This is Juniper. I think I would be a great choice for your podcast. I'm pretty laid back. I'm pretty casual. Give me a try.", isPreset: true, avatar: "/avatars/avatar_juniper.jpg" },
+  { id: "el_v3_19", name: "Mark - Natural Conversations", data: "/presets/el_19.mp3", transcript: "I think this is a really nice way to just talk naturally together, you know? Talk plainly. Let's give it a shot.", isPreset: true, avatar: "/avatars/avatar_mark.jpg" },
+  { id: "el_v3_20", name: "Arabella - Mysterious and Emotive", data: "/presets/el_20.mp3", transcript: "The people who are crazy enough to think they can change the world are the ones who do.", isPreset: true, avatar: "/avatars/avatar_arabella.jpg" },
+  { id: "el_v3_21", name: "Jane - Professional Audiobook Reader", data: "/presets/el_21.mp3", transcript: "Hello, I'm Jane. A great voice for any form of narration where you need a strong, older female voice.", isPreset: true, avatar: "/avatars/avatar_jane.jpg" },
+  { id: "el_v3_22", name: "Hope - upbeat and clear", data: "/presets/el_22.mp3", transcript: "Hey, are you looking for a fresh and engaging voice for your podcast or social media? Then I'm the voice for you.", isPreset: true, avatar: "/avatars/avatar_hope.jpg" },
+  { id: "el_v3_0", name: "Roger - Confident and Deep", data: "/presets/el_0.wav", transcript: "It is not so important to know everything as to appreciate what we learn.", isPreset: true, avatar: "/avatars/avatar_tpl_3.jpg" },
+  { id: "el_v3_1", name: "Charlie - Friendly and Conversational", data: "/presets/el_1.wav", transcript: "Love all, trust a few, do wrong to none.", isPreset: true, avatar: "/avatars/avatar_tpl_1.jpg" },
+  { id: "el_v3_2", name: "George - Warm and Authoritative", data: "/presets/el_2.wav", transcript: "God has given you one face, and you make yourself another.", isPreset: true, avatar: "/avatars/avatar_james.jpg" },
+  { id: "el_v3_3", name: "Callum - Smooth and Engaging", data: "/presets/el_3.wav", transcript: "Life without love is like a tree without blossoms or fruit.", isPreset: true, avatar: "/avatars/avatar_mark.jpg" },
+  { id: "el_v3_4", name: "River - Calm and Neutral", data: "/presets/el_4.wav", transcript: "Nature is a mutable cloud which is always and never the same.", isPreset: true, avatar: "/avatars/avatar_tpl_2.jpg" },
+  { id: "el_v3_5", name: "Harry - Bright and Energetic", data: "/presets/el_5.wav", transcript: "Friends show their love in times of trouble, not in happiness.", isPreset: true, avatar: "/avatars/avatar_standard.jpg" },
+  { id: "el_v3_6", name: "Liam - Strong and Articulate", data: "/presets/el_6.wav", transcript: "Life isn't about finding yourself. Life is about creating yourself.", isPreset: true, avatar: "/avatars/avatar_tpl_1.jpg" },
+  { id: "el_v3_7", name: "Alice - Soft and Sweet", data: "/presets/el_7.wav", transcript: "Just trust yourself, then you will know how to live.", isPreset: true, avatar: "/avatars/avatar_amy.jpg" },
+  { id: "el_v3_8", name: "Matilda - Warm and Expressive", data: "/presets/el_8.wav", transcript: "Ideas are the beginning points of all fortunes.", isPreset: true, avatar: "/avatars/avatar_juniper.jpg" },
+  { id: "el_v3_9", name: "Jessica - Bright and Professional", data: "/presets/el_9.wav", transcript: "If you spend your whole life waiting for the storm, you'll never enjoy the sunshine.", isPreset: true, avatar: "/avatars/avatar_hope.jpg" },
+  { id: "el_v3_10", name: "Eric - Deep and Resonant", data: "/presets/el_10.wav", transcript: "Gratitude is riches. Complaint is poverty.", isPreset: true, avatar: "/avatars/avatar_tpl_3.jpg" },
+  { id: "el_v3_11", name: "Bella - Clear and Engaging", data: "/presets/el_11.wav", transcript: "In the theater of life, we are all actors sharing the same scene.", isPreset: true, avatar: "/avatars/avatar_arabella.jpg" },
+  { id: "el_v3_12", name: "Chris - Friendly and Upbeat", data: "/presets/el_12.wav", transcript: "A single rose can be my garden... a single friend, my world.", isPreset: true, avatar: "/avatars/avatar_standard.jpg" },
+  { id: "el_v3_13", name: "Brian - Professional and Trustworthy", data: "/presets/el_13.wav", transcript: "The thing always happens that you really believe in; and the belief in a thing makes it happen.", isPreset: true, avatar: "/avatars/avatar_james.jpg" },
+  { id: "el_v3_14", name: "Daniel - Calm and Authoritative", data: "/presets/el_14.wav", transcript: "The world is round, and the place which may seem like the end may also be the beginning.", isPreset: true, avatar: "/avatars/avatar_tpl_1.jpg" }
 ];
 
 function niceName(f: string) {
@@ -357,6 +359,7 @@ export default function Home() {
   const [newVoiceName, setNewVoiceName] = useState("");
   const [newVoiceText, setNewVoiceText] = useState("");
   const [newVoiceFile, setNewVoiceFile] = useState<File | null>(null);
+  const [newVoiceAvatar, setNewVoiceAvatar] = useState<string>(TEMPLATE_AVATARS[0].url);
 
   const [copiedText, setCopiedText] = useState(false);
   const [copiedTags, setCopiedTags] = useState(false);
@@ -2440,6 +2443,12 @@ export default function Home() {
               <textarea value={newVoiceText} onChange={e => setNewVoiceText(e.target.value)} placeholder="Transcript of the audio file..." rows={3} className="w-full bg-bg-input border border-border-color rounded-lg px-3 py-2 text-sm text-text-primary outline-none resize-none focus:border-border-color" />
             </div>
 
+            <AvatarPicker
+              selectedAvatar={newVoiceAvatar}
+              onSelectAvatar={setNewVoiceAvatar}
+              label="Choose Voice Avatar"
+            />
+
             <div className="flex justify-end gap-3 mt-2 items-center">
               {uploadError && <span className="text-red-500 text-xs mr-auto">{uploadError}</span>}
               <button onClick={() => setShowUpload(false)} className="px-4 py-2 rounded-full text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">Cancel</button>
@@ -2449,7 +2458,7 @@ export default function Home() {
                 const reader = new FileReader();
                 reader.onload = async () => {
                   const data = reader.result as string;
-                  const newVoice: CustomVoice = { id: Date.now().toString(), name: newVoiceName, transcript: newVoiceText, data };
+                  const newVoice: CustomVoice = { id: Date.now().toString(), name: newVoiceName, transcript: newVoiceText, data, avatar: newVoiceAvatar };
                   const updated = [...customVoices, newVoice];
                   setCustomVoices(updated);
                   await set('custom_voices', updated);

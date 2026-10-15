@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Search, Check, ChevronDown, User, X, Play, Pause, Trash2, HelpCircle, Download, Pencil } from 'lucide-react';
+import { Search, Check, ChevronDown, X, Play, Pause, Trash2, HelpCircle, Download, Pencil } from 'lucide-react';
+import { getVoiceAvatar } from '@/lib/avatars';
 
 export interface Voice {
   id: string;
@@ -9,6 +10,7 @@ export interface Voice {
   data: string;
   transcript: string;
   isPreset?: boolean;
+  avatar?: string;
 }
 
 interface VoiceSelectorProps {
@@ -143,10 +145,14 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="true"
         aria-expanded={isOpen}
-        className="flex items-center gap-2 px-3 py-2 bg-bg-panel border border-border-color rounded-lg hover:bg-accent-bg/5 transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none w-full sm:w-[280px]"
+        className="flex items-center gap-2.5 px-3 py-2 bg-bg-panel border border-border-color rounded-lg hover:bg-accent-bg/5 transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none w-full sm:w-[280px]"
       >
-        <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
-          <User size={14} className="text-text-secondary" />
+        <div className="w-6 h-6 rounded-full bg-zinc-800 shrink-0 overflow-hidden ring-1 ring-border-color">
+          <img
+            src={getVoiceAvatar(selectedVoice)}
+            alt={selectedVoice?.name || "Voice avatar"}
+            className="w-full h-full object-cover"
+          />
         </div>
         <span className="text-sm font-medium text-text-primary truncate flex-1 text-left">
           {selectedVoice ? selectedVoice.name : 'Select Voice'}
@@ -213,20 +219,25 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
                           <button
                             type="button"
                             onClick={(e) => togglePreview(e, voice)}
-                            className="group/play relative w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0 cursor-pointer overflow-hidden focus-visible:ring-2 focus-visible:ring-white/30 outline-none"
+                            className="group/play relative w-9 h-9 rounded-full bg-zinc-800 shrink-0 cursor-pointer overflow-hidden ring-1 ring-border-color/60 focus-visible:ring-2 focus-visible:ring-white/30 outline-none"
                             aria-label={playingId === voice.id ? "Pause preview" : "Play preview"}
                           >
-                            <User 
-                              size={16} 
-                              className={`transition-opacity duration-200 ${playingId === voice.id ? 'opacity-0' : 'group-hover/play:opacity-0'} ${selectedId === voice.id ? 'text-text-primary' : 'text-text-secondary'}`} 
+                            <img
+                              src={getVoiceAvatar(voice)}
+                              alt={voice.name}
+                              className="w-full h-full object-cover"
                             />
-                            <div className={`absolute inset-0 flex items-center justify-center bg-zinc-600 transition-opacity duration-200 ${playingId === voice.id ? 'opacity-100' : 'opacity-0 group-hover/play:opacity-100'}`}>
+                            <div className={`absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[1px] transition-opacity duration-150 ${playingId === voice.id ? 'opacity-100' : 'opacity-0 group-hover/play:opacity-100'}`}>
                               {playingId === voice.id ? <Pause size={14} className="text-white" /> : <Play size={14} className="text-white ml-0.5" />}
                             </div>
                           </button>
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
-                            <User size={16} className={selectedId === voice.id ? 'text-text-primary' : 'text-text-secondary'} />
+                          <div className="w-9 h-9 rounded-full bg-zinc-800 shrink-0 overflow-hidden ring-1 ring-border-color/60">
+                            <img
+                              src={getVoiceAvatar(voice)}
+                              alt={voice.name}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                         )}
 
