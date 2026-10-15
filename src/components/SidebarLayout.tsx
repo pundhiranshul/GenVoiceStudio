@@ -1,12 +1,11 @@
 "use client";
-import { AboutModal } from "@/components/AboutModal";
 import { SignOutModal } from "@/components/SignOutModal";
 import { FeedbackModal } from "@/components/FeedbackModal";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Mic, AudioLines, Bug, Info, ChevronLeft, ChevronRight, Menu, X, User, Wand2, Library, LogOut, MessageSquareHeart } from "lucide-react";
+import { Mic, AudioLines, Bug, ChevronLeft, ChevronRight, Menu, X, User, Wand2, Library, LogOut, MessageSquareHeart } from "lucide-react";
 import { getAuthInfo, handleSignOut } from "@/lib/auth";
 
 const GenVoiceLogo = ({ size = 24, className = "" }) => (
@@ -39,7 +38,6 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
     username: '',
     authType: null,
   });
-  const [showAbout, setShowAbout] = useState(false);
   const [showSignOut, setShowSignOut] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackMode, setFeedbackMode] = useState<'poll' | 'report'>('report');
@@ -70,7 +68,6 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    const handleOpenAbout = () => setShowAbout(true);
     const handleOpenSignOut = () => setShowSignOut(true);
     const handleOpenFeedback = (e: any) => {
       const detail = e.detail || {};
@@ -96,7 +93,6 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
       setIsFeedbackDocked(true);
     };
 
-    window.addEventListener('open-architecture', handleOpenAbout);
     window.addEventListener('open-signout', handleOpenSignOut);
     window.addEventListener('open-feedback', handleOpenFeedback);
     window.addEventListener('open-report-bug', handleOpenReportBug);
@@ -104,7 +100,6 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
     window.addEventListener('feedback-docked-changed', handleFeedbackDocked);
 
     return () => {
-      window.removeEventListener('open-architecture', handleOpenAbout);
       window.removeEventListener('open-signout', handleOpenSignOut);
       window.removeEventListener('open-feedback', handleOpenFeedback);
       window.removeEventListener('open-report-bug', handleOpenReportBug);
@@ -173,7 +168,6 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
     onClick?: (e: any) => void;
     external?: boolean;
   }> = [
-    { name: "System Architecture", href: "#", icon: Info, onClick: (e: any) => { e.preventDefault(); window.dispatchEvent(new Event('open-architecture')); } },
     { name: "Report Bug", href: "#", icon: Bug, onClick: (e: any) => { e.preventDefault(); handleOpenReportBug(); } }
   ];
 
@@ -385,7 +379,6 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </div>
-      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
       {showSignOut && <SignOutModal onClose={() => setShowSignOut(false)} />}
       <FeedbackModal
         isOpen={showFeedback}
