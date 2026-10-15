@@ -86,7 +86,7 @@ const AVAILABLE_AI_MODELS = [
 
 type AppStatus = "idle" | "generating" | "complete" | "error";
 type AudioFile = { name: string; url: string };
-type CustomVoice = { id: string; name: string; data: string; transcript: string; isPreset?: boolean; avatar?: string; };
+type CustomVoice = { id: string; name: string; data: string; transcript: string; isPreset?: boolean; avatar?: string; type?: string; };
 
 const PRESET_VOICES: CustomVoice[] = [
   { id: "std_S0", name: "Standard AI Voice (S0)", data: "", transcript: "", isPreset: true, avatar: "/avatars/avatar_standard.jpg" },

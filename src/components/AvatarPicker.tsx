@@ -1,7 +1,7 @@
 'use client';
 
 import { Check } from 'lucide-react';
-import { TEMPLATE_AVATARS } from '@/lib/avatars';
+import { TEMPLATE_AVATARS, TemplateAvatar } from '@/lib/avatars';
 
 interface AvatarPickerProps {
   selectedAvatar: string;
@@ -30,7 +30,7 @@ export function AvatarPicker({
       )}
       
       <div className="flex items-center gap-2.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar sm:grid sm:grid-cols-6 sm:overflow-visible">
-        {TEMPLATE_AVATARS.map((tpl) => {
+        {TEMPLATE_AVATARS.map((tpl: TemplateAvatar) => {
           const isSelected = selectedAvatar === tpl.url;
           return (
             <button

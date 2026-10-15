@@ -375,7 +375,8 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
                         </div>
                       )}
                     </div>
-                  ))
+                  );
+                })
                 ) : (
                   <div className="p-6 text-center text-sm text-text-muted">
                     No voices found for "{search}"

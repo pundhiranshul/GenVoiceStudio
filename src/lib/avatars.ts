@@ -13,6 +13,18 @@ export const PRESET_AVATAR_MAP: Record<string, string> = {
   el_v3_4: '/avatars/avatar_tpl_2.jpg',  // River
 };
 
+export interface TemplateAvatar {
+  id: string;
+  url: string;
+  label: string;
+}
+
+export const TEMPLATE_AVATARS: TemplateAvatar[] = [
+  { id: 'tpl_1', url: '/avatars/avatar_tpl_1.jpg', label: 'Portrait 1' },
+  { id: 'tpl_2', url: '/avatars/avatar_tpl_2.jpg', label: 'Portrait 2' },
+  { id: 'tpl_3', url: '/avatars/avatar_tpl_3.jpg', label: 'Portrait 3' },
+];
+
 /**
  * Generates an AI portrait image URL using an AI image model
  * based on the character description or voice persona name.
