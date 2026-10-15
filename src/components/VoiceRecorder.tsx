@@ -1,8 +1,16 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, Square, Play, Pause, RotateCcw, Check, Sparkles, AlertCircle, Clock } from 'lucide-react';
-import { convertBlobToWav, blobToDataUrl, RECORDING_SUGGESTED_SCRIPTS } from '@/utils/audioRecorder';
+import { Mic, Square, Play, Pause, RotateCcw, Check, Sparkles, AlertCircle, Clock, Scissors, ShieldCheck } from 'lucide-react';
+import {
+  decodeBlobToAudioBuffer,
+  detectSpeechBoundaries,
+  sliceAudioBuffer,
+  cleanAudioBuffer,
+  audioBufferToWav,
+  blobToDataUrl,
+  RECORDING_SUGGESTED_SCRIPTS
+} from '@/utils/audioRecorder';
 import { set, get } from 'idb-keyval';
 
 export interface CustomVoice {
@@ -33,12 +41,21 @@ export function VoiceRecorder({
   const [transcript, setTranscript] = useState('');
   const [selectedScriptIdx, setSelectedScriptIdx] = useState<number | null>(0);
   const [elapsed, setElapsed] = useState(0);
+
+  // Audio & playback state
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [rawBlob, setRawBlob] = useState<Blob | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [audioTotalDuration, setAudioTotalDuration] = useState(0);
+
+  // Trimming & Noise Cleaning state
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
+  const [cleanAudioEnabled, setCleanAudioEnabled] = useState(true);
+  const [autoTrimDetected, setAutoTrimDetected] = useState<{ start: number; end: number } | null>(null);
+
   const [audioLevels, setAudioLevels] = useState<number[]>([20, 35, 15, 45, 25, 40, 30, 20]);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -53,6 +70,7 @@ export function VoiceRecorder({
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const speechRecognitionRef = useRef<any>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+  const decodedBufferRef = useRef<AudioBuffer | null>(null);
 
   // Initialize with the first suggested script
   useEffect(() => {
@@ -114,16 +132,19 @@ export function VoiceRecorder({
     }
 
     try {
+      // High-quality microphone constraints for clean voice capture
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
+          channelCount: 1, // Mono eliminates stereo phase cancellation and background fan noise
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
+          sampleRate: { ideal: 48000 }
         }
       });
       audioStreamRef.current = stream;
 
-      // Audio analyser for real-time visualizer
+      // Real-time audio analyser for visual feedback
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (AudioCtx) {
         const audioCtx = new AudioCtx();
@@ -151,7 +172,6 @@ export function VoiceRecorder({
         updateLevels();
       }
 
-      // Supported mimeType check
       const mimeTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4', ''];
       let selectedMime = '';
       for (const m of mimeTypes) {
@@ -173,23 +193,33 @@ export function VoiceRecorder({
 
       recorder.onstop = async () => {
         stopAllMedia();
-        const rawBlob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+        const recordedBlob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+        setRawBlob(recordedBlob);
+
         try {
-          const wav = await convertBlobToWav(rawBlob);
-          setAudioBlob(wav);
+          const decoded = await decodeBlobToAudioBuffer(recordedBlob);
+          decodedBufferRef.current = decoded;
+          const dur = Number(decoded.duration.toFixed(2));
+          setAudioTotalDuration(dur);
+
+          // Detect speech boundaries to auto-trim initial and trailing silence
+          const boundaries = detectSpeechBoundaries(decoded);
+          setAutoTrimDetected(boundaries);
+          setTrimStart(boundaries.start);
+          setTrimEnd(boundaries.end);
+
           if (audioUrl) URL.revokeObjectURL(audioUrl);
-          setAudioUrl(URL.createObjectURL(wav));
+          setAudioUrl(URL.createObjectURL(recordedBlob));
           setRecordingState('recorded');
         } catch (convErr) {
-          console.error("WAV conversion error:", convErr);
-          setAudioBlob(rawBlob);
+          console.error("Audio decoding error:", convErr);
           if (audioUrl) URL.revokeObjectURL(audioUrl);
-          setAudioUrl(URL.createObjectURL(rawBlob));
+          setAudioUrl(URL.createObjectURL(recordedBlob));
           setRecordingState('recorded');
         }
       };
 
-      // Optional live speech recognition
+      // Optional speech-to-text
       if (typeof window !== 'undefined') {
         const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         if (SpeechRec) {
@@ -250,13 +280,17 @@ export function VoiceRecorder({
       URL.revokeObjectURL(audioUrl);
       setAudioUrl(null);
     }
-    setAudioBlob(null);
+    setRawBlob(null);
+    decodedBufferRef.current = null;
     setRecordingState('idle');
     setElapsed(0);
     setIsPlaying(false);
     setAudioProgress(0);
     setAudioCurrentTime(0);
     setAudioTotalDuration(0);
+    setTrimStart(0);
+    setTrimEnd(0);
+    setAutoTrimDetected(null);
     setSavedSuccess(false);
     setError(null);
   };
@@ -267,7 +301,12 @@ export function VoiceRecorder({
       audioPlayerRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioPlayerRef.current.play().then(() => {
+      // Start playback from trimStart if current time is outside trimmed region
+      const player = audioPlayerRef.current;
+      if (player.currentTime < trimStart || (trimEnd > 0 && player.currentTime >= trimEnd - 0.05)) {
+        player.currentTime = trimStart;
+      }
+      player.play().then(() => {
         setIsPlaying(true);
       }).catch((e) => console.error("Playback error:", e));
     }
@@ -275,15 +314,47 @@ export function VoiceRecorder({
 
   const handleAudioTimeUpdate = () => {
     if (!audioPlayerRef.current) return;
-    const current = audioPlayerRef.current.currentTime;
-    const dur = audioPlayerRef.current.duration || audioTotalDuration || 1;
+    const player = audioPlayerRef.current;
+    const current = player.currentTime;
     setAudioCurrentTime(current);
+
+    // Stop playback when reaching the trimEnd point
+    if (trimEnd > 0 && current >= trimEnd) {
+      player.pause();
+      player.currentTime = trimStart;
+      setIsPlaying(false);
+      setAudioProgress(100);
+      return;
+    }
+
+    const dur = audioTotalDuration || 1;
     setAudioProgress((current / dur) * 100);
   };
 
   const handleAudioEnded = () => {
     setIsPlaying(false);
     setAudioProgress(100);
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.currentTime = trimStart;
+    }
+  };
+
+  const applyAutoTrim = () => {
+    if (autoTrimDetected) {
+      setTrimStart(autoTrimDetected.start);
+      setTrimEnd(autoTrimDetected.end);
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.currentTime = autoTrimDetected.start;
+      }
+    }
+  };
+
+  const resetTrim = () => {
+    setTrimStart(0);
+    setTrimEnd(audioTotalDuration);
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.currentTime = 0;
+    }
   };
 
   const formatSeconds = (sec: number) => {
@@ -297,7 +368,7 @@ export function VoiceRecorder({
     const nameToSave = voiceName.trim() || "My Recorded Voice";
     const transcriptToSave = transcript.trim();
 
-    if (!audioBlob) {
+    if (!rawBlob || !decodedBufferRef.current) {
       setError("Please record your voice first.");
       return;
     }
@@ -308,7 +379,22 @@ export function VoiceRecorder({
 
     setIsSaving(true);
     try {
-      const dataUrl = await blobToDataUrl(audioBlob);
+      const buffer = decodedBufferRef.current;
+      const endSec = trimEnd > 0 ? Math.min(trimEnd, buffer.duration) : buffer.duration;
+      const startSec = Math.max(0, Math.min(trimStart, endSec - 0.2));
+
+      // 1. Slice audio to the trimmed region
+      let processedBuffer = sliceAudioBuffer(buffer, startSec, endSec);
+
+      // 2. Apply studio noise cleaning & normalization if enabled
+      if (cleanAudioEnabled) {
+        processedBuffer = await cleanAudioBuffer(processedBuffer);
+      }
+
+      // 3. Convert to pristine 16-bit PCM WAV Blob
+      const wavBlob = audioBufferToWav(processedBuffer);
+      const dataUrl = await blobToDataUrl(wavBlob);
+
       const newVoice: CustomVoice = {
         id: `rec_${Date.now()}`,
         name: nameToSave,
@@ -327,14 +413,16 @@ export function VoiceRecorder({
       }
     } catch (saveErr: any) {
       console.error("Failed to save voice:", saveErr);
-      setError(saveErr.message || "Failed to save voice to library.");
+      setError(saveErr.message || "Failed to process and save voice.");
     } finally {
       setIsSaving(false);
     }
   };
 
+  const trimmedDuration = Number(Math.max(0, (trimEnd || audioTotalDuration) - trimStart).toFixed(1));
+
   return (
-    <div className={`flex flex-col gap-3.5 bg-bg-panel border border-border-color rounded-2xl p-4 sm:p-5 shadow-sm ${className}`}>
+    <div className={`flex flex-col gap-3 bg-bg-panel border border-border-color rounded-2xl p-4 sm:p-5 shadow-sm ${className}`}>
       
       {/* Voice Name Input */}
       <div className="flex flex-col gap-1">
@@ -351,12 +439,12 @@ export function VoiceRecorder({
       </div>
 
       {/* Suggested Reading Scripts (Compact pills without adjectives/titles) */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
           <label className="text-[10px] font-bold tracking-wider text-text-muted uppercase">
             Prompts to Read Aloud
           </label>
-          <span className="text-[10px] text-text-muted">Click to use</span>
+          <span className="text-[10px] text-text-muted">Click to select</span>
         </div>
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
           {RECORDING_SUGGESTED_SCRIPTS.map((script, idx) => (
@@ -378,11 +466,11 @@ export function VoiceRecorder({
       </div>
 
       {/* Compact Interactive Recording Bar */}
-      <div className="flex items-center justify-between p-3 rounded-xl bg-bg-base/70 border border-border-color gap-3 min-h-[58px]">
+      <div className="flex flex-col gap-2 p-3 rounded-xl bg-bg-base/70 border border-border-color">
         
         {/* State 1: IDLE */}
         {recordingState === 'idle' && (
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-between w-full min-h-[44px]">
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -394,7 +482,7 @@ export function VoiceRecorder({
               </button>
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-text-primary">Click to Record</span>
-                <span className="text-[10px] text-text-muted">Speak for 5–20 seconds into your microphone</span>
+                <span className="text-[10px] text-text-muted">Auto-clean & background noise cancellation enabled</span>
               </div>
             </div>
             <button
@@ -409,7 +497,7 @@ export function VoiceRecorder({
 
         {/* State 2: RECORDING */}
         {recordingState === 'recording' && (
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-between w-full min-h-[44px]">
             <div className="flex items-center gap-3">
               <span className="relative flex h-2.5 w-2.5 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -421,7 +509,7 @@ export function VoiceRecorder({
               <span className="text-[10px] text-text-muted font-mono">(max 00:30)</span>
             </div>
 
-            {/* Compact EQ wave */}
+            {/* Live Audio Level Meter */}
             <div className="flex items-center gap-1 h-6">
               {audioLevels.map((lvl, i) => (
                 <div
@@ -443,60 +531,142 @@ export function VoiceRecorder({
           </div>
         )}
 
-        {/* State 3: RECORDED PREVIEW */}
+        {/* State 3: RECORDED PREVIEW & TRIMMING */}
         {recordingState === 'recorded' && audioUrl && (
-          <div className="flex items-center justify-between w-full gap-3">
+          <div className="flex flex-col gap-2.5 w-full">
             <audio
               ref={audioPlayerRef}
               src={audioUrl}
               onTimeUpdate={handleAudioTimeUpdate}
-              onLoadedMetadata={() => {
-                if (audioPlayerRef.current) setAudioTotalDuration(audioPlayerRef.current.duration);
-              }}
               onEnded={handleAudioEnded}
               className="hidden"
             />
 
-            <button
-              type="button"
-              onClick={toggleAudioPlay}
-              className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full bg-accent-bg text-accent-text hover:opacity-90 active:scale-95 transition-transform outline-none"
-              aria-label={isPlaying ? "Pause" : "Play"}
-            >
-              {isPlaying ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" className="ml-0.5" />}
-            </button>
+            {/* Player Row */}
+            <div className="flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={toggleAudioPlay}
+                className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full bg-accent-bg text-accent-text hover:opacity-90 active:scale-95 transition-transform outline-none"
+                aria-label={isPlaying ? "Pause" : "Play"}
+              >
+                {isPlaying ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" className="ml-0.5" />}
+              </button>
 
-            <div className="flex-1 flex flex-col gap-1 min-w-0">
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="0.1"
-                value={audioProgress}
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value);
-                  setAudioProgress(val);
-                  if (audioPlayerRef.current && audioTotalDuration) {
-                    audioPlayerRef.current.currentTime = (val / 100) * audioTotalDuration;
-                  }
-                }}
-                className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
-              />
-              <div className="flex justify-between text-[10px] text-text-muted font-mono leading-none">
-                <span>{formatSeconds(audioCurrentTime)}</span>
-                <span>{formatSeconds(audioTotalDuration || elapsed)}</span>
+              <div className="flex-1 flex flex-col gap-1 min-w-0">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={audioProgress}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setAudioProgress(val);
+                    if (audioPlayerRef.current && audioTotalDuration) {
+                      audioPlayerRef.current.currentTime = (val / 100) * audioTotalDuration;
+                    }
+                  }}
+                  className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
+                />
+                <div className="flex justify-between text-[10px] text-text-muted font-mono leading-none">
+                  <span>{formatSeconds(audioCurrentTime)}</span>
+                  <span>{formatSeconds(trimmedDuration)} trimmed ({formatSeconds(audioTotalDuration)} total)</span>
+                </div>
               </div>
+
+              <button
+                type="button"
+                onClick={resetRecording}
+                className="flex items-center gap-1 text-xs text-text-muted hover:text-text-primary px-2.5 py-1 rounded-lg hover:bg-bg-hover transition-colors shrink-0"
+                title="Discard and record again"
+              >
+                <RotateCcw size={12} />
+                <span className="hidden sm:inline">Re-record</span>
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={resetRecording}
-              className="flex items-center gap-1 text-xs text-text-muted hover:text-text-primary px-2.5 py-1 rounded-lg hover:bg-bg-hover transition-colors shrink-0"
-              title="Discard and record again"
-            >
-              <RotateCcw size={12} />
-              <span className="hidden sm:inline">Re-record</span>
-            </button>
+            {/* Trimming & Noise Cleanup Controls (Compact Bar) */}
+            <div className="pt-2 border-t border-border-subtle flex flex-col gap-2">
+              
+              {/* Sliders for Start & End Trim */}
+              <div className="flex flex-col sm:flex-row items-center gap-2 text-xs">
+                <div className="flex items-center gap-1.5 w-full sm:w-1/2">
+                  <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider shrink-0 w-9">Start:</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max={Math.max(0, (trimEnd || audioTotalDuration) - 0.2)}
+                    step="0.05"
+                    value={trimStart}
+                    onChange={(e) => {
+                      const val = Number(parseFloat(e.target.value).toFixed(2));
+                      setTrimStart(val);
+                      if (audioPlayerRef.current) {
+                        audioPlayerRef.current.currentTime = val;
+                      }
+                    }}
+                    className="w-full h-1 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
+                  />
+                  <span className="font-mono text-[10px] text-text-primary w-8 text-right">{trimStart}s</span>
+                </div>
+
+                <div className="flex items-center gap-1.5 w-full sm:w-1/2">
+                  <span className="text-[10px] text-text-muted font-mono uppercase tracking-wider shrink-0 w-8">End:</span>
+                  <input
+                    type="range"
+                    min={trimStart + 0.2}
+                    max={audioTotalDuration || 1}
+                    step="0.05"
+                    value={trimEnd || audioTotalDuration}
+                    onChange={(e) => {
+                      const val = Number(parseFloat(e.target.value).toFixed(2));
+                      setTrimEnd(val);
+                    }}
+                    className="w-full h-1 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
+                  />
+                  <span className="font-mono text-[10px] text-text-primary w-8 text-right">
+                    {(trimEnd || audioTotalDuration).toFixed(1)}s
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Actions & Noise Clean Toggle */}
+              <div className="flex items-center justify-between text-[11px] pt-1">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={applyAutoTrim}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent-bg/10 text-accent-bg font-medium hover:bg-accent-bg/20 transition-colors"
+                    title="Automatically snaps to speech start & end"
+                  >
+                    <Scissors size={11} />
+                    Auto-Trim Silence
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetTrim}
+                    className="text-text-muted hover:text-text-primary transition-colors text-[10px]"
+                  >
+                    Reset Trim
+                  </button>
+                </div>
+
+                <label className="flex items-center gap-1.5 cursor-pointer text-text-secondary hover:text-text-primary transition-colors select-none">
+                  <input
+                    type="checkbox"
+                    checked={cleanAudioEnabled}
+                    onChange={(e) => setCleanAudioEnabled(e.target.checked)}
+                    className="rounded text-accent-bg focus:ring-0 cursor-pointer w-3.5 h-3.5"
+                  />
+                  <span className="flex items-center gap-1 text-[11px] font-medium">
+                    <ShieldCheck size={13} className="text-accent-bg" />
+                    Clean Noise
+                  </span>
+                </label>
+              </div>
+
+            </div>
           </div>
         )}
       </div>
@@ -536,7 +706,7 @@ export function VoiceRecorder({
       {savedSuccess && (
         <div className="p-2.5 rounded-xl bg-green-500/10 border border-green-500/20 text-green-500 text-xs flex items-center gap-2 animate-in fade-in">
           <Check size={14} className="shrink-0" />
-          <span><strong>Voice saved!</strong> Available in your Custom Voices library across the studio.</span>
+          <span><strong>Voice cleaned & saved!</strong> Available in your Custom Voices library across the studio.</span>
         </div>
       )}
 
@@ -555,13 +725,13 @@ export function VoiceRecorder({
 
           <button
             type="button"
-            disabled={recordingState !== 'recorded' || !audioBlob || !transcript.trim() || isSaving}
+            disabled={recordingState !== 'recorded' || !rawBlob || !transcript.trim() || isSaving}
             onClick={handleSave}
             className="flex items-center justify-center gap-1.5 px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-accent-bg text-accent-text hover:opacity-90 disabled:opacity-40 disabled:hover:opacity-40 transition-all shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
           >
             {isSaving ? (
               <span className="flex items-center gap-1.5">
-                <Clock size={14} className="animate-spin" /> Saving...
+                <Clock size={14} className="animate-spin" /> Processing & Saving...
               </span>
             ) : savedSuccess ? (
               <span className="flex items-center gap-1.5">
