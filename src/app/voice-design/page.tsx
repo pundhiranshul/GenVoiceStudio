@@ -1859,7 +1859,7 @@ export default function Home() {
 
       {/* ── Main Voice Design Layout ─────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:flex-1 md:min-h-0 md:overflow-hidden bg-bg-base">
-        <div className={`w-full ${designTab === 'record' ? 'max-w-6xl' : 'max-w-2xl'} mx-auto px-4 sm:px-6 py-5 sm:py-6 flex flex-col gap-4 transition-all duration-200`}>
+        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6 transition-all duration-200">
 
           {/* Design Mode Switcher */}
           <div className="flex bg-bg-panel p-1 rounded-2xl border border-border-color shadow-sm">
@@ -1873,7 +1873,7 @@ export default function Home() {
               }`}
             >
               <Wand2 size={16} />
-              AI Prompt Design
+              AI Voice Design
             </button>
             <button
               type="button"
@@ -1889,181 +1889,189 @@ export default function Home() {
             </button>
           </div>
 
-          {/* ── MODE A: AI PROMPT DESIGN ─────────────────────────────── */}
+          {/* ── MODE A: AI VOICE DESIGN ─────────────────────────────── */}
           {designTab === 'prompt' && (
-            <div className="flex flex-col gap-8 animate-in fade-in duration-150">
+            <div className="flex flex-col gap-6 animate-in fade-in duration-150">
               {/* Description Card */}
               <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-2xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">
-                <Sparkles size={16} className="text-accent-bg shrink-0 mt-0.5" />
+                <Wand2 size={18} className="text-accent-bg shrink-0 mt-0.5" />
                 <span>
-                  <strong>Voice Design</strong> creates an entirely new voice from scratch based purely on your <strong>Voice Design Instruction</strong> below. Describe the age, gender, accent, tone, and character.
+                  <strong className="text-text-primary font-semibold">AI Voice Design:</strong> Create an entirely new synthetic voice from scratch using natural language descriptions. Describe age, gender, accent, tone, and character.
                 </span>
               </div>
 
-              {/* Voice Design Instruction */}
-              <div className="flex flex-col gap-2">
-                <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
-                  Voice Design Instruction
-                </label>
-                <div className="bg-bg-panel border border-border-color rounded-2xl p-4 shadow-sm focus-within:ring-2 ring-ring-color transition-all flex flex-col gap-2">
+              {/* Voice Design Configuration Card */}
+              <div className="bg-bg-panel border border-border-color rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col gap-5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
+                    Voice Name
+                  </label>
                   <input
                     type="text"
-                    placeholder="Voice Name (e.g. Grumpy Wizard)"
+                    placeholder="e.g. Grumpy Wizard, Calm Narrator"
                     value={voiceName}
                     onChange={(e) => setVoiceName(e.target.value)}
-                    className="w-full bg-transparent text-text-primary text-sm font-semibold tracking-wide placeholder:text-text-muted focus:outline-none pb-2 border-b border-border-subtle"
+                    className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-xs sm:text-sm text-text-primary placeholder:text-text-muted outline-none focus:ring-2 focus:ring-ring-color transition-all"
                   />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
+                    Voice Design Instruction
+                  </label>
                   <textarea
                     value={designPrompt}
                     onChange={(e) => setDesignPrompt(e.target.value)}
-                    placeholder={"e.g., A raspy old man with a British accent..."}
-                    className="w-full h-24 bg-transparent resize-none outline-none text-sm leading-relaxed placeholder:text-text-muted text-text-primary"
+                    placeholder="e.g. A deep, resonant older male voice with a slight Scottish accent, speaking with a warm, deliberate storytelling cadence..."
+                    rows={3}
+                    className="w-full bg-bg-input border border-border-color rounded-xl p-3.5 text-xs sm:text-sm leading-relaxed text-text-primary outline-none focus:ring-2 focus:ring-ring-color resize-none placeholder:text-text-muted transition-all"
                   />
                 </div>
+
+                {/* Guidance Scale */}
+                <div className="flex flex-col gap-2 pt-1">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Guidance Scale</label>
+                    <span className="text-[11px] font-mono text-text-muted font-bold">{guidanceScale}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1" max="10" step="0.1"
+                    value={guidanceScale}
+                    onChange={(e) => setGuidanceScale(parseFloat(e.target.value))}
+                    className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
+                  />
+                  <p className="text-[11px] text-text-muted leading-relaxed">
+                    Higher values strengthen prompt adherence. Recommended: 4.0 for Voice Design, 1–3 for expressive cloning.
+                  </p>
+                </div>
+
+                {/* Error */}
+                {status === "error" && (
+                  <div className={`p-3.5 rounded-xl text-xs sm:text-sm ${
+                    message.toLowerCase().includes("cancel") || message.toLowerCase().includes("stopped")
+                      ? "bg-amber-500/10 border border-amber-500/20 text-amber-500"
+                      : "bg-red-500/10 border border-red-500/20 text-red-500"
+                  }`}>
+                    <strong className="font-semibold block mb-0.5">
+                      {message.toLowerCase().includes("cancel") || message.toLowerCase().includes("stopped")
+                        ? "Generation Cancelled:"
+                        : "Generation Failed:"}
+                    </strong>
+                    {message}
+                  </div>
+                )}
+
+                {/* Controls & Generate Buttons */}
+                <div className="flex flex-col gap-3 pt-2 border-t border-border-subtle">
+                  {optimizeDesignError && <p className="text-xs text-red-500">{optimizeDesignError}</p>}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    
+                    {/* Left Controls (AI Write / Optimize) */}
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <button
+                        onClick={() => { setShowWriteDesignModal(true); setWriteDesignError(""); }}
+                        disabled={status !== "idle" && status !== "complete" && status !== "error"}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-bg-base border border-border-color rounded-xl text-xs sm:text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none w-full sm:w-auto"
+                      >
+                        <Sparkles size={15} className="text-accent-bg" />
+                        AI Write
+                      </button>
+                      <button
+                        onClick={handleOptimizeDesignPrompt}
+                        disabled={isOptimizingDesign || !designPrompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-bg-base border border-border-color rounded-xl text-xs sm:text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none w-full sm:w-auto"
+                      >
+                        {isOptimizingDesign ? <Loader2 size={15} className="animate-spin text-accent-bg" /> : <Wand2 size={15} className="text-accent-bg" />}
+                        AI Optimize
+                      </button>
+                    </div>
+
+                    {/* Right Controls (Generate Preview) */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={() => {
+                          const randomPangram = PANGRAMS[Math.floor(Math.random() * PANGRAMS.length)];
+                          const textToGen = text.trim() || randomPangram;
+                          setGeneratedPreviewText(textToGen);
+                          handleGenerate(textToGen);
+                        }}
+                        disabled={isGen || !designPrompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-text-primary text-bg-base hover:opacity-90 active:scale-[0.98] disabled:opacity-50 transition-all focus-visible:ring-2 focus-visible:ring-ring-color outline-none w-full sm:w-auto"
+                      >
+                        {isGen ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <Loader2 size={15} className="animate-spin" /> Generating Preview...
+                          </span>
+                        ) : (
+                          <span className="flex items-center justify-center gap-2">
+                            <Sparkles size={15} /> Generate Preview
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Guidance Scale */}
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Guidance Scale</label>
-                  <span className="text-[11px] font-mono text-text-muted">{guidanceScale}</span>
-                </div>
-                <input
-                  type="range"
-                  min="1" max="10" step="0.1"
-                  value={guidanceScale}
-                  onChange={(e) => setGuidanceScale(parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
-                />
-                <p className="text-[10px] text-text-muted leading-relaxed">
-                  Higher values strengthen guidance. Recommended: 4.0 for Voice Design, 1–3 for expressive cloning.
-                </p>
-              </div>
-
-              {/* Error */}
-              {status === "error" && (
-                <div className={`p-3 rounded-xl text-sm ${
-                  message.toLowerCase().includes("cancel") || message.toLowerCase().includes("stopped")
-                    ? "bg-amber-500/10 border border-amber-500/20 text-amber-500"
-                    : "bg-red-500/10 border border-red-500/20 text-red-500"
-                }`}>
-                  <strong className="font-semibold block mb-0.5">
-                    {message.toLowerCase().includes("cancel") || message.toLowerCase().includes("stopped")
-                      ? "Generation Cancelled:"
-                      : "Generation Failed:"}
-                  </strong>
-                  {message}
-                </div>
-              )}
-
-              {/* Controls & Generate Buttons */}
-              <div className="flex flex-col gap-3">
-                {optimizeDesignError && <p className="text-xs text-red-500">{optimizeDesignError}</p>}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                  
-                  {/* Left Controls (AI Write / Optimize) */}
-                  <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <button
-                      onClick={() => { setShowWriteDesignModal(true); setWriteDesignError(""); }}
-                      disabled={status !== "idle" && status !== "complete" && status !== "error"}
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-base border border-border-color rounded-xl text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none w-full sm:w-auto"
-                    >
-                      <Sparkles size={16} className="text-accent-bg" />
-                      AI Write
-                    </button>
-                    <button
-                      onClick={handleOptimizeDesignPrompt}
-                      disabled={isOptimizingDesign || !designPrompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-base border border-border-color rounded-xl text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none w-full sm:w-auto"
-                    >
-                      {isOptimizingDesign ? <Loader2 size={16} className="animate-spin text-accent-bg" /> : <Wand2 size={16} className="text-accent-bg" />}
-                      AI Optimize
-                    </button>
+              {/* Audio Preview & Save Section */}
+              {status === 'complete' && (stitchedAudioUrl || finalAudios.length > 0 || chunkAudios.length > 0) && !isGen && (
+                <div className="bg-bg-panel border border-border-color rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col gap-4 animate-in zoom-in-95 duration-300">
+                  <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
+                    <h4 className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Generated Voice Preview</h4>
+                    <span className="text-[11px] text-text-muted font-medium">{voiceName || "Custom Voice"}</span>
                   </div>
 
-                  {/* Right Controls (Generate) */}
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <button
-                      onClick={() => {
-                        const randomPangram = PANGRAMS[Math.floor(Math.random() * PANGRAMS.length)];
-                        const textToGen = text.trim() || randomPangram;
-                        setGeneratedPreviewText(textToGen);
-                        handleGenerate(textToGen);
-                      }}
-                      disabled={isGen || !designPrompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-text-primary text-bg-base hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 transition-all focus-visible:ring-2 focus-visible:ring-ring-color outline-none w-full sm:w-auto"
-                    >
-                      {isGen ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <Loader2 size={16} className="animate-spin" /> Generating...
-                        </span>
-                      ) : (
-                        <span className="flex items-center justify-center gap-2">
-                          <Sparkles size={16} /> Generate Preview
-                        </span>
-                      )}
-                    </button>
+                  <div className="w-full">
+                    <AudioPlayer
+                      src={stitchedAudioUrl || (finalAudios[0] && finalAudios[0].url) || (chunkAudios[0] && chunkAudios[0].url) || ""}
+                      name={`voicedesign_${(voiceName || 'voice').toLowerCase().replace(/[^a-z0-9]/gi, '_')}.wav`}
+                    />
                   </div>
-                </div>
 
-                {status === 'complete' && (stitchedAudioUrl || finalAudios.length > 0 || chunkAudios.length > 0) && !isGen && (
                   <button
                     disabled={isVoiceSaved}
                     onClick={() => handleSaveVoice(stitchedAudioUrl || (finalAudios[0] && finalAudios[0].url) || (chunkAudios[0] && chunkAudios[0].url))}
-                    className="w-full py-3 rounded-xl text-sm font-medium bg-bg-input text-text-primary border border-border-color hover:bg-bg-hover disabled:opacity-50 disabled:hover:bg-bg-input transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-accent-bg text-accent-text hover:opacity-90 disabled:opacity-50 transition-all shadow-sm outline-none"
                   >
-                    {isVoiceSaved ? "Saved to Custom Voices!" : "Save to Custom Voices"}
-                  </button>
-                )}
-
-                {/* Audio Preview */}
-                {status === 'complete' && (stitchedAudioUrl || finalAudios.length > 0 || chunkAudios.length > 0) && (
-                  <div className="mt-2 flex flex-col gap-2">
-                    {stitchedAudioUrl ? (
-                      <audio controls src={stitchedAudioUrl} className="w-full" />
-                    ) : finalAudios.length > 0 ? (
-                      finalAudios.map((a, i) => (
-                        <audio key={i} controls src={a.url} className="w-full" />
-                      ))
+                    {isVoiceSaved ? (
+                      <span className="flex items-center gap-2"><Check size={15} /> Saved to Custom Voices!</span>
                     ) : (
-                      chunkAudios.map((a, i) => (
-                        <div key={i} className="flex flex-col gap-1">
-                          <span className="text-xs text-text-muted">Chunk {i + 1}</span>
-                          <audio controls src={a.url} className="w-full" />
-                        </div>
-                      ))
+                      <span className="flex items-center gap-2"><Sparkles size={15} /> Save to Custom Voices</span>
                     )}
-                  </div>
-                )}
-              </div>
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
           {/* ── MODE B: RECORD YOUR VOICE ────────────────────────────── */}
           {designTab === 'record' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start animate-in fade-in duration-150">
+            <div className="flex flex-col gap-5 animate-in fade-in duration-150">
               
-              {/* Left Column: Voice Recording Studio */}
-              <div className="lg:col-span-7 flex flex-col gap-3">
-                {/* Description Card */}
-                <div className="p-3 bg-accent-bg/5 border border-accent-bg/10 rounded-xl flex items-center gap-2.5 text-xs text-text-secondary leading-relaxed">
-                  <Mic size={15} className="text-accent-bg shrink-0" />
-                  <span>
-                    <strong>Record Your Voice:</strong> Speak into your microphone and confirm the transcript. Once saved, it will be added to your custom voices library on the right.
-                  </span>
+              {/* Description Card */}
+              <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-2xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">
+                <Mic size={18} className="text-accent-bg shrink-0 mt-0.5" />
+                <span>
+                  <strong className="text-text-primary font-semibold">Record Your Voice:</strong> Speak into your microphone and confirm the transcript. Real-time studio noise filtering and silence trimming create a pristine voice profile.
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                
+                {/* Left Column: Voice Recording Studio */}
+                <div className="lg:col-span-7 flex flex-col gap-3">
+                  <VoiceRecorder
+                    onVoiceSaved={(newVoice) => {
+                      setCustomVoices((prev) => {
+                        const filtered = prev.filter(v => v.id !== newVoice.id);
+                        return [...filtered, newVoice];
+                      });
+                      setSelectedVoiceId(newVoice.id);
+                    }}
+                  />
                 </div>
 
-                {/* Voice Recorder Component */}
-                <VoiceRecorder
-                  onVoiceSaved={(newVoice) => {
-                    setCustomVoices((prev) => {
-                      const filtered = prev.filter(v => v.id !== newVoice.id);
-                      return [...filtered, newVoice];
-                    });
-                    setSelectedVoiceId(newVoice.id);
-                  }}
-                />
-              </div>
 
               {/* Right Column: Saved Custom Voices */}
               <div className="lg:col-span-5 flex flex-col gap-3">
@@ -2141,7 +2149,8 @@ export default function Home() {
               </div>
 
             </div>
-          )}
+          </div>
+        )}
 
         </div>
       </div>

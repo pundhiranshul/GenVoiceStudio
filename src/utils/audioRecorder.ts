@@ -179,18 +179,19 @@ export function sliceAudioBuffer(
 
 /**
  * Applies studio-grade noise cleaning to an AudioBuffer:
- * 1. 80Hz High-Pass Filter: Cuts out desk thumps, AC rumble, handling noise.
- * 2. 10kHz Low-Pass Filter: Cuts out electrical hiss/coil whine.
- * 3. Dynamics Compressor: Smooths vocal dynamics.
- * 4. Noise Gate: Smoothly attenuates room ambience in speech pauses (< -42dB).
- * 5. Peak Normalization: Optimizes amplitude to -1.0 dBFS for punchy, clean clarity.
+ * 1. 110Hz High-Pass Filter: Cuts out desk thumps, AC rumble, handling noise.
+ * 2. 8kHz Low-Pass Filter: Cuts out high-frequency electrical hiss/fan coil whine.
+ * 3. High-Shelf Filter: Tames harsh ambient room reflections.
+ * 4. Vocal Dynamics Compressor: Smooths vocal dynamics.
+ * 5. Adaptive Noise Gate with Per-Sample Gain Smoothing: Silences ambient room noise during speech pauses.
+ * 6. Peak Normalization: Optimizes amplitude to -0.5 dBFS.
  */
 export async function cleanAudioBuffer(buffer: AudioBuffer): Promise<AudioBuffer> {
   const sampleRate = buffer.sampleRate;
   const frameCount = buffer.length;
   const channels = buffer.numberOfChannels;
 
-  // Step 1 & 2 & 3: Run through hardware-accelerated OfflineAudioContext
+  // Step 1: Run through hardware-accelerated OfflineAudioContext for filtering
   const offlineCtx = new (window.OfflineAudioContext || (window as any).webkitOfflineAudioContext)(
     channels,
     frameCount,
@@ -200,75 +201,103 @@ export async function cleanAudioBuffer(buffer: AudioBuffer): Promise<AudioBuffer
   const source = offlineCtx.createBufferSource();
   source.buffer = buffer;
 
-  // 80Hz High-pass Butterworth filter
+  // 110Hz High-pass Butterworth filter (AC rumble, mic handling, desk thump)
   const highpass = offlineCtx.createBiquadFilter();
   highpass.type = 'highpass';
-  highpass.frequency.value = 80;
-  highpass.Q.value = 0.707;
+  highpass.frequency.value = 110;
+  highpass.Q.value = 0.8;
 
-  // 10kHz Low-pass filter
+  // 8kHz Low-pass filter (fan whine, high hiss)
   const lowpass = offlineCtx.createBiquadFilter();
   lowpass.type = 'lowpass';
-  lowpass.frequency.value = 10000;
+  lowpass.frequency.value = 8000;
   lowpass.Q.value = 0.707;
+
+  // High-shelf filter to tame room hiss
+  const highshelf = offlineCtx.createBiquadFilter();
+  highshelf.type = 'highshelf';
+  highshelf.frequency.value = 4500;
+  highshelf.gain.value = -3.0;
 
   // Vocal dynamics compressor
   const compressor = offlineCtx.createDynamicsCompressor();
-  compressor.threshold.value = -24;
-  compressor.knee.value = 8;
-  compressor.ratio.value = 2.5;
+  compressor.threshold.value = -20;
+  compressor.knee.value = 6;
+  compressor.ratio.value = 3.0;
   compressor.attack.value = 0.003;
-  compressor.release.value = 0.25;
+  compressor.release.value = 0.20;
 
   source.connect(highpass);
   highpass.connect(lowpass);
-  lowpass.connect(compressor);
+  lowpass.connect(highshelf);
+  highshelf.connect(compressor);
   compressor.connect(offlineCtx.destination);
 
   source.start(0);
   const filtered = await offlineCtx.startRendering();
 
-  // Step 4 & 5: Noise Gate and Peak Normalization
-  const gateThreshold = Math.pow(10, -42 / 20); // -42dB noise floor
+  // Step 2: Adaptive Noise Gate with Per-Sample Smooth Gain Envelope
   const windowSize = Math.floor(sampleRate * 0.02); // 20ms analysis window
-
-  // Calculate global peak for normalization
-  let maxPeak = 0;
+  const numWindows = Math.floor(frameCount / windowSize);
 
   for (let c = 0; c < channels; c++) {
     const data = filtered.getChannelData(c);
 
-    // Apply soft noise gate in windows
-    for (let i = 0; i < data.length; i += windowSize) {
-      const endWin = Math.min(data.length, i + windowSize);
+    // Calculate RMS across all windows to estimate dynamic noise floor vs vocal peaks
+    const rmsValues: number[] = [];
+    for (let w = 0; w < numWindows; w++) {
+      const start = w * windowSize;
+      const end = Math.min(frameCount, start + windowSize);
       let sumSq = 0;
-      for (let j = i; j < endWin; j++) {
+      for (let j = start; j < end; j++) {
         sumSq += data[j] * data[j];
       }
-      const rms = Math.sqrt(sumSq / (endWin - i));
+      rmsValues.push(Math.sqrt(sumSq / (end - start)));
+    }
 
-      // If RMS is below noise floor, smoothly attenuate (downward expand)
+    // Sort to determine 25th percentile (noise floor) and 85th percentile (speech level)
+    const sortedRms = [...rmsValues].sort((a, b) => a - b);
+    const floorRms = sortedRms[Math.floor(sortedRms.length * 0.25)] || 0.005;
+    const speechRms = sortedRms[Math.floor(sortedRms.length * 0.85)] || 0.05;
+
+    // Gate threshold is set above noise floor with a vocal safety margin
+    const gateThreshold = Math.max(0.015, Math.min(speechRms * 0.35, floorRms * 2.8));
+
+    // Calculate target gain per window
+    const windowGains = new Float32Array(numWindows);
+    for (let w = 0; w < numWindows; w++) {
+      const rms = rmsValues[w];
       if (rms < gateThreshold) {
-        const gain = Math.max(0.05, rms / gateThreshold);
-        for (let j = i; j < endWin; j++) {
-          data[j] *= gain;
-        }
+        // Attenuate down to 0.06 (-24dB reduction in pauses)
+        const ratio = rms / gateThreshold;
+        windowGains[w] = Math.max(0.06, ratio * ratio);
+      } else {
+        windowGains[w] = 1.0;
       }
     }
 
-    // Find peak
-    for (let i = 0; i < data.length; i++) {
+    // Apply smooth per-sample envelope to prevent any audio clicks or pumping
+    let currentGain = windowGains[0] || 1.0;
+    const smoothing = 0.002; // Smooth ramp factor
+
+    for (let i = 0; i < frameCount; i++) {
+      const currentWin = Math.min(numWindows - 1, Math.floor(i / windowSize));
+      const targetGain = windowGains[currentWin];
+      currentGain += (targetGain - currentGain) * smoothing;
+      data[i] *= currentGain;
+    }
+
+    // Find global peak for normalization
+    let maxPeak = 0;
+    for (let i = 0; i < frameCount; i++) {
       const abs = Math.abs(data[i]);
       if (abs > maxPeak) maxPeak = abs;
     }
-  }
 
-  // Peak normalize to 0.90 (-0.9 dBFS) if maxPeak > 0
-  if (maxPeak > 0.05 && maxPeak < 0.95) {
-    const normFactor = 0.90 / maxPeak;
-    for (let c = 0; c < channels; c++) {
-      const data = filtered.getChannelData(c);
-      for (let i = 0; i < data.length; i++) {
+    // Peak normalize to 0.95 (-0.45 dBFS)
+    if (maxPeak > 0.05 && maxPeak < 0.98) {
+      const normFactor = 0.95 / maxPeak;
+      for (let i = 0; i < frameCount; i++) {
         data[i] = Math.max(-1, Math.min(1, data[i] * normFactor));
       }
     }

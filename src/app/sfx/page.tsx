@@ -1118,18 +1118,18 @@ export default function SFXStudio() {
 
       {/* ── Main Canvas ─────────────────────────────────────────────── */}
       <main className="flex-1 flex flex-col min-w-0 md:overflow-y-auto">
-        <div className="w-full max-w-3xl mx-auto px-6 py-10 space-y-8">
+        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
           
           {/* Description Card */}
           <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-2xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">
-            <AudioLines size={16} className="text-accent-bg shrink-0 mt-0.5" />
+            <AudioLines size={18} className="text-accent-bg shrink-0 mt-0.5" />
             <span>
-              <strong>Sound Effects Generation</strong> creates high-quality cinematic sound effects, powered by zero-cost Kaggle GPUs. Describe an acoustic environment, tone, or texture.
+              <strong className="text-text-primary font-semibold">Sound Effects:</strong> Create high-quality cinematic sound effects powered by zero-cost Kaggle GPUs. Describe an acoustic environment, tone, or texture.
             </span>
           </div>
 
           {/* Input Area */}
-          <div className="bg-bg-panel border border-border-color rounded-2xl p-4 shadow-sm focus-within:ring-2 ring-ring-color transition-all">
+          <div className="bg-bg-panel border border-border-color rounded-2xl p-5 sm:p-6 shadow-sm focus-within:ring-2 ring-ring-color transition-all">
             <textarea
               className="w-full h-32 bg-transparent resize-none outline-none text-lg leading-relaxed placeholder:text-text-muted"
               placeholder="Describe the sound effect... e.g. 'Cinematic explosion with sub-bass rumble'"
