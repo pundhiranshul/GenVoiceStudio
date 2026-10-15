@@ -63,6 +63,8 @@ export function VoiceRecorder({
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [speechRecognizing, setSpeechRecognizing] = useState(false);
+  const [isPromptDropdownOpen, setIsPromptDropdownOpen] = useState(false);
+  const promptDropdownRef = useRef<HTMLDivElement>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
@@ -91,6 +93,19 @@ export function VoiceRecorder({
       }
     };
   }, [audioUrl]);
+
+  // Handle dropdown close on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (promptDropdownRef.current && !promptDropdownRef.current.contains(e.target as Node)) {
+        setIsPromptDropdownOpen(false);
+      }
+    };
+    if (isPromptDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isPromptDropdownOpen]);
 
   const stopAllMedia = useCallback(() => {
     if (timerIntervalRef.current) {
@@ -486,33 +501,58 @@ export function VoiceRecorder({
           />
         </div>
 
-        {/* Suggested Reading Prompt Dropdown (Clean, full sentences) */}
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">
-              Prompt to Read Aloud
-            </label>
-          </div>
+        {/* Suggested Reading Prompt Dropdown (Custom Site Design) */}
+        <div className="flex flex-col gap-1.5 relative" ref={promptDropdownRef}>
+          <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">
+            Prompt to Read Aloud
+          </label>
           <div className="relative">
-            <select
-              value={selectedScriptIdx !== null ? selectedScriptIdx : ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === '') {
-                  setSelectedScriptIdx(null);
-                } else {
-                  selectScript(Number(val));
-                }
-              }}
-              className="w-full bg-bg-input border border-border-color hover:border-border-subtle rounded-xl px-4 py-2.5 text-sm text-text-primary outline-none focus:border-border-color appearance-none cursor-pointer pr-9 font-medium transition-colors"
+            <button
+              type="button"
+              onClick={() => setIsPromptDropdownOpen(!isPromptDropdownOpen)}
+              className="w-full flex items-center justify-between bg-bg-input border border-border-color hover:border-border-subtle rounded-xl px-4 py-2.5 text-sm text-text-primary outline-none focus:border-border-color transition-colors text-left"
             >
-              {RECORDING_SUGGESTED_SCRIPTS.map((script, idx) => (
-                <option key={idx} value={idx}>
-                  {`Prompt ${idx + 1}: "${script}"`}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
+              <span className="truncate font-medium">
+                {selectedScriptIdx !== null
+                  ? `Prompt ${selectedScriptIdx + 1}: "${RECORDING_SUGGESTED_SCRIPTS[selectedScriptIdx]}"`
+                  : 'Choose a prompt to read aloud...'}
+              </span>
+              <ChevronDown
+                size={15}
+                className={`text-text-muted shrink-0 ml-2 transition-transform duration-150 ${isPromptDropdownOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {isPromptDropdownOpen && (
+              <div className="absolute z-50 mt-1.5 w-full rounded-xl bg-bg-panel border border-border-color shadow-2xl py-1.5 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+                {RECORDING_SUGGESTED_SCRIPTS.map((script, idx) => {
+                  const isSelected = selectedScriptIdx === idx;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        selectScript(idx);
+                        setIsPromptDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-3.5 py-2.5 text-xs sm:text-sm transition-colors flex items-center justify-between gap-3 ${
+                        isSelected
+                          ? 'bg-accent-bg/10 text-accent-bg font-semibold'
+                          : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
+                      }`}
+                    >
+                      <span className="truncate">
+                        <strong className="font-semibold text-text-primary mr-1.5">Prompt {idx + 1}:</strong>
+                        &ldquo;{script}&rdquo;
+                      </span>
+                      {isSelected && (
+                        <Check size={14} className="text-accent-bg shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -619,7 +659,7 @@ export function VoiceRecorder({
                       audioPlayerRef.current.currentTime = (val / 100) * audioTotalDuration;
                     }
                   }}
-                  className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
+                  className="w-full h-1.5 bg-neutral-300 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-accent-bg"
                 />
                 <div className="flex justify-between text-[10px] text-text-muted font-mono leading-none">
                   <span>{formatSeconds(audioCurrentTime)}</span>
@@ -657,7 +697,7 @@ export function VoiceRecorder({
                     onChange={(e) => setTrimStart(Number(parseFloat(e.target.value).toFixed(2)))}
                     onMouseUp={handleSliderCommit}
                     onTouchEnd={handleSliderCommit}
-                    className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
+                    className="w-full h-1.5 bg-neutral-300 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-accent-bg"
                   />
                   <span className="font-mono text-[10px] text-text-primary w-9 text-right">{trimStart}s</span>
                 </div>
@@ -673,7 +713,7 @@ export function VoiceRecorder({
                     onChange={(e) => setTrimEnd(Number(parseFloat(e.target.value).toFixed(2)))}
                     onMouseUp={handleSliderCommit}
                     onTouchEnd={handleSliderCommit}
-                    className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
+                    className="w-full h-1.5 bg-neutral-300 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-accent-bg"
                   />
                   <span className="font-mono text-[10px] text-text-primary w-9 text-right">
                     {(trimEnd || rawFullDuration).toFixed(1)}s

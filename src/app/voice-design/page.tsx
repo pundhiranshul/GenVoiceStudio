@@ -1907,7 +1907,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setDesignTab('prompt')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 sm:py-2.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all outline-none ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 sm:py-2.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-colors duration-150 select-none outline-none ${
                   designTab === 'prompt'
                     ? 'bg-accent-bg text-accent-text shadow-sm'
                     : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
@@ -1919,7 +1919,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setDesignTab('record')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 sm:py-2.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all outline-none ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 sm:py-2.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-colors duration-150 select-none outline-none ${
                   designTab === 'record'
                     ? 'bg-accent-bg text-accent-text shadow-sm'
                     : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
@@ -1927,6 +1927,13 @@ export default function Home() {
               >
                 <Mic size={16} />
                 <span>Record Your Voice</span>
+                <span className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase rounded-full leading-none transition-colors ${
+                  designTab === 'record'
+                    ? 'bg-accent-text/20 text-accent-text'
+                    : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                }`}>
+                  NEW
+                </span>
               </button>
             </div>
 
@@ -2023,13 +2030,22 @@ export default function Home() {
                     <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">Guidance Scale</label>
                     <span className="text-xs font-mono text-text-muted font-bold">{guidanceScale}</span>
                   </div>
-                  <input
-                    type="range"
-                    min="1" max="10" step="0.1"
-                    value={guidanceScale}
-                    onChange={(e) => setGuidanceScale(parseFloat(e.target.value))}
-                    className="w-full h-1.5 bg-border-color rounded-lg appearance-none cursor-pointer accent-accent-bg"
-                  />
+                  <div className="relative flex items-center h-6">
+                    {/* Explicit visible track line */}
+                    <div className="absolute inset-x-0 h-1.5 rounded-full bg-neutral-300 dark:bg-neutral-700 overflow-hidden">
+                      <div 
+                        className="h-full bg-neutral-900 dark:bg-neutral-100 rounded-full transition-all duration-75" 
+                        style={{ width: `${((guidanceScale - 1) / (10 - 1)) * 100}%` }} 
+                      />
+                    </div>
+                    <input
+                      type="range"
+                      min="1" max="10" step="0.1"
+                      value={guidanceScale}
+                      onChange={(e) => setGuidanceScale(parseFloat(e.target.value))}
+                      className="relative z-10 w-full h-1.5 appearance-none bg-transparent cursor-pointer accent-neutral-900 dark:accent-neutral-100"
+                    />
+                  </div>
                   <p className="text-xs text-text-muted leading-tight">
                     Higher values strengthen prompt adherence. Recommended: 4.0 for Voice Design.
                   </p>

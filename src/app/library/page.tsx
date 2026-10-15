@@ -9,6 +9,7 @@ export default function LibraryPage() {
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(true);
+  const [populateFromLibrary, setPopulateFromLibrary] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
 
@@ -22,6 +23,8 @@ export default function LibraryPage() {
     setItems(history);
     const isEnabled = await getHistoryEnabled();
     setEnabled(isEnabled);
+    const isPopulate = localStorage.getItem('populateFromLibrary') === 'true';
+    setPopulateFromLibrary(isPopulate);
     setLoading(false);
   };
 
@@ -71,8 +74,8 @@ export default function LibraryPage() {
     <div className="flex-1 overflow-y-auto bg-bg-base flex flex-col items-center">
       <div className="w-full max-w-4xl p-6 md:p-12 pb-24 md:pb-12 pt-20 md:pt-12 space-y-8 animate-in fade-in duration-500 relative">
         <header className="flex flex-col gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-accent-bg/10 flex items-center justify-center border border-accent-bg/20 shadow-[0_0_15px_rgba(255,255,255,0.05)]">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-accent-bg/10 flex items-center justify-center border border-accent-bg/20 shrink-0 mt-1 shadow-[0_0_15px_rgba(255,255,255,0.05)]">
               <Settings size={20} className="text-text-primary" />
             </div>
             <div>
@@ -88,7 +91,7 @@ export default function LibraryPage() {
               <h3 className="font-semibold text-text-primary">Save Generations to Library</h3>
               <p className="text-xs text-text-secondary">Automatically save new Voice Clones, Voice Designs, and Sound Effects to this local history.</p>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label className="relative inline-flex items-center cursor-pointer shrink-0">
               <input type="checkbox" checked={enabled} onChange={handleToggle} className="sr-only peer" />
               <div className="w-11 h-6 bg-border-color peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-bg"></div>
             </label>
@@ -96,17 +99,23 @@ export default function LibraryPage() {
 
           <div className="flex items-center gap-4 p-4 border border-border-color rounded-xl bg-bg-panel/50 mt-2">
             <div className="flex-1">
-              <h3 className="font-semibold text-text-primary">Show Library in Custom Voices</h3>
-              <p className="text-xs text-text-secondary">Automatically populate the Custom Voices dropdown with voices generated and saved in this library.</p>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-text-primary">Show Library in Custom Voices</h3>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-bg-hover text-text-muted">Optional</span>
+              </div>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Automatically populate the Voice Generator dropdown with voices designed and saved in this history.
+              </p>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label className="relative inline-flex items-center cursor-pointer shrink-0">
               <input 
                 type="checkbox" 
-                checked={typeof window !== "undefined" ? localStorage.getItem('populateFromLibrary') !== 'false' : true} 
+                checked={populateFromLibrary} 
                 onChange={(e) => {
-                  localStorage.setItem('populateFromLibrary', String(e.target.checked));
-                  // force re-render
-                  setEnabled(enabled);
+                  const val = e.target.checked;
+                  setPopulateFromLibrary(val);
+                  localStorage.setItem('populateFromLibrary', String(val));
+                  window.dispatchEvent(new CustomEvent('genvoice-populate-library-changed', { detail: val }));
                 }} 
                 className="sr-only peer" 
               />

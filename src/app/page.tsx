@@ -484,27 +484,32 @@ export default function Home() {
   };
 
   useEffect(() => {
-    get('custom_voices').then(val => {
-      const explicitVoices = val || [];
-      const populate = localStorage.getItem('populateFromLibrary') !== 'false';
-      if (populate) {
-        import('@/lib/history').then(({ getHistory }) => {
-          getHistory().then(history => {
-            const historyVoices = history
-              .filter(h => h.type === 'design')
-              .map(h => ({
-                id: `history_${h.id}`,
-                name: h.name || (h.prompt ? (h.prompt.length > 30 ? h.prompt.slice(0, 30) + '...' : h.prompt) : 'Voice Design'),
-                data: URL.createObjectURL(h.audioBlob),
-                transcript: h.text
-              }));
-            setCustomVoices([...explicitVoices, ...historyVoices]);
+    const refreshCustomVoices = () => {
+      get('custom_voices').then(val => {
+        const explicitVoices = val || [];
+        const populate = localStorage.getItem('populateFromLibrary') === 'true';
+        if (populate) {
+          import('@/lib/history').then(({ getHistory }) => {
+            getHistory().then(history => {
+              const historyVoices = history
+                .filter(h => h.type === 'design')
+                .map(h => ({
+                  id: `history_${h.id}`,
+                  name: h.name || (h.prompt ? (h.prompt.length > 30 ? h.prompt.slice(0, 30) + '...' : h.prompt) : 'Voice Design'),
+                  data: URL.createObjectURL(h.audioBlob),
+                  transcript: h.text
+                }));
+              setCustomVoices([...explicitVoices, ...historyVoices]);
+            });
           });
-        });
-      } else if (explicitVoices.length > 0) {
-        setCustomVoices(explicitVoices);
-      }
-    });
+        } else {
+          setCustomVoices(explicitVoices);
+        }
+      });
+    };
+
+    refreshCustomVoices();
+    window.addEventListener('genvoice-populate-library-changed', refreshCustomVoices);
 
     const storedUsername = localStorage.getItem('kaggleUsername');
     const storedKey = localStorage.getItem('kaggleKey');
@@ -527,7 +532,9 @@ export default function Home() {
     // Initialize theme based on document class
     setIsDark(document.documentElement.classList.contains('dark'));
     
-    return () => {};
+    return () => {
+      window.removeEventListener('genvoice-populate-library-changed', refreshCustomVoices);
+    };
   }, []);
 
   useEffect(() => {
