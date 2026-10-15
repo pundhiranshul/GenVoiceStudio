@@ -462,7 +462,7 @@ export function FeedbackModal({
                     disabled={isSubmitting}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder={currentCategoryMeta.placeholder}
-                    className="w-full px-3.5 py-3 rounded-xl bg-bg-input border border-border-color text-text-primary placeholder:text-text-muted text-sm leading-relaxed resize-none outline-none focus:border-accent-bg focus:ring-1 focus:ring-accent-bg transition-colors"
+                    className="w-full h-28 px-3.5 py-3 rounded-xl bg-bg-input border border-border-color text-text-primary placeholder:text-text-muted text-sm leading-relaxed resize-none outline-none focus:border-accent-bg focus:ring-1 focus:ring-accent-bg transition-colors"
                   />
                 </div>
 
@@ -503,7 +503,7 @@ export function FeedbackModal({
                       type="button"
                       disabled={isSubmitting}
                       onClick={onClose}
-                      className="px-4 py-2.5 rounded-xl text-xs sm:text-sm text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors cursor-pointer"
+                      className="h-10 px-4 rounded-xl text-xs sm:text-sm text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors cursor-pointer flex items-center justify-center"
                     >
                       Cancel
                     </button>
@@ -511,10 +511,10 @@ export function FeedbackModal({
                     <button
                       type="submit"
                       disabled={!message.trim() || isSubmitting}
-                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-sm ${
+                      className={`h-10 flex items-center gap-2 px-5 rounded-xl text-xs sm:text-sm font-semibold border transition-colors shadow-sm ${
                         message.trim() && !isSubmitting
-                          ? "bg-accent-bg text-accent-text hover:opacity-90 cursor-pointer"
-                          : "bg-bg-input text-text-muted border border-border-color cursor-not-allowed opacity-60"
+                          ? "bg-accent-bg text-accent-text border-transparent hover:opacity-90 cursor-pointer"
+                          : "bg-bg-input text-text-muted border-border-color cursor-not-allowed opacity-60"
                       }`}
                     >
                       {isSubmitting ? (
@@ -642,7 +642,7 @@ export function FeedbackModal({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-4 py-2.5 rounded-xl text-xs sm:text-sm text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors cursor-pointer"
+                    className="h-10 px-4 rounded-xl text-xs sm:text-sm text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors cursor-pointer flex items-center justify-center"
                   >
                     Maybe later
                   </button>
@@ -652,10 +652,10 @@ export function FeedbackModal({
                     onClick={() => {
                       if (selectedPurposeId) handleRecordPurposePoll(selectedPurposeId);
                     }}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all shadow-sm ${
+                    className={`h-10 flex items-center gap-2 px-5 rounded-xl text-xs sm:text-sm font-medium border transition-colors shadow-sm ${
                       selectedPurposeId
-                        ? "bg-accent-bg text-accent-text hover:opacity-90 cursor-pointer"
-                        : "bg-bg-input text-text-muted border border-border-color cursor-not-allowed opacity-60"
+                        ? "bg-accent-bg text-accent-text border-transparent hover:opacity-90 cursor-pointer"
+                        : "bg-bg-input text-text-muted border-border-color cursor-not-allowed opacity-60"
                     }`}
                   >
                     <span>Submit</span>
