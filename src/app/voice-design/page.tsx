@@ -353,7 +353,7 @@ export default function Home() {
   }, [designPrompt, voiceName]);
   const [generatedPreviewText, setGeneratedPreviewText] = useState("");
   const [isVoiceSaved, setIsVoiceSaved] = useState(false);
-  const [guidanceScale, setGuidanceScale] = useState(2);
+  const [guidanceScale, setGuidanceScale] = useState(4);
   const [isOptimizingDesign, setIsOptimizingDesign] = useState(false);
   const [optimizeDesignError, setOptimizeDesignError] = useState("");
   const [showWriteDesignModal, setShowWriteDesignModal] = useState(false);
