@@ -46,3 +46,9 @@ export async function deleteHistoryItem(id: string) {
   const history = await get<HistoryItem[]>('genvoice_history') || [];
   await set('genvoice_history', history.filter(h => h.id !== id));
 }
+
+export async function renameHistoryItem(id: string, newName: string) {
+  const history = await get<HistoryItem[]>('genvoice_history') || [];
+  const updated = history.map(h => h.id === id ? { ...h, name: newName } : h);
+  await set('genvoice_history', updated);
+}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Search, Check, ChevronDown, User, X, Play, Pause, Trash2, HelpCircle, Download } from 'lucide-react';
+import { Search, Check, ChevronDown, User, X, Play, Pause, Trash2, HelpCircle, Download, Pencil } from 'lucide-react';
 
 export interface Voice {
   id: string;
@@ -17,12 +17,15 @@ interface VoiceSelectorProps {
   onSelect: (id: string) => void;
   onUploadClick: () => void;
   onDeleteVoice?: (id: string) => void;
+  onRenameVoice?: (id: string, newName: string) => void;
 }
 
-export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onDeleteVoice }: VoiceSelectorProps) {
+export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onDeleteVoice, onRenameVoice }: VoiceSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState<string>('');
   const modalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -104,6 +107,26 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
     }
   };
 
+  const handleStartRename = (e: React.MouseEvent, voice: Voice) => {
+    e.stopPropagation();
+    setEditingId(voice.id);
+    setEditingName(voice.name);
+  };
+
+  const handleSaveRename = (id: string) => {
+    const trimmed = editingName.trim();
+    if (trimmed && onRenameVoice) {
+      onRenameVoice(id, trimmed);
+    }
+    setEditingId(null);
+    setEditingName('');
+  };
+
+  const handleCancelRename = () => {
+    setEditingId(null);
+    setEditingName('');
+  };
+
   // Cleanup audio on unmount or modal close
   useEffect(() => {
     if (!isOpen && activeAudioRef.current) {
@@ -166,81 +189,155 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
                 {filteredVoices.length > 0 ? (
                   filteredVoices.map(voice => (
                     <div key={voice.id} className="flex flex-col">
-                      <button
+                      <div
+                        role="button"
+                        tabIndex={0}
                         onClick={() => {
-                          onSelect(voice.id);
-                          setIsOpen(false);
+                          if (editingId !== voice.id) {
+                            onSelect(voice.id);
+                            setIsOpen(false);
+                          }
                         }}
-                      className={`group flex items-center gap-3 w-full text-left p-3 rounded-xl transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${
-                        selectedId === voice.id ? 'bg-accent-bg/10' : 'hover:bg-accent-bg/5'
-                      }`}
-                    >
-                      {voice.data ? (
-                        <button
-                          onClick={(e) => togglePreview(e, voice)}
-                          className="group/play relative w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0 cursor-pointer overflow-hidden focus-visible:ring-2 focus-visible:ring-white/30 outline-none"
-                          aria-label={playingId === voice.id ? "Pause preview" : "Play preview"}
-                        >
-                          <User 
-                            size={16} 
-                            className={`transition-opacity duration-200 ${playingId === voice.id ? 'opacity-0' : 'group-hover/play:opacity-0'} ${selectedId === voice.id ? 'text-text-primary' : 'text-text-secondary'}`} 
-                          />
-                          <div className={`absolute inset-0 flex items-center justify-center bg-zinc-600 transition-opacity duration-200 ${playingId === voice.id ? 'opacity-100' : 'opacity-0 group-hover/play:opacity-100'}`}>
-                            {playingId === voice.id ? <Pause size={14} className="text-white" /> : <Play size={14} className="text-white ml-0.5" />}
+                        onKeyDown={(e) => {
+                          if (editingId !== voice.id && (e.key === 'Enter' || e.key === ' ')) {
+                            e.preventDefault();
+                            onSelect(voice.id);
+                            setIsOpen(false);
+                          }
+                        }}
+                        className={`group flex items-center gap-3 w-full text-left p-3 rounded-xl transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${
+                          selectedId === voice.id ? 'bg-accent-bg/10' : 'hover:bg-accent-bg/5'
+                        }`}
+                      >
+                        {voice.data ? (
+                          <button
+                            type="button"
+                            onClick={(e) => togglePreview(e, voice)}
+                            className="group/play relative w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0 cursor-pointer overflow-hidden focus-visible:ring-2 focus-visible:ring-white/30 outline-none"
+                            aria-label={playingId === voice.id ? "Pause preview" : "Play preview"}
+                          >
+                            <User 
+                              size={16} 
+                              className={`transition-opacity duration-200 ${playingId === voice.id ? 'opacity-0' : 'group-hover/play:opacity-0'} ${selectedId === voice.id ? 'text-text-primary' : 'text-text-secondary'}`} 
+                            />
+                            <div className={`absolute inset-0 flex items-center justify-center bg-zinc-600 transition-opacity duration-200 ${playingId === voice.id ? 'opacity-100' : 'opacity-0 group-hover/play:opacity-100'}`}>
+                              {playingId === voice.id ? <Pause size={14} className="text-white" /> : <Play size={14} className="text-white ml-0.5" />}
+                            </div>
+                          </button>
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
+                            <User size={16} className={selectedId === voice.id ? 'text-text-primary' : 'text-text-secondary'} />
                           </div>
-                        </button>
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
-                          <User size={16} className={selectedId === voice.id ? 'text-text-primary' : 'text-text-secondary'} />
+                        )}
+
+                        {editingId === voice.id ? (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-1.5 flex-1 min-w-0"
+                          >
+                            <input
+                              type="text"
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              autoFocus
+                              onKeyDown={(e) => {
+                                e.stopPropagation();
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleSaveRename(voice.id);
+                                } else if (e.key === 'Escape') {
+                                  e.preventDefault();
+                                  handleCancelRename();
+                                }
+                              }}
+                              className="flex-1 min-w-0 bg-bg-input border border-border-color rounded-lg px-2.5 py-1 text-xs text-text-primary outline-none focus:border-border-color"
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSaveRename(voice.id);
+                              }}
+                              className="p-1 rounded text-text-muted hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors shrink-0"
+                              title="Save name"
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancelRename();
+                              }}
+                              className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors shrink-0"
+                              title="Cancel"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                            <span className={`text-sm truncate ${selectedId === voice.id ? 'font-medium text-text-primary' : 'text-text-primary'}`}>
+                              {voice.name}
+                            </span>
+                            {!voice.isPreset && onRenameVoice && (
+                              <button
+                                type="button"
+                                onClick={(e) => handleStartRename(e, voice)}
+                                className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-text-primary hover:bg-accent-bg/10 opacity-0 group-hover:opacity-100 transition-all shrink-0 outline-none"
+                                title="Rename voice"
+                              >
+                                <Pencil size={12} />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0">
+                          {voice.transcript && (
+                            <button 
+                              type="button"
+                              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors outline-none ${
+                                expandedTranscriptId === voice.id 
+                                  ? 'bg-accent-bg/10 text-accent-text' 
+                                  : 'hover:bg-accent-bg/10 text-text-muted hover:text-text-primary'
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedTranscriptId(expandedTranscriptId === voice.id ? null : voice.id);
+                              }}
+                              title="Show Transcript"
+                            >
+                              <HelpCircle size={14} />
+                            </button>
+                          )}
+                          {voice.data && (
+                            <a
+                              href={voice.data}
+                              download={`${voice.name.replace(/[^a-zA-Z0-9]/g, '_')}_reference`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-accent-bg/10 text-text-muted hover:text-text-primary transition-colors"
+                              title="Download Reference Audio"
+                            >
+                              <Download size={14} />
+                            </a>
+                          )}
                         </div>
-                      )}
-                      <span className={`text-sm flex-1 truncate ${selectedId === voice.id ? 'font-medium text-text-primary' : 'text-text-primary'}`}>
-                        {voice.name}
-                      </span>
-                      
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0">
-                        {voice.transcript && (
-                          <button 
-                            className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors outline-none ${
-                              expandedTranscriptId === voice.id 
-                                ? 'bg-accent-bg/10 text-accent-text' 
-                                : 'hover:bg-accent-bg/10 text-text-muted hover:text-text-primary'
-                            }`}
+                        {selectedId === voice.id && <Check size={16} className="text-text-primary shrink-0 mr-1" />}
+                        {!voice.isPreset && onDeleteVoice && (
+                          <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setExpandedTranscriptId(expandedTranscriptId === voice.id ? null : voice.id);
+                              onDeleteVoice(voice.id);
                             }}
-                            title="Show Transcript"
+                            className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-red-500/10 text-text-muted hover:text-red-500 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                            title="Delete custom voice"
                           >
-                            <HelpCircle size={14} />
+                            <Trash2 size={14} />
                           </button>
                         )}
-                        {voice.data && (
-                          <a
-                            href={voice.data}
-                            download={`${voice.name.replace(/[^a-zA-Z0-9]/g, '_')}_reference`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-accent-bg/10 text-text-muted hover:text-text-primary transition-colors"
-                            title="Download Reference Audio"
-                          >
-                            <Download size={14} />
-                          </a>
-                        )}
                       </div>
-                      {selectedId === voice.id && <Check size={16} className="text-text-primary shrink-0 mr-1" />}
-                      {!voice.isPreset && onDeleteVoice && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteVoice(voice.id);
-                          }}
-                          className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-red-500/10 text-text-muted hover:text-red-500 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-                          title="Delete custom voice"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                      </button>
                       
                       {expandedTranscriptId === voice.id && voice.transcript && (
                         <div className="mx-3 mb-2 px-4 py-3 bg-bg-input/50 rounded-lg text-xs text-text-secondary border border-border-subtle animate-in slide-in-from-top-2 fade-in duration-200 shadow-inner">

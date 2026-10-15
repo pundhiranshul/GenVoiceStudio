@@ -456,6 +456,21 @@ export default function Home() {
     }
   };
 
+  const handleRenameVoice = async (id: string, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    if (id.startsWith('history_')) {
+      const realId = id.replace('history_', '');
+      const { renameHistoryItem } = await import('@/lib/history');
+      await renameHistoryItem(realId, trimmed);
+    } else {
+      const explicitVoices = (await get('custom_voices')) || [];
+      const updated = explicitVoices.map((v: any) => v.id === id ? { ...v, name: trimmed } : v);
+      await set('custom_voices', updated);
+    }
+    setCustomVoices(prev => prev.map(v => v.id === id ? { ...v, name: trimmed } : v));
+  };
+
   useEffect(() => {
     get('custom_voices').then(val => {
       const explicitVoices = val || [];
@@ -2222,6 +2237,7 @@ export default function Home() {
                   onSelect={setSelectedVoiceId} 
                   onUploadClick={() => { setShowUpload(true); setUploadError(""); }} 
                   onDeleteVoice={handleDeleteVoice}
+                  onRenameVoice={handleRenameVoice}
                 />
                 <button
                   onClick={handleRecommendVoices}

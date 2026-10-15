@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getHistory, HistoryItem, deleteHistoryItem, clearHistory, getHistoryEnabled, setHistoryEnabled } from '@/lib/history';
+import { getHistory, HistoryItem, deleteHistoryItem, clearHistory, getHistoryEnabled, setHistoryEnabled, renameHistoryItem } from '@/lib/history';
 import { AudioPlayer } from '@/components/AudioPlayer';
-import { Trash2, Mic, Wand2, AudioLines, Settings, Library } from 'lucide-react';
+import { Trash2, Mic, Wand2, AudioLines, Settings, Library, Pencil, Check, X } from 'lucide-react';
 
 export default function LibraryPage() {
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState<string>('');
 
   useEffect(() => {
     loadData();
@@ -31,6 +33,13 @@ export default function LibraryPage() {
   const handleDelete = async (id: string) => {
     await deleteHistoryItem(id);
     setItems(items.filter(i => i.id !== id));
+  };
+
+  const handleRename = async (id: string, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    await renameHistoryItem(id, trimmed);
+    setItems(items.map(i => i.id === id ? { ...i, name: trimmed } : i));
   };
 
   const handleClear = async () => {
@@ -149,11 +158,69 @@ export default function LibraryPage() {
                   </div>
                 </div>
 
-                {item.name && (
-                  <div className="text-sm font-semibold text-text-primary mb-1">
-                    {item.name}
-                  </div>
-                )}
+                <div className="flex items-center justify-between gap-2">
+                  {editingId === item.id ? (
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                      <input
+                        type="text"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (editingName.trim()) {
+                              handleRename(item.id, editingName.trim());
+                            }
+                            setEditingId(null);
+                          } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            setEditingId(null);
+                          }
+                        }}
+                        className="flex-1 min-w-0 bg-bg-input border border-border-color rounded-lg px-2.5 py-1 text-xs sm:text-sm text-text-primary outline-none focus:border-border-color"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (editingName.trim()) {
+                            handleRename(item.id, editingName.trim());
+                          }
+                          setEditingId(null);
+                        }}
+                        className="p-1 rounded text-text-muted hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors shrink-0"
+                        title="Save name"
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(null)}
+                        className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors shrink-0"
+                        title="Cancel"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-sm font-semibold text-text-primary truncate">
+                        {item.name || (item.prompt ? (item.prompt.length > 40 ? item.prompt.slice(0, 40) + '...' : item.prompt) : getLabel(item.type))}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingId(item.id);
+                          setEditingName(item.name || (item.prompt ? (item.prompt.length > 40 ? item.prompt.slice(0, 40) + '...' : item.prompt) : getLabel(item.type)));
+                        }}
+                        className="p-1 text-text-muted hover:text-text-primary hover:bg-accent-bg/10 rounded-md transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                        title="Rename item"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                    </div>
+                  )}
+                </div>
                 {item.prompt && (
                   <div className="text-sm font-medium text-text-primary">
                     <span className="text-xs text-text-muted uppercase tracking-wider block mb-1">Prompt</span>
