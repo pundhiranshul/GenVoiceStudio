@@ -2148,7 +2148,7 @@ export default function Home() {
                   {isVoiceSaved ? (
                     <span className="flex items-center gap-2"><Check size={15} /> Saved to Custom Voices!</span>
                   ) : (
-                    <span className="flex items-center gap-2"><Sparkles size={15} /> Save to Custom Voices</span>
+                    <span>Save to Custom Voices</span>
                   )}
                 </button>
               </div>

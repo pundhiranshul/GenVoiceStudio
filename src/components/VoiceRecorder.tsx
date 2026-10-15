@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Mic, Square, Play, Pause, RotateCcw, Check, Sparkles, AlertCircle, Clock, Scissors, ShieldCheck, ChevronDown, Loader2, Copy } from 'lucide-react';
+import { Mic, Square, Play, Pause, RotateCcw, Check, Sparkles, AlertCircle, Clock, Scissors, ShieldCheck, ChevronDown, Loader2, Copy, Trash2 } from 'lucide-react';
 import {
   decodeBlobToAudioBuffer,
   detectSpeechBoundaries,
@@ -224,19 +224,33 @@ export function VoiceRecorder({
         audioContextRef.current = audioCtx;
         const source = audioCtx.createMediaStreamSource(stream);
         const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 32;
+        analyser.fftSize = 128;
+        analyser.smoothingTimeConstant = 0.35;
         source.connect(analyser);
         analyserRef.current = analyser;
 
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const freqData = new Uint8Array(analyser.frequencyBinCount);
+        const timeData = new Uint8Array(analyser.fftSize);
         const updateLevels = () => {
           if (analyserRef.current) {
-            analyserRef.current.getByteFrequencyData(dataArray);
-            const step = Math.max(1, Math.floor(dataArray.length / 8));
+            analyserRef.current.getByteFrequencyData(freqData);
+            analyserRef.current.getByteTimeDomainData(timeData);
+
+            // Calculate instantaneous voice volume (RMS)
+            let sumSq = 0;
+            for (let j = 0; j < timeData.length; j++) {
+              const diff = (timeData[j] - 128) / 128;
+              sumSq += diff * diff;
+            }
+            const volume = Math.min(1, Math.sqrt(sumSq / timeData.length) * 4.5);
+
             const bars: number[] = [];
             for (let i = 0; i < 8; i++) {
-              const val = dataArray[i * step] || 0;
-              bars.push(Math.max(15, Math.min(100, Math.round((val / 255) * 100))));
+              // Bins 1 to 16 focus specifically on human speech frequencies (~150Hz to ~3500Hz)
+              const freqVal = (freqData[i * 2 + 1] || 0) / 255;
+              const combined = freqVal * 0.65 + volume * 0.55;
+              const level = Math.max(12, Math.min(100, Math.round(combined * 160)));
+              bars.push(level);
             }
             setAudioLevels(bars);
             animFrameRef.current = requestAnimationFrame(updateLevels);
@@ -645,23 +659,25 @@ export function VoiceRecorder({
                 )}
               </button>
 
-              <div className="flex-1 flex flex-col gap-1 min-w-0">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={audioProgress}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    setAudioProgress(val);
-                    if (audioPlayerRef.current && audioTotalDuration) {
-                      audioPlayerRef.current.currentTime = (val / 100) * audioTotalDuration;
-                    }
-                  }}
-                  className="w-full h-1.5 bg-neutral-300 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-accent-bg"
-                />
-                <div className="flex justify-between text-[10px] text-text-muted font-mono leading-none">
+              <div className="flex-1 flex flex-col gap-2 min-w-0">
+                <div className="w-full flex items-center h-4">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={audioProgress}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      setAudioProgress(val);
+                      if (audioPlayerRef.current && audioTotalDuration) {
+                        audioPlayerRef.current.currentTime = (val / 100) * audioTotalDuration;
+                      }
+                    }}
+                    className="w-full h-1.5 bg-neutral-300 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-accent-bg"
+                  />
+                </div>
+                <div className="flex justify-between text-[10px] text-text-muted font-mono leading-none mt-1">
                   <span>{formatSeconds(audioCurrentTime)}</span>
                   <span>
                     {formatSeconds(audioTotalDuration)} preview
@@ -764,10 +780,8 @@ export function VoiceRecorder({
                     }`}
                     title="Enable studio noise cleaning"
                   >
-                    {isFiltering && cleanAudioEnabled ? (
+                    {isFiltering && cleanAudioEnabled && (
                       <Loader2 size={12} className="animate-spin" />
-                    ) : (
-                      <Sparkles size={12} />
                     )}
                     Clean Voice
                   </button>
@@ -787,14 +801,12 @@ export function VoiceRecorder({
                         ? 'bg-accent-bg text-accent-text shadow-sm'
                         : 'text-text-secondary hover:text-text-primary'
                     }`}
-                    title="Listen to raw mic audio without cleaning"
+                    title="Listen to raw audio without cleaning"
                   >
-                    {isFiltering && !cleanAudioEnabled ? (
+                    {isFiltering && !cleanAudioEnabled && (
                       <Loader2 size={12} className="animate-spin" />
-                    ) : (
-                      <Mic size={12} />
                     )}
-                    Raw Mic
+                    Raw
                   </button>
                 </div>
               </div>
@@ -872,6 +884,19 @@ export function VoiceRecorder({
       {/* Actions */}
       {showSaveButton && (
         <div className="flex items-center justify-end gap-2.5 pt-1">
+          {recordingState === 'recorded' && (
+            <button
+              type="button"
+              disabled={isSaving || isFiltering}
+              onClick={resetRecording}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-red-500 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-colors cursor-pointer"
+              title="Discard recording and start over"
+            >
+              <Trash2 size={14} />
+              <span>Discard Voice</span>
+            </button>
+          )}
+
           {onCancel && (
             <button
               type="button"
@@ -897,9 +922,7 @@ export function VoiceRecorder({
                 <Check size={15} /> Saved to Custom Voices
               </span>
             ) : (
-              <span className="flex items-center gap-2">
-                <Sparkles size={15} /> Save to Custom Voices
-              </span>
+              <span>Save to Custom Voices</span>
             )}
           </button>
         </div>
