@@ -1209,9 +1209,9 @@ export default function Home() {
   if (!hasCredentials) {
     if (verifyScreen) {
       return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 md:p-8 lg:p-10 animate-in fade-in duration-500 overflow-y-auto [scrollbar-gutter:stable]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 lg:p-8 animate-in fade-in duration-500 overflow-y-auto [scrollbar-gutter:stable]">
           {/* Layout container: left = site integrated voice hero (no panel), right = verification card */}
-          <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 px-4 sm:px-8 lg:px-12 relative z-10 lg:min-h-[780px]">
+          <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-14 px-4 sm:px-8 lg:px-12 relative z-10">
 
             {/* ── Left: Voice waves & branding integrated into the site (no panel) ── */}
             <div className="flex-1 w-full max-w-xl flex flex-col justify-center items-center gap-6 sm:gap-8 py-2 text-center lg:self-center">
@@ -1237,8 +1237,8 @@ export default function Home() {
             </div>
 
             {/* ── Right: Verification card (natural height, stable row centering) ── */}
-            <div className="w-full max-w-[550px] lg:w-[550px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col relative shrink-0 lg:self-center">
-              <div className="flex flex-col gap-6">
+            <div className="w-full max-w-[550px] lg:w-[550px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-6 sm:p-8 flex flex-col relative shrink-0 lg:self-center">
+              <div className="flex flex-col gap-5">
 
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-bg-input rounded-xl border border-border-color">
@@ -1529,9 +1529,9 @@ export default function Home() {
     }
 
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto [scrollbar-gutter:stable]">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bg-base text-text-primary p-4 sm:p-6 lg:p-8 overflow-y-auto [scrollbar-gutter:stable]">
         {/* Layout container: left = site integrated voice hero (no panel), right = auth panel */}
-        <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 px-4 sm:px-8 lg:px-12 relative z-10 lg:min-h-[780px]">
+        <div className="max-w-7xl w-full my-auto flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-14 px-4 sm:px-8 lg:px-12 relative z-10">
 
           {/* ── Left: Voice waves & branding integrated into the site (no panel) ── */}
           <div className="flex-1 w-full max-w-xl flex flex-col justify-center items-center gap-6 sm:gap-8 py-2 text-center lg:self-center">
@@ -1555,7 +1555,7 @@ export default function Home() {
           </div>
 
           {/* ── Right: Auth panel card (natural height, stable row centering) ── */}
-          <div className="w-full max-w-[550px] lg:w-[550px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col relative shrink-0 lg:self-center">
+          <div className="w-full max-w-[550px] lg:w-[550px] bg-bg-panel border border-border-color rounded-3xl shadow-2xl p-6 sm:p-8 flex flex-col relative shrink-0 lg:self-center">
           {canCancelAuth && !verifyScreen && (
             <div className="absolute top-6 right-6 flex items-center">
               <button
@@ -1574,13 +1574,13 @@ export default function Home() {
           )}
 
           {/* Shifted heading to the right auth panel — centered */}
-          <div className="mb-6 text-center">
+          <div className="mb-4 sm:mb-5 text-center">
             <h2 className="text-lg sm:text-xl font-bold tracking-tight text-text-primary text-center">
               Choose how to authenticate and start creating
             </h2>
           </div>
 
-          <div className="flex bg-bg-input p-1 rounded-lg border border-border-color mb-6">
+          <div className="flex bg-bg-input p-1 rounded-lg border border-border-color mb-4 sm:mb-5">
             <button 
               onClick={() => setAuthMode('byok')}
               className={`flex-1 py-2 text-xs font-medium rounded-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${authMode === 'byok' ? 'bg-bg-panel text-text-primary shadow-sm border border-border-color' : 'text-text-muted hover:text-text-secondary border border-transparent'}`}
@@ -1596,8 +1596,8 @@ export default function Home() {
           </div>
 
           {authMode === 'byok' ? (
-            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2">
-              <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-xl flex items-start gap-3 text-xs text-text-secondary leading-relaxed mb-2">
+            <div className="flex flex-col gap-3.5 animate-in fade-in slide-in-from-bottom-2">
+              <div className="p-3 sm:p-3.5 bg-accent-bg/5 border border-accent-bg/10 rounded-xl flex items-start gap-3 text-xs text-text-secondary leading-relaxed mb-1">
                 <Info size={16} className="text-accent-bg shrink-0 mt-0.5" />
                 <div className="flex flex-col gap-1.5">
                   <span className="font-medium text-text-primary">How to get your credentials:</span>
@@ -1610,13 +1610,13 @@ export default function Home() {
                   </ol>
                 </div>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <input
                   type="text"
                   placeholder="Kaggle Username"
                   value={kaggleUsername}
                   onChange={e => setKaggleUsername(e.target.value)}
-                  className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
+                  className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
                 />
                 <div className="relative">
                   <input
@@ -1624,7 +1624,7 @@ export default function Home() {
                     placeholder="Kaggle API Token"
                     value={kaggleKey}
                     onChange={e => setKaggleKey(e.target.value)}
-                    className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 pr-12 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
+                    className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3 pr-12 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
                   />
                   <button
                     type="button"
@@ -1637,22 +1637,22 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2">
-              <div className="p-4 bg-bg-hover border border-border-color rounded-xl flex items-start gap-3 text-xs text-text-secondary leading-relaxed mb-2">
+            <div className="flex flex-col gap-3.5 animate-in fade-in slide-in-from-bottom-2">
+              <div className="p-3 sm:p-3.5 bg-bg-hover border border-border-color rounded-xl flex items-start gap-3 text-xs text-text-secondary leading-relaxed mb-1">
                 <Shield size={16} className="text-text-muted shrink-0 mt-0.5" />
                 <div className="flex flex-col gap-1">
                   <span className="font-medium text-text-primary">Shared Deployment Access</span>
                   <span>Access the shared hosted instance. This requires the master App Password. Individual Kaggle credentials are not required.</span>
                 </div>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <div className="relative">
                   <input
                     type={showAppPassword ? "text" : "password"}
                     placeholder="App Password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3.5 pr-12 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
+                    className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3 pr-12 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color focus-visible:ring-2 focus-visible:ring-ring-color transition-all shadow-sm"
                   />
                   <button
                     type="button"
@@ -1731,16 +1731,16 @@ export default function Home() {
                         setVerifyStatus('success');
                       } else {
                         setVerifyStatus('error');
-                        let friendlyError = "Verification failed. Internet or GPU not available.";
-                        if (!results.internet && !results.gpu) {
-                          friendlyError = "Internet access blocked and GPU not available. Please verify your phone number on Kaggle to enable these features.";
-                        } else if (!results.internet) {
-                          friendlyError = "Internet access is blocked. Please ensure your Kaggle account is phone-verified to use Internet.";
-                        } else if (!results.gpu) {
-                          friendlyError = "GPU is not available. Please ensure your Kaggle account has free GPU quota remaining.";
-                        }
-                        setVerifyError(friendlyError);
                       }
+                      let friendlyError = "Verification failed. Internet or GPU not available.";
+                      if (!results.internet && !results.gpu) {
+                        friendlyError = "Internet access blocked and GPU not available. Please verify your phone number on Kaggle to enable these features.";
+                      } else if (!results.internet) {
+                        friendlyError = "Internet access is blocked. Please ensure your Kaggle account is phone-verified to use Internet.";
+                      } else if (!results.gpu) {
+                        friendlyError = "GPU is not available. Please ensure your Kaggle account has free GPU quota remaining.";
+                      }
+                      setVerifyError(friendlyError);
                     } else {
                       polling = false;
                       setVerifyStatus('error');
@@ -1787,7 +1787,7 @@ export default function Home() {
                 setTimeout(() => setStatus("idle"), 3000);
               }
             }}
-            className={`w-full mt-6 font-medium py-3.5 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 relative overflow-hidden select-none ${
+            className={`w-full mt-4 sm:mt-5 font-medium py-3 sm:py-3.5 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 relative overflow-hidden select-none ${
               authMode === 'byok' && retryCooldown > 0
                 ? "bg-bg-input text-text-muted border border-border-color cursor-not-allowed opacity-60"
                 : "bg-accent-bg text-accent-text hover:opacity-90 active:scale-[0.98] cursor-pointer"
@@ -1815,20 +1815,19 @@ export default function Home() {
             </span>
           </button>
           
-          {/* Reserved error slot — prevents card height jump and left panel shift */}
-          <div className="min-h-[24px] mt-2.5 flex items-center justify-center">
-            {status === 'error' && (
-              <p className="text-red-400 text-xs text-center animate-in fade-in">
+          {status === 'error' && (
+            <div className="mt-2 text-center">
+              <p className="text-red-400 text-xs animate-in fade-in">
                 {message}
               </p>
-            )}
-          </div>
+            </div>
+          )}
 
           {(typeof window !== 'undefined' && (localStorage.getItem('kaggleUsername') || localStorage.getItem('appPassword'))) && (
-            <div className="mt-4 pt-3 border-t border-border-color/50 text-center">
+            <div className="mt-3 pt-2.5 border-t border-border-color/50 text-center">
               <button
                 onClick={() => handleSignOut()}
-                className="text-xs text-text-muted hover:text-red-400 transition-colors inline-flex items-center gap-1.5"
+                className="text-xs text-text-muted hover:text-red-400 transition-colors inline-flex items-center gap-1.5 py-0.5"
                 title="Flushes authentication credentials while preserving your library generations"
               >
                 <LogOut size={13} />
