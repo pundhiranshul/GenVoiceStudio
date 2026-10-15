@@ -8,12 +8,28 @@ import { Trash2, Mic, Wand2, AudioLines, Settings, Library, Pencil, Check, X } f
 export default function LibraryPage() {
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [enabled, setEnabled] = useState(true);
-  const [populateFromLibrary, setPopulateFromLibrary] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [enabled, setEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('saveHistoryLocally') !== 'false';
+    }
+    return true;
+  });
+  const [populateFromLibrary, setPopulateFromLibrary] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('populateFromLibrary') === 'true';
+    }
+    return false;
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
 
   useEffect(() => {
+    const isPopulate = localStorage.getItem('populateFromLibrary') === 'true';
+    setPopulateFromLibrary(isPopulate);
+    const isEnabled = localStorage.getItem('saveHistoryLocally') !== 'false';
+    setEnabled(isEnabled);
+    setMounted(true);
     loadData();
   }, []);
 
@@ -21,10 +37,6 @@ export default function LibraryPage() {
     setLoading(true);
     const history = await getHistory();
     setItems(history);
-    const isEnabled = await getHistoryEnabled();
-    setEnabled(isEnabled);
-    const isPopulate = localStorage.getItem('populateFromLibrary') === 'true';
-    setPopulateFromLibrary(isPopulate);
     setLoading(false);
   };
 
@@ -92,8 +104,8 @@ export default function LibraryPage() {
               <p className="text-xs text-text-secondary">Automatically save new Voice Clones, Voice Designs, and Sound Effects to this local history.</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer shrink-0">
-              <input type="checkbox" checked={enabled} onChange={handleToggle} className="sr-only peer" />
-              <div className="w-11 h-6 bg-border-color peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-bg"></div>
+              <input type="checkbox" checked={enabled} onChange={handleToggle} suppressHydrationWarning className="sr-only peer" />
+              <div className={`w-11 h-6 bg-border-color peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 ${mounted ? 'after:transition-all' : ''} peer-checked:bg-accent-bg`}></div>
             </label>
           </div>
 
@@ -111,6 +123,7 @@ export default function LibraryPage() {
               <input 
                 type="checkbox" 
                 checked={populateFromLibrary} 
+                suppressHydrationWarning
                 onChange={(e) => {
                   const val = e.target.checked;
                   setPopulateFromLibrary(val);
@@ -119,7 +132,7 @@ export default function LibraryPage() {
                 }} 
                 className="sr-only peer" 
               />
-              <div className="w-11 h-6 bg-border-color peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-bg"></div>
+              <div className={`w-11 h-6 bg-border-color peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 ${mounted ? 'after:transition-all' : ''} peer-checked:bg-accent-bg`}></div>
             </label>
           </div>
         </header>
