@@ -349,8 +349,6 @@ export default function Home() {
 
   const [generationMode, setGenerationMode] = useState<'clone' | 'design'>('clone');
   const [designTab, setDesignTab] = useState<'prompt' | 'record'>('prompt');
-  const [testVoiceText, setTestVoiceText] = useState("Hello! This is a test of my newly recorded custom voice.");
-  const [testingVoiceId, setTestingVoiceId] = useState<string | null>(null);
   const [uploadModalTab, setUploadModalTab] = useState<'file' | 'record'>('record');
   const [previewPlayingId, setPreviewPlayingId] = useState<string | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -1861,7 +1859,7 @@ export default function Home() {
 
       {/* ── Main Voice Design Layout ─────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:flex-1 md:min-h-0 md:overflow-hidden bg-bg-base">
-        <div className="w-full max-w-2xl mx-auto px-6 py-10 flex flex-col gap-6">
+        <div className="w-full max-w-2xl mx-auto px-6 py-5 sm:py-6 flex flex-col gap-4">
 
           {/* Design Mode Switcher */}
           <div className="flex bg-bg-panel p-1 rounded-2xl border border-border-color shadow-sm">
@@ -2043,17 +2041,17 @@ export default function Home() {
 
           {/* ── MODE B: RECORD YOUR VOICE ────────────────────────────── */}
           {designTab === 'record' && (
-            <div className="flex flex-col gap-6 animate-in fade-in duration-150">
+            <div className="flex flex-col gap-3.5 animate-in fade-in duration-150">
               
               {/* Description Card */}
-              <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-2xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">
-                <Mic size={16} className="text-accent-bg shrink-0 mt-0.5" />
+              <div className="p-3 bg-accent-bg/5 border border-accent-bg/10 rounded-xl flex items-center gap-2.5 text-xs text-text-secondary leading-relaxed">
+                <Mic size={15} className="text-accent-bg shrink-0" />
                 <span>
-                  <strong>Record Your Voice:</strong> Speak into your microphone and transcribe what you said. Your recorded voice will be saved into your Custom Voices library and can be used immediately across the entire GenVoice Studio.
+                  <strong>Record Your Voice:</strong> Speak into your microphone and write the exact transcript. Once saved, your voice will be ready across the studio.
                 </span>
               </div>
 
-              {/* Voice Recorder Component */}
+              {/* Voice Recorder Component (Compact, Single-Page) */}
               <VoiceRecorder
                 onVoiceSaved={(newVoice) => {
                   setCustomVoices((prev) => {
@@ -2061,143 +2059,38 @@ export default function Home() {
                     return [...filtered, newVoice];
                   });
                   setSelectedVoiceId(newVoice.id);
-                  setTestingVoiceId(newVoice.id);
                 }}
               />
 
-              {/* Test Voice Section */}
+              {/* Saved Custom Voices Bar (Compact 1-line list) */}
               {customVoices.length > 0 && (
-                <div className="flex flex-col gap-4 bg-bg-panel border border-border-color rounded-2xl p-5 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Sparkles size={16} className="text-accent-bg" />
-                      <h4 className="text-sm font-semibold text-text-primary">Test Voice with Sample Text</h4>
-                    </div>
-                    {testingVoiceId && (
-                      <span className="text-[11px] font-medium text-text-muted truncate max-w-[200px]">
-                        {customVoices.find(v => v.id === testingVoiceId)?.name}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Voice to Test</label>
-                    <select
-                      value={testingVoiceId || (customVoices[customVoices.length - 1]?.id || '')}
-                      onChange={(e) => setTestingVoiceId(e.target.value)}
-                      className="w-full bg-bg-input border border-border-color rounded-xl px-3 py-2.5 text-sm text-text-primary outline-none focus:ring-2 focus:ring-ring-color"
-                    >
-                      {customVoices.map((v) => (
-                        <option key={v.id} value={v.id}>
-                          {v.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">Text to Synthesize</label>
-                    <textarea
-                      value={testVoiceText}
-                      onChange={(e) => setTestVoiceText(e.target.value)}
-                      rows={2}
-                      className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary outline-none focus:ring-2 focus:ring-ring-color resize-none placeholder:text-text-muted"
-                      placeholder="Enter text to speak in this custom voice..."
-                    />
-                  </div>
-
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      disabled={isGen || !testVoiceText.trim()}
-                      onClick={() => {
-                        const voiceToTest = customVoices.find(v => v.id === (testingVoiceId || customVoices[customVoices.length - 1]?.id));
-                        if (voiceToTest) {
-                          setGeneratedPreviewText(testVoiceText);
-                          handleGenerate(testVoiceText, voiceToTest);
-                        }
-                      }}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-accent-bg text-accent-text hover:opacity-90 disabled:opacity-40 transition-all shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                    >
-                      {isGen ? (
-                        <span className="flex items-center gap-2">
-                          <Loader2 size={16} className="animate-spin" /> Synthesizing...
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-2">
-                          <Sparkles size={16} /> Synthesize Test Clip
-                        </span>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Status and Generated Output */}
-                  {status === "error" && (
-                    <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs">
-                      {message}
-                    </div>
-                  )}
-
-                  {status === 'complete' && (stitchedAudioUrl || finalAudios.length > 0 || chunkAudios.length > 0) && (
-                    <div className="mt-2 flex flex-col gap-2 border-t border-border-subtle pt-3">
-                      <span className="text-xs font-semibold text-text-primary">Generated Test Output:</span>
-                      <audio controls src={stitchedAudioUrl || finalAudios[0]?.url || chunkAudios[0]?.url} className="w-full" />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Saved Custom Voices List */}
-              {customVoices.length > 0 && (
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">
-                      My Custom Voices ({customVoices.length})
-                    </label>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 p-2.5 px-3 bg-bg-panel border border-border-color rounded-xl text-xs overflow-hidden">
+                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider shrink-0">
+                    Saved ({customVoices.length}):
+                  </span>
+                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
                     {customVoices.map((voice) => (
                       <div
                         key={voice.id}
-                        className="p-3.5 rounded-xl bg-bg-panel border border-border-color flex items-center justify-between gap-3 shadow-sm hover:border-border-color transition-colors"
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-bg-input border border-border-color shrink-0 shadow-xs"
                       >
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <button
-                            type="button"
-                            onClick={() => togglePlayCustomVoice(voice)}
-                            className="w-8 h-8 rounded-full bg-accent-bg/10 text-accent-bg flex items-center justify-center hover:bg-accent-bg hover:text-accent-text transition-colors shrink-0 outline-none"
-                            title={previewPlayingId === voice.id ? "Pause" : "Play sample"}
-                          >
-                            {previewPlayingId === voice.id ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5" />}
-                          </button>
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-semibold text-text-primary truncate">{voice.name}</span>
-                            <span className="text-xs text-text-muted truncate">"{voice.transcript}"</span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => setTestingVoiceId(voice.id)}
-                            className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
-                              testingVoiceId === voice.id
-                                ? 'bg-accent-bg text-accent-text border-accent-bg'
-                                : 'bg-bg-input border-border-color text-text-secondary hover:text-text-primary hover:bg-bg-hover'
-                            }`}
-                          >
-                            {testingVoiceId === voice.id ? 'Selected' : 'Select'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteVoice(voice.id)}
-                            className="p-1.5 text-text-muted hover:text-red-500 rounded-lg hover:bg-bg-hover transition-colors outline-none"
-                            title="Delete voice"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => togglePlayCustomVoice(voice)}
+                          className="text-accent-bg hover:opacity-80 transition-opacity"
+                          title={previewPlayingId === voice.id ? "Pause" : "Play preview"}
+                        >
+                          {previewPlayingId === voice.id ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
+                        </button>
+                        <span className="font-medium text-text-primary max-w-[130px] truncate">{voice.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteVoice(voice.id)}
+                          className="text-text-muted hover:text-red-500 ml-0.5 transition-colors"
+                          title="Delete voice"
+                        >
+                          <Trash2 size={12} />
+                        </button>
                       </div>
                     ))}
                   </div>

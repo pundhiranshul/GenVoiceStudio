@@ -103,29 +103,11 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
  * Recommended reading scripts for voice recording.
  * Pangrams and natural sentences with rich phonetic variety.
  */
-export const RECORDING_SUGGESTED_SCRIPTS = [
-  {
-    title: "The Classic Pangram",
-    text: "The quick brown fox jumps over the lazy dog."
-  },
-  {
-    title: "Expressive & Hopeful",
-    text: "Freedom kindles the flames of hope in every heart."
-  },
-  {
-    title: "Atmospheric & Dramatic",
-    text: "Sphinx of black quartz, judge my vow."
-  },
-  {
-    title: "Conversational & Warm",
-    text: "Life isn't about finding yourself. Life is about creating yourself."
-  },
-  {
-    title: "Audiobook Narration",
-    text: "A wizard's job is to vex chumps quickly in fog, revealing secrets kept for centuries."
-  },
-  {
-    title: "Short & Punchy",
-    text: "Pack my box with five dozen liquor jugs."
-  }
+export const RECORDING_SUGGESTED_SCRIPTS: string[] = [
+  "The quick brown fox jumps over the lazy dog.",
+  "Freedom kindles the flames of hope in every heart.",
+  "Sphinx of black quartz, judge my vow.",
+  "Life isn't about finding yourself. Life is about creating yourself.",
+  "A wizard's job is to vex chumps quickly in fog, revealing secrets kept for centuries.",
+  "Pack my box with five dozen liquor jugs."
 ];
