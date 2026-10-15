@@ -1898,36 +1898,36 @@ export default function Home() {
 
       {/* ── Main Voice Design Layout ─────────────────────────────── */}
       <main className="flex-1 flex flex-col min-w-0 md:overflow-y-auto">
-        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+        <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-3.5">
 
           {/* Header Row: Switcher & Saved Voices Button */}
           <div className="flex items-center justify-between gap-3">
             {/* Design Mode Switcher */}
-            <div className="flex bg-bg-panel p-1 rounded-2xl border border-border-color shadow-sm flex-1 max-w-md">
+            <div className="h-10 sm:h-11 flex items-center bg-bg-panel p-1 rounded-2xl border border-border-color shadow-sm w-fit">
               <button
                 type="button"
                 onClick={() => setDesignTab('prompt')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 sm:py-2.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-colors duration-150 select-none outline-none ${
+                className={`h-full flex items-center justify-center gap-2 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-colors duration-150 select-none outline-none whitespace-nowrap ${
                   designTab === 'prompt'
                     ? 'bg-accent-bg text-accent-text shadow-sm'
                     : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
                 }`}
               >
-                <Wand2 size={16} />
+                <Wand2 size={16} className="shrink-0" />
                 <span>AI Voice Design</span>
               </button>
               <button
                 type="button"
                 onClick={() => setDesignTab('record')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 sm:py-2.5 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-colors duration-150 select-none outline-none ${
+                className={`h-full flex items-center justify-center gap-2 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-colors duration-150 select-none outline-none whitespace-nowrap ${
                   designTab === 'record'
                     ? 'bg-accent-bg text-accent-text shadow-sm'
                     : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
                 }`}
               >
-                <Mic size={16} />
+                <Mic size={16} className="shrink-0" />
                 <span>Record Your Voice</span>
-                <span className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase rounded-full leading-none transition-colors ${
+                <span className={`px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase rounded-full leading-none transition-colors shrink-0 ${
                   designTab === 'record'
                     ? 'bg-accent-text/20 text-accent-text'
                     : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
@@ -1941,11 +1941,11 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setShowSavedVoicesModal(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-bg-panel border border-border-color text-xs sm:text-sm font-semibold text-text-primary hover:bg-bg-hover hover:border-border-color/80 transition-all shadow-sm shrink-0 outline-none"
+              className="h-10 sm:h-11 flex items-center gap-2 px-4 rounded-xl bg-bg-panel border border-border-color text-xs sm:text-sm font-semibold text-text-primary hover:bg-bg-hover hover:border-border-color/80 transition-all shadow-sm shrink-0 outline-none"
               title="View and manage saved custom voices"
             >
-              <Volume2 size={16} className="text-accent-bg" />
-              <span className="hidden sm:inline">Saved Voices</span>
+              <Volume2 size={16} className="text-accent-bg shrink-0" />
+              <span className="hidden sm:inline whitespace-nowrap">Saved Voices</span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-accent-bg/10 text-accent-bg font-bold">
                 {customVoices.length}
               </span>
@@ -1954,15 +1954,15 @@ export default function Home() {
 
           {/* Description Card */}
           {designTab === 'prompt' ? (
-            <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-2xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">
-              <Wand2 size={18} className="text-accent-bg shrink-0 mt-0.5" />
+            <div className="py-2.5 px-3.5 sm:px-4 bg-accent-bg/5 border border-accent-bg/10 rounded-xl flex items-center gap-2.5 text-xs text-text-secondary leading-snug">
+              <Wand2 size={15} className="text-accent-bg shrink-0" />
               <span>
-                <strong className="text-text-primary font-semibold">AI Voice Design:</strong> Create an entirely new synthetic voice from scratch using natural language descriptions (age, gender, accent, tone, and character).
+                <strong className="text-text-primary font-semibold">AI Voice Design:</strong> Create a new synthetic voice from natural language descriptions (age, gender, accent, tone, character).
               </span>
             </div>
           ) : (
-            <div className="p-4 bg-accent-bg/5 border border-accent-bg/10 rounded-2xl flex items-start gap-3 text-sm text-text-secondary leading-relaxed">
-              <Mic size={18} className="text-accent-bg shrink-0 mt-0.5" />
+            <div className="py-2.5 px-3.5 sm:px-4 bg-accent-bg/5 border border-accent-bg/10 rounded-xl flex items-center gap-2.5 text-xs text-text-secondary leading-snug">
+              <Mic size={15} className="text-accent-bg shrink-0" />
               <span>
                 <strong className="text-text-primary font-semibold">Record Your Voice:</strong> Record a clear sample of your voice to create an instant custom voice profile for speech generation.
               </span>
@@ -1970,15 +1970,15 @@ export default function Home() {
           )}
 
           {/* Main Studio View */}
-          <div className="w-full flex flex-col gap-6">
+          <div className="w-full flex flex-col gap-3 sm:gap-4">
             
             {/* ── MODE A: AI VOICE DESIGN ── */}
             {designTab === 'prompt' && (
-              <div className="bg-bg-panel border border-border-color rounded-2xl p-5 sm:p-6 shadow-sm focus-within:ring-2 ring-ring-color transition-all flex flex-col gap-5">
+              <div className="bg-bg-panel border border-border-color rounded-2xl p-4 sm:p-5 shadow-sm focus-within:ring-2 ring-ring-color transition-all flex flex-col gap-3 sm:gap-3.5">
                 
                 {/* Voice Name */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] sm:text-xs font-semibold tracking-wider text-text-muted uppercase">
                     Voice Name
                   </label>
                   <input
@@ -1986,26 +1986,26 @@ export default function Home() {
                     placeholder="e.g. Grumpy Wizard, Calm Narrator"
                     value={voiceName}
                     onChange={(e) => setVoiceName(e.target.value)}
-                    className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-2.5 text-sm sm:text-base text-text-primary placeholder:text-text-muted outline-none focus:border-border-color transition-all"
+                    className="w-full bg-bg-input border border-border-color rounded-xl px-3.5 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color transition-all"
                   />
                 </div>
 
                 {/* Voice Design Instruction */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] sm:text-xs font-semibold tracking-wider text-text-muted uppercase">
                     Voice Design Instruction
                   </label>
                   <textarea
                     value={designPrompt}
                     onChange={(e) => setDesignPrompt(e.target.value)}
                     placeholder="e.g. A deep, resonant older male voice with a slight Scottish accent, speaking with a warm, deliberate storytelling cadence..."
-                    rows={4}
-                    className="w-full bg-bg-input border border-border-color rounded-xl p-4 text-sm sm:text-base leading-relaxed text-text-primary outline-none focus:border-border-color resize-none placeholder:text-text-muted transition-all"
+                    rows={3}
+                    className="w-full bg-bg-input border border-border-color rounded-xl p-3 text-xs sm:text-sm leading-relaxed text-text-primary outline-none focus:border-border-color resize-none placeholder:text-text-muted transition-all"
                   />
                   
                   {/* Character Count & Copy (Matching SFX) */}
-                  <div className="flex items-center justify-end gap-3 mt-1 text-text-muted">
-                    <span className="text-xs uppercase tracking-wider font-medium">{designPrompt.length} chars</span>
+                  <div className="flex items-center justify-end gap-2 text-text-muted mt-0.5">
+                    <span className="text-[11px] uppercase tracking-wider font-medium">{designPrompt.length} chars</span>
                     <button 
                       type="button"
                       onClick={() => {
@@ -2016,44 +2016,43 @@ export default function Home() {
                         }
                       }}
                       disabled={!designPrompt}
-                      className="p-1.5 hover:bg-bg-hover rounded-md transition-colors outline-none disabled:opacity-50"
+                      className="p-1 hover:bg-bg-hover rounded transition-colors outline-none disabled:opacity-50"
                       title="Copy instruction"
                     >
-                      {copiedText ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                      {copiedText ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
                     </button>
                   </div>
                 </div>
 
                 {/* Guidance Scale */}
-                <div className="flex flex-col gap-2 pt-1">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">Guidance Scale</label>
-                    <span className="text-xs font-mono text-text-muted font-bold">{guidanceScale}</span>
-                  </div>
-                  <div className="relative flex items-center h-6">
-                    {/* Explicit visible track line */}
-                    <div className="absolute inset-x-0 h-1.5 rounded-full bg-neutral-300 dark:bg-neutral-700 overflow-hidden">
-                      <div 
-                        className="h-full bg-neutral-900 dark:bg-neutral-100 rounded-full transition-all duration-75" 
-                        style={{ width: `${((guidanceScale - 1) / (10 - 1)) * 100}%` }} 
-                      />
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <label className="text-[11px] sm:text-xs font-semibold tracking-wider text-text-muted uppercase">Guidance Scale</label>
+                      <span className="text-xs font-mono text-text-primary font-bold bg-bg-base px-2 py-0.5 rounded-md border border-border-color">
+                        {guidanceScale.toFixed(1)}
+                      </span>
                     </div>
+                    <p className="text-[11px] sm:text-xs text-text-muted text-right">
+                      Higher values strengthen prompt adherence. Recommended: 4.0 for Voice Design.
+                    </p>
+                  </div>
+                  <div className="relative flex items-center h-5 w-full">
+                    {/* Explicit visible continuous line track */}
+                    <div className="absolute inset-x-0 h-0.5 rounded-full bg-neutral-900 dark:bg-neutral-100 pointer-events-none" />
                     <input
                       type="range"
                       min="1" max="10" step="0.1"
                       value={guidanceScale}
                       onChange={(e) => setGuidanceScale(parseFloat(e.target.value))}
-                      className="relative z-10 w-full h-1.5 appearance-none bg-transparent cursor-pointer accent-neutral-900 dark:accent-neutral-100"
+                      className="black-bob-slider relative z-10 w-full h-5 appearance-none bg-transparent cursor-pointer outline-none"
                     />
                   </div>
-                  <p className="text-xs text-text-muted leading-tight">
-                    Higher values strengthen prompt adherence. Recommended: 4.0 for Voice Design.
-                  </p>
                 </div>
 
                 {/* Error */}
                 {status === "error" && (
-                  <div className={`p-4 rounded-xl text-sm animate-in fade-in ${
+                  <div className={`p-3 rounded-xl text-xs animate-in fade-in ${
                     message.toLowerCase().includes("cancel") || message.toLowerCase().includes("stopped")
                       ? "bg-amber-500/10 border border-amber-500/20 text-amber-500"
                       : "bg-red-500/10 border border-red-500/20 text-red-500"
@@ -2068,26 +2067,26 @@ export default function Home() {
                 )}
 
                 {/* Controls & Generate Buttons (Matching SFX) */}
-                <div className="flex flex-col gap-3 pt-4 border-t border-border-color/50">
+                <div className="flex flex-col gap-2.5 pt-3 border-t border-border-color/50">
                   {optimizeDesignError && <p className="text-xs text-red-500">{optimizeDesignError}</p>}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
                     
                     {/* Left Controls (AI Write / Optimize) */}
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto">
                       <button
                         onClick={() => { setShowWriteDesignModal(true); setWriteDesignError(""); }}
                         disabled={status !== "idle" && status !== "complete" && status !== "error"}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-base border border-border-color rounded-xl text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none w-full sm:w-auto whitespace-nowrap"
+                        className="flex items-center justify-center gap-2 px-3.5 py-2 bg-bg-base border border-border-color rounded-xl text-xs sm:text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none w-full sm:w-auto whitespace-nowrap"
                       >
-                        <Sparkles size={16} className="text-accent-bg" />
+                        <Sparkles size={15} className="text-accent-bg" />
                         AI Write Prompt
                       </button>
                       <button
                         onClick={handleOptimizeDesignPrompt}
                         disabled={isOptimizingDesign || !designPrompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-bg-base border border-border-color rounded-xl text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none w-full sm:w-auto whitespace-nowrap"
+                        className="flex items-center justify-center gap-2 px-3.5 py-2 bg-bg-base border border-border-color rounded-xl text-xs sm:text-sm font-medium text-text-primary hover:bg-bg-hover transition-all disabled:opacity-50 outline-none w-full sm:w-auto whitespace-nowrap"
                       >
-                        {isOptimizingDesign ? <Loader2 size={16} className="animate-spin text-accent-bg" /> : <Wand2 size={16} className="text-accent-bg" />}
+                        {isOptimizingDesign ? <Loader2 size={15} className="animate-spin text-accent-bg" /> : <Wand2 size={15} className="text-accent-bg" />}
                         AI Optimize
                       </button>
                     </div>
@@ -2097,9 +2096,9 @@ export default function Home() {
                       {isGen && (
                         <button
                           onClick={stopRun}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-red-500/10 text-red-500 border border-red-500/20 px-6 py-2.5 rounded-xl font-semibold hover:bg-red-500/20 transition-all outline-none whitespace-nowrap text-sm"
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-red-500/10 text-red-500 border border-red-500/20 px-5 py-2 rounded-xl font-semibold hover:bg-red-500/20 transition-all outline-none whitespace-nowrap text-xs sm:text-sm"
                         >
-                          <X size={16} /> Stop
+                          <X size={15} /> Stop
                         </button>
                       )}
                       <button
@@ -2110,15 +2109,15 @@ export default function Home() {
                           handleGenerate(textToGen);
                         }}
                         disabled={isGen || !designPrompt.trim() || (status !== "idle" && status !== "complete" && status !== "error")}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-text-primary text-bg-base px-6 py-2.5 rounded-xl font-semibold hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100 outline-none whitespace-nowrap text-sm"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-text-primary text-bg-base px-5 py-2 rounded-xl font-semibold hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100 outline-none whitespace-nowrap text-xs sm:text-sm"
                       >
                         {isGen ? (
                           <>
-                            <Loader2 size={16} className="animate-spin" /> Generating Preview...
+                            <Loader2 size={15} className="animate-spin" /> Generating Preview...
                           </>
                         ) : (
                           <>
-                            <Sparkles size={16} /> Generate Preview
+                            <Sparkles size={15} /> Generate Preview
                           </>
                         )}
                       </button>
@@ -2131,9 +2130,9 @@ export default function Home() {
 
             {/* Audio Preview & Save Section */}
             {status === 'complete' && (stitchedAudioUrl || finalAudios.length > 0 || chunkAudios.length > 0) && !isGen && (
-              <div className="bg-bg-panel border border-border-color rounded-2xl p-6 shadow-sm flex flex-col gap-4 animate-in zoom-in-95 duration-300">
-                <div className="flex items-center justify-between pb-3 border-b border-border-subtle">
-                  <h3 className="font-semibold text-sm text-text-muted uppercase tracking-wider">Generated Voice Preview</h3>
+              <div className="bg-bg-panel border border-border-color rounded-2xl p-3.5 sm:p-4 shadow-sm flex flex-col gap-3 animate-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
+                  <h3 className="font-semibold text-xs text-text-muted uppercase tracking-wider">Generated Voice Preview</h3>
                   <span className="text-xs text-text-muted font-medium">{voiceName || "Custom Voice"}</span>
                 </div>
 
@@ -2147,12 +2146,12 @@ export default function Home() {
                 <button
                   disabled={isVoiceSaved}
                   onClick={() => handleSaveVoice(stitchedAudioUrl || (finalAudios[0] && finalAudios[0].url) || (chunkAudios[0] && chunkAudios[0].url))}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-accent-bg text-accent-text hover:opacity-90 disabled:opacity-50 transition-all shadow-sm outline-none"
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-accent-bg text-accent-text hover:opacity-90 disabled:opacity-50 transition-all shadow-sm outline-none"
                 >
                   {isVoiceSaved ? (
-                    <span className="flex items-center gap-2"><Check size={16} /> Saved to Custom Voices!</span>
+                    <span className="flex items-center gap-2"><Check size={15} /> Saved to Custom Voices!</span>
                   ) : (
-                    <span className="flex items-center gap-2"><Sparkles size={16} /> Save to Custom Voices</span>
+                    <span className="flex items-center gap-2"><Sparkles size={15} /> Save to Custom Voices</span>
                   )}
                 </button>
               </div>

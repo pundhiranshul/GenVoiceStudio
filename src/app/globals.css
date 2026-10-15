@@ -114,3 +114,55 @@ textarea.custom-highlight::selection {
   color: transparent !important;
   background-color: rgba(100, 150, 255, 0.25) !important;
 }
+
+/* Custom Guidance Scale Slider with crisp line & black draggable blob */
+.black-bob-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  width: 100%;
+  outline: none;
+}
+.black-bob-slider::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 100%;
+}
+.black-bob-slider::-moz-range-track {
+  background: transparent;
+  height: 100%;
+}
+.black-bob-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background-color: #111111;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+  transition: transform 0.12s ease;
+}
+.dark .black-bob-slider::-webkit-slider-thumb {
+  background-color: #EDEDED;
+}
+.black-bob-slider::-webkit-slider-thumb:hover,
+.black-bob-slider::-webkit-slider-thumb:active {
+  transform: scale(1.2);
+}
+.black-bob-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background-color: #111111;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+  transition: transform 0.12s ease;
+}
+.dark .black-bob-slider::-moz-range-thumb {
+  background-color: #EDEDED;
+}
+.black-bob-slider::-moz-range-thumb:hover,
+.black-bob-slider::-moz-range-thumb:active {
+  transform: scale(1.2);
+}
