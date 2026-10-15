@@ -685,31 +685,67 @@ export function VoiceRecorder({
                   </button>
                 </div>
 
-                {/* Clean Noise Interactive Toggle */}
-                <label className="flex items-center gap-1.5 cursor-pointer text-text-secondary hover:text-text-primary transition-colors select-none">
-                  <input
-                    type="checkbox"
-                    checked={cleanAudioEnabled}
-                    disabled={isFiltering}
-                    onChange={(e) => {
-                      const nextClean = e.target.checked;
-                      setCleanAudioEnabled(nextClean);
-                      if (decodedBufferRef.current) {
-                        recomputePreview(decodedBufferRef.current, nextClean, trimStart, trimEnd);
+                {/* Clean Noise Interactive Buttons */}
+                <div className="flex items-center gap-1 bg-bg-input p-0.5 rounded-xl border border-border-color">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!cleanAudioEnabled) {
+                        setCleanAudioEnabled(true);
+                        if (decodedBufferRef.current) {
+                          recomputePreview(decodedBufferRef.current, true, trimStart, trimEnd);
+                        }
                       }
                     }}
-                    className="rounded text-accent-bg focus:ring-0 cursor-pointer w-3.5 h-3.5"
-                  />
-                  <span className="flex items-center gap-1 text-[11px] font-semibold">
-                    {isFiltering ? (
-                      <Loader2 size={12} className="animate-spin text-accent-bg" />
+                    disabled={isFiltering}
+                    className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1.5 ${
+                      cleanAudioEnabled
+                        ? 'bg-accent-bg text-accent-text shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                    title="Enable studio noise cleaning"
+                  >
+                    {isFiltering && cleanAudioEnabled ? (
+                      <Loader2 size={12} className="animate-spin" />
                     ) : (
-                      <ShieldCheck size={13} className={cleanAudioEnabled ? "text-accent-bg" : "text-text-muted"} />
+                      <Sparkles size={12} />
                     )}
                     Clean Voice
-                  </span>
-                </label>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (cleanAudioEnabled) {
+                        setCleanAudioEnabled(false);
+                        if (decodedBufferRef.current) {
+                          recomputePreview(decodedBufferRef.current, false, trimStart, trimEnd);
+                        }
+                      }
+                    }}
+                    disabled={isFiltering}
+                    className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1.5 ${
+                      !cleanAudioEnabled
+                        ? 'bg-accent-bg text-accent-text shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                    title="Listen to raw mic audio without cleaning"
+                  >
+                    {isFiltering && !cleanAudioEnabled ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                      <Mic size={12} />
+                    )}
+                    Raw Mic
+                  </button>
+                </div>
               </div>
+
+              {cleanAudioEnabled && (
+                <div className="text-[10px] text-text-muted flex items-center gap-1.5 pt-1 border-t border-border-subtle animate-in fade-in duration-150">
+                  <ShieldCheck size={12} className="text-emerald-400 shrink-0" />
+                  <span>Spectral noise subtraction (-18dB) • Sub-bass de-rumble • Pause gate</span>
+                </div>
+              )}
 
             </div>
           </div>

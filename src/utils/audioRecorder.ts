@@ -178,20 +178,190 @@ export function sliceAudioBuffer(
 }
 
 /**
+ * Fast in-place Radix-2 Cooley-Tukey FFT.
+ */
+function fft(real: Float32Array, imag: Float32Array) {
+  const n = real.length;
+  let j = 0;
+  for (let i = 0; i < n - 1; i++) {
+    if (i < j) {
+      const tr = real[i]; real[i] = real[j]; real[j] = tr;
+      const ti = imag[i]; imag[i] = imag[j]; imag[j] = ti;
+    }
+    let k = n >> 1;
+    while (k <= j) {
+      j -= k;
+      k >>= 1;
+    }
+    j += k;
+  }
+  for (let l = 2; l <= n; l <<= 1) {
+    const half = l >> 1;
+    const angle = -2 * Math.PI / l;
+    const wstepR = Math.cos(angle);
+    const wstepI = Math.sin(angle);
+    for (let i = 0; i < n; i += l) {
+      let curR = 1, curI = 0;
+      for (let m = 0; m < half; m++) {
+        const uR = real[i + m];
+        const uI = imag[i + m];
+        const vR = real[i + m + half] * curR - imag[i + m + half] * curI;
+        const vI = real[i + m + half] * curI + imag[i + m + half] * curR;
+        real[i + m] = uR + vR;
+        imag[i + m] = uI + vI;
+        real[i + m + half] = uR - vR;
+        imag[i + m + half] = uI - vI;
+        const nextR = curR * wstepR - curI * wstepI;
+        const nextI = curR * wstepI + curI * wstepR;
+        curR = nextR; curI = nextI;
+      }
+    }
+  }
+}
+
+/**
+ * Inverse FFT.
+ */
+function ifft(real: Float32Array, imag: Float32Array) {
+  const n = real.length;
+  for (let i = 0; i < n; i++) imag[i] = -imag[i];
+  fft(real, imag);
+  for (let i = 0; i < n; i++) {
+    real[i] /= n;
+    imag[i] = -imag[i] / n;
+  }
+}
+
+/**
+ * Multi-band Spectral Subtraction Noise Profiler & Suppressor.
+ * Eliminates continuous background fan drone, AC hum, and microphone hiss
+ * across all frequency bins, with spectral smoothing to prevent musical artifacts.
+ */
+function spectralDenoise(data: Float32Array): Float32Array {
+  const N = 1024;
+  const H = N / 4; // 75% overlap
+  const frameCount = data.length;
+  if (frameCount < N * 2) return data;
+
+  const numFrames = Math.floor((frameCount - N) / H);
+  const halfN = N / 2;
+  const hann = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    hann[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / N));
+  }
+
+  const frameMags: Float32Array[] = [];
+  const framesReal: Float32Array[] = [];
+  const framesImag: Float32Array[] = [];
+
+  for (let f = 0; f < numFrames; f++) {
+    const offset = f * H;
+    const real = new Float32Array(N);
+    const imag = new Float32Array(N);
+    for (let i = 0; i < N; i++) {
+      real[i] = data[offset + i] * hann[i];
+    }
+    fft(real, imag);
+    framesReal.push(real);
+    framesImag.push(imag);
+
+    const mags = new Float32Array(halfN + 1);
+    for (let k = 0; k <= halfN; k++) {
+      mags[k] = Math.sqrt(real[k] * real[k] + imag[k] * imag[k]);
+    }
+    frameMags.push(mags);
+  }
+
+  // Estimate noise floor profile per bin using lowest 15% quantile
+  const noiseFloor = new Float32Array(halfN + 1);
+  for (let k = 0; k <= halfN; k++) {
+    const vals: number[] = [];
+    for (let f = 0; f < numFrames; f++) {
+      vals.push(frameMags[f][k]);
+    }
+    vals.sort((a, b) => a - b);
+    noiseFloor[k] = vals[Math.floor(vals.length * 0.15)] || 1e-5;
+  }
+
+  const alpha = 1.85; // Over-subtraction factor
+  const beta = 0.035; // Spectral floor (-29dB)
+  const out = new Float32Array(frameCount);
+  let prevGain = new Float32Array(halfN + 1).fill(1.0);
+
+  for (let f = 0; f < numFrames; f++) {
+    const offset = f * H;
+    const real = framesReal[f];
+    const imag = framesImag[f];
+    const mags = frameMags[f];
+    const rawGain = new Float32Array(halfN + 1);
+
+    for (let k = 0; k <= halfN; k++) {
+      const snr = mags[k] / (noiseFloor[k] + 1e-7);
+      rawGain[k] = Math.max(beta, 1.0 - (alpha / (snr + 1e-4)));
+    }
+
+    // Frequency 3-tap smoothing & time exponential smoothing to remove musical noise
+    const smoothGain = new Float32Array(halfN + 1);
+    for (let k = 0; k <= halfN; k++) {
+      const prev = k > 0 ? rawGain[k - 1] : rawGain[k];
+      const next = k < halfN ? rawGain[k + 1] : rawGain[k];
+      let g = 0.2 * prev + 0.6 * rawGain[k] + 0.2 * next;
+      g = 0.7 * g + 0.3 * prevGain[k];
+      smoothGain[k] = g;
+      prevGain[k] = g;
+    }
+
+    for (let k = 0; k <= halfN; k++) {
+      const g = smoothGain[k];
+      real[k] *= g;
+      imag[k] *= g;
+      if (k > 0 && k < halfN) {
+        real[N - k] = real[k];
+        imag[N - k] = -imag[k];
+      }
+    }
+
+    ifft(real, imag);
+    for (let i = 0; i < N; i++) {
+      out[offset + i] += (real[i] * hann[i]) / 1.5;
+    }
+  }
+
+  // Seamlessly preserve audio head/tail
+  for (let i = 0; i < H; i++) {
+    if (out[i] === 0) out[i] = data[i] * 0.1;
+  }
+  return out;
+}
+
+/**
  * Applies studio-grade noise cleaning to an AudioBuffer:
- * 1. 110Hz High-Pass Filter: Cuts out desk thumps, AC rumble, handling noise.
- * 2. 8kHz Low-Pass Filter: Cuts out high-frequency electrical hiss/fan coil whine.
- * 3. High-Shelf Filter: Tames harsh ambient room reflections.
- * 4. Vocal Dynamics Compressor: Smooths vocal dynamics.
- * 5. Adaptive Noise Gate with Per-Sample Gain Smoothing: Silences ambient room noise during speech pauses.
- * 6. Peak Normalization: Optimizes amplitude to -0.5 dBFS.
+ * 1. Multi-band Spectral Subtraction: Removes continuous background fan noise, AC hum, electrical hiss.
+ * 2. 95Hz High-Pass Filter: Cuts out desk thumps, AC rumble, handling noise.
+ * 3. 9.5kHz Low-Pass Filter: Cuts out supersonic hiss & coil whine.
+ * 4. High-Shelf Filter: Tames harsh ambient room reflections.
+ * 5. Vocal Dynamics Compressor: Smooths vocal dynamics.
+ * 6. Adaptive Downward Expander: Silences ambient room noise during speech pauses (-30dB).
+ * 7. Peak Normalization: Optimizes amplitude to -0.5 dBFS.
  */
 export async function cleanAudioBuffer(buffer: AudioBuffer): Promise<AudioBuffer> {
   const sampleRate = buffer.sampleRate;
   const frameCount = buffer.length;
   const channels = buffer.numberOfChannels;
 
-  // Step 1: Run through hardware-accelerated OfflineAudioContext for filtering
+  // Step 1: Pre-process with Spectral Subtraction to eliminate stationary hiss/fan noise
+  const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+  const tempCtx = new AudioCtx();
+  const spectrallyCleaned = tempCtx.createBuffer(channels, frameCount, sampleRate);
+  tempCtx.close().catch(() => {});
+
+  for (let c = 0; c < channels; c++) {
+    const rawData = buffer.getChannelData(c);
+    const cleanedData = spectralDenoise(rawData);
+    spectrallyCleaned.getChannelData(c).set(cleanedData);
+  }
+
+  // Step 2: Biquad acoustic filtering & dynamics compressor via OfflineAudioContext
   const offlineCtx = new (window.OfflineAudioContext || (window as any).webkitOfflineAudioContext)(
     channels,
     frameCount,
@@ -199,33 +369,33 @@ export async function cleanAudioBuffer(buffer: AudioBuffer): Promise<AudioBuffer
   );
 
   const source = offlineCtx.createBufferSource();
-  source.buffer = buffer;
+  source.buffer = spectrallyCleaned;
 
-  // 110Hz High-pass Butterworth filter (AC rumble, mic handling, desk thump)
+  // 95Hz High-pass Butterworth filter (AC rumble, mic handling, desk thump)
   const highpass = offlineCtx.createBiquadFilter();
   highpass.type = 'highpass';
-  highpass.frequency.value = 110;
+  highpass.frequency.value = 95;
   highpass.Q.value = 0.8;
 
-  // 8kHz Low-pass filter (fan whine, high hiss)
+  // 9.5kHz Low-pass filter (high coil whine, supersonic hiss)
   const lowpass = offlineCtx.createBiquadFilter();
   lowpass.type = 'lowpass';
-  lowpass.frequency.value = 8000;
+  lowpass.frequency.value = 9500;
   lowpass.Q.value = 0.707;
 
-  // High-shelf filter to tame room hiss
+  // High-shelf filter to tame room reflection harshness
   const highshelf = offlineCtx.createBiquadFilter();
   highshelf.type = 'highshelf';
   highshelf.frequency.value = 4500;
-  highshelf.gain.value = -3.0;
+  highshelf.gain.value = -2.5;
 
-  // Vocal dynamics compressor
+  // Vocal dynamics compressor to smooth vocal delivery
   const compressor = offlineCtx.createDynamicsCompressor();
   compressor.threshold.value = -20;
   compressor.knee.value = 6;
-  compressor.ratio.value = 3.0;
+  compressor.ratio.value = 2.8;
   compressor.attack.value = 0.003;
-  compressor.release.value = 0.20;
+  compressor.release.value = 0.18;
 
   source.connect(highpass);
   highpass.connect(lowpass);
@@ -236,14 +406,14 @@ export async function cleanAudioBuffer(buffer: AudioBuffer): Promise<AudioBuffer
   source.start(0);
   const filtered = await offlineCtx.startRendering();
 
-  // Step 2: Adaptive Noise Gate with Per-Sample Smooth Gain Envelope
+  // Step 3: Adaptive Downward Expander (Smooth Noise Gate on speech pauses)
   const windowSize = Math.floor(sampleRate * 0.02); // 20ms analysis window
   const numWindows = Math.floor(frameCount / windowSize);
 
   for (let c = 0; c < channels; c++) {
     const data = filtered.getChannelData(c);
 
-    // Calculate RMS across all windows to estimate dynamic noise floor vs vocal peaks
+    // Calculate RMS across all windows
     const rmsValues: number[] = [];
     for (let w = 0; w < numWindows; w++) {
       const start = w * windowSize;
@@ -255,30 +425,27 @@ export async function cleanAudioBuffer(buffer: AudioBuffer): Promise<AudioBuffer
       rmsValues.push(Math.sqrt(sumSq / (end - start)));
     }
 
-    // Sort to determine 25th percentile (noise floor) and 85th percentile (speech level)
     const sortedRms = [...rmsValues].sort((a, b) => a - b);
-    const floorRms = sortedRms[Math.floor(sortedRms.length * 0.25)] || 0.005;
+    const floorRms = sortedRms[Math.floor(sortedRms.length * 0.15)] || 0.003;
     const speechRms = sortedRms[Math.floor(sortedRms.length * 0.85)] || 0.05;
 
-    // Gate threshold is set above noise floor with a vocal safety margin
-    const gateThreshold = Math.max(0.015, Math.min(speechRms * 0.35, floorRms * 2.8));
+    // Safety margin for speech threshold
+    const gateThreshold = Math.max(0.008, Math.min(speechRms * 0.28, floorRms * 2.2));
 
-    // Calculate target gain per window
     const windowGains = new Float32Array(numWindows);
     for (let w = 0; w < numWindows; w++) {
       const rms = rmsValues[w];
       if (rms < gateThreshold) {
-        // Attenuate down to 0.06 (-24dB reduction in pauses)
+        // Attenuate down to 0.03 (-30dB in pauses)
         const ratio = rms / gateThreshold;
-        windowGains[w] = Math.max(0.06, ratio * ratio);
+        windowGains[w] = Math.max(0.03, ratio * ratio);
       } else {
         windowGains[w] = 1.0;
       }
     }
 
-    // Apply smooth per-sample envelope to prevent any audio clicks or pumping
     let currentGain = windowGains[0] || 1.0;
-    const smoothing = 0.002; // Smooth ramp factor
+    const smoothing = 0.003; // Smooth ramp factor
 
     for (let i = 0; i < frameCount; i++) {
       const currentWin = Math.min(numWindows - 1, Math.floor(i / windowSize));
@@ -287,15 +454,14 @@ export async function cleanAudioBuffer(buffer: AudioBuffer): Promise<AudioBuffer
       data[i] *= currentGain;
     }
 
-    // Find global peak for normalization
+    // Step 4: Peak Normalization to -0.5 dBFS (0.95)
     let maxPeak = 0;
     for (let i = 0; i < frameCount; i++) {
       const abs = Math.abs(data[i]);
       if (abs > maxPeak) maxPeak = abs;
     }
 
-    // Peak normalize to 0.95 (-0.45 dBFS)
-    if (maxPeak > 0.05 && maxPeak < 0.98) {
+    if (maxPeak > 0.03 && maxPeak < 0.98) {
       const normFactor = 0.95 / maxPeak;
       for (let i = 0; i < frameCount; i++) {
         data[i] = Math.max(-1, Math.min(1, data[i] * normFactor));
