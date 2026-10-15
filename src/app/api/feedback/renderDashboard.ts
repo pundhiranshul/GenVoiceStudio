@@ -351,17 +351,27 @@ export function renderDashboardHtml(feedbacks: any[], secret: string): string {
         const user = fb.username ? ('@' + fb.username) : 'Anonymous';
         const time = formatTime(fb.timestamp);
         const id = fb.id || '';
+        const isBug = fb.type === 'bug' || (fb.trigger || '').toLowerCase() === 'bug';
+        const isSuggestion = fb.type === 'suggestion';
+        const badgeStyle = isBug
+          ? 'color:#f87171; border-color:rgba(248,113,113,0.3); background:rgba(248,113,113,0.1);'
+          : isSuggestion
+          ? 'color:#60a5fa; border-color:rgba(96,165,250,0.3); background:rgba(96,165,250,0.1);'
+          : '';
 
         return \`
           <div class="feedback-item">
             <div class="item-left">
-              <div class="item-details">
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-                  <span class="purpose-badge">\${escapeHtml(purpose)}</span>
+              <div class="item-details" style="width:100%;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
+                  <span class="purpose-badge" style="\${badgeStyle}">\${escapeHtml(fb.category || purpose)}</span>
                   <span class="trigger-badge">\${trigger}</span>
+                  \${fb.page ? \`<span style="font-size:11px; color:#a1a1aa; background:#121013; padding:2px 6px; border-radius:4px; border:1px solid rgba(255,255,255,0.06);">\${escapeHtml(fb.page)}</span>\` : ''}
                 </div>
+                \${fb.message ? \`<div style="font-size:13px; color:#e4e4e7; margin:6px 0 8px; line-height:1.5; white-space:pre-wrap; background:rgba(0,0,0,0.25); padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">\${escapeHtml(fb.message)}</div>\` : ''}
                 <div class="item-meta">
                   <span class="user-name">\${escapeHtml(user)}</span>
+                  \${fb.email ? \`<span>•</span><span style="color:#a1a1aa;">\${escapeHtml(fb.email)}</span>\` : ''}
                   <span>•</span>
                   <span>\${time}</span>
                 </div>
@@ -389,14 +399,19 @@ export function renderDashboardHtml(feedbacks: any[], secret: string): string {
     function filterFeedbacks() {
       const q = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
       const filtered = feedbacks.filter(fb => {
-        const matchesTrigger = (currentTrigger === 'all') || ((fb.trigger || '').toLowerCase() === currentTrigger);
+        const matchesTrigger = (currentTrigger === 'all') || 
+          ((fb.trigger || '').toLowerCase() === currentTrigger) ||
+          ((fb.type || '').toLowerCase() === currentTrigger);
         if (!matchesTrigger) return false;
         if (!q) return true;
 
         const purpose = (fb.purpose || '').toLowerCase();
+        const category = (fb.category || '').toLowerCase();
+        const message = (fb.message || '').toLowerCase();
+        const email = (fb.email || '').toLowerCase();
         const user = (fb.username || '').toLowerCase();
         const id = (fb.id || '').toLowerCase();
-        return purpose.includes(q) || user.includes(q) || id.includes(q);
+        return purpose.includes(q) || category.includes(q) || message.includes(q) || email.includes(q) || user.includes(q) || id.includes(q);
       });
       renderList(filtered);
     }

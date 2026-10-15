@@ -42,7 +42,9 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
   const [showAbout, setShowAbout] = useState(false);
   const [showSignOut, setShowSignOut] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [feedbackTrigger, setFeedbackTrigger] = useState<'generation' | 'exit' | 'manual'>('manual');
+  const [feedbackMode, setFeedbackMode] = useState<'poll' | 'report'>('report');
+  const [feedbackCategory, setFeedbackCategory] = useState<'bug' | 'suggestion' | 'other'>('bug');
+  const [feedbackTrigger, setFeedbackTrigger] = useState<'generation' | 'exit' | 'manual' | 'bug'>('bug');
   const [feedbackAutoSubmit, setFeedbackAutoSubmit] = useState(false);
   const [isFeedbackDocked, setIsFeedbackDocked] = useState(false);
   const [isFeedbackSubmitted, setIsFeedbackSubmitted] = useState(false);
@@ -60,12 +62,27 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const handleOpenReportBug = () => {
+    setFeedbackMode('report');
+    setFeedbackCategory('bug');
+    setFeedbackTrigger('bug');
+    setShowFeedback(true);
+  };
+
   useEffect(() => {
     const handleOpenAbout = () => setShowAbout(true);
     const handleOpenSignOut = () => setShowSignOut(true);
     const handleOpenFeedback = (e: any) => {
-      if (typeof window !== "undefined" && localStorage.getItem('genvoice_feedback_submitted')) return;
       const detail = e.detail || {};
+      if (detail.mode === 'report' || detail.trigger === 'bug') {
+        setFeedbackMode('report');
+        setFeedbackCategory(detail.category || 'bug');
+        setFeedbackTrigger(detail.trigger || 'bug');
+        setShowFeedback(true);
+        return;
+      }
+      if (typeof window !== "undefined" && localStorage.getItem('genvoice_feedback_submitted')) return;
+      setFeedbackMode('poll');
       setFeedbackTrigger(detail.trigger || 'manual');
       setFeedbackAutoSubmit(Boolean(detail.autoSubmit));
       setShowFeedback(true);
@@ -82,6 +99,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
     window.addEventListener('open-architecture', handleOpenAbout);
     window.addEventListener('open-signout', handleOpenSignOut);
     window.addEventListener('open-feedback', handleOpenFeedback);
+    window.addEventListener('open-report-bug', handleOpenReportBug);
     window.addEventListener('feedback-submitted', handleFeedbackSubmitted);
     window.addEventListener('feedback-docked-changed', handleFeedbackDocked);
 
@@ -89,6 +107,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
       window.removeEventListener('open-architecture', handleOpenAbout);
       window.removeEventListener('open-signout', handleOpenSignOut);
       window.removeEventListener('open-feedback', handleOpenFeedback);
+      window.removeEventListener('open-report-bug', handleOpenReportBug);
       window.removeEventListener('feedback-submitted', handleFeedbackSubmitted);
       window.removeEventListener('feedback-docked-changed', handleFeedbackDocked);
     };
@@ -96,15 +115,16 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
 
   const handleCloseFeedback = () => {
     setShowFeedback(false);
-    if (typeof window !== "undefined" && !localStorage.getItem('genvoice_feedback_submitted')) {
+    if (feedbackMode === 'poll' && typeof window !== "undefined" && !localStorage.getItem('genvoice_feedback_submitted')) {
       setIsFeedbackDocked(true);
       localStorage.setItem('genvoice_feedback_docked', 'true');
     }
   };
 
   const handleOpenManualFeedback = () => {
+    setFeedbackMode('report');
+    setFeedbackCategory('suggestion');
     setFeedbackTrigger('manual');
-    setFeedbackAutoSubmit(false);
     setShowFeedback(true);
   };
 
@@ -146,9 +166,15 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
     { name: "Library", href: "/library", icon: Library }
   ];
 
-  const bottomItems = [
+  const bottomItems: Array<{
+    name: string;
+    href: string;
+    icon: any;
+    onClick?: (e: any) => void;
+    external?: boolean;
+  }> = [
     { name: "System Architecture", href: "#", icon: Info, onClick: (e: any) => { e.preventDefault(); window.dispatchEvent(new Event('open-architecture')); } },
-    { name: "Report Bug", href: "https://github.com/pundhiranshul/GenVoiceStudio/issues/new", icon: Bug, external: true }
+    { name: "Report Bug", href: "#", icon: Bug, onClick: (e: any) => { e.preventDefault(); handleOpenReportBug(); } }
   ];
 
   return (
@@ -363,12 +389,16 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
       {showSignOut && <SignOutModal onClose={() => setShowSignOut(false)} />}
       <FeedbackModal
         isOpen={showFeedback}
+        mode={feedbackMode}
+        initialCategory={feedbackCategory}
         trigger={feedbackTrigger}
         autoSubmit={feedbackAutoSubmit}
         onClose={handleCloseFeedback}
         onSubmitSuccess={() => {
-          setIsFeedbackSubmitted(true);
-          setIsFeedbackDocked(false);
+          if (feedbackMode === 'poll') {
+            setIsFeedbackSubmitted(true);
+            setIsFeedbackDocked(false);
+          }
         }}
       />
     </div>

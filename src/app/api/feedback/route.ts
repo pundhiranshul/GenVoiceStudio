@@ -70,11 +70,22 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
 
     // Sanitize and structure feedback record
+    const type = String(data.type || data.category || (data.trigger === 'bug' ? 'bug' : 'feedback')).trim().toLowerCase().slice(0, 50);
+    const category = String(data.category || (type === 'bug' ? 'Report Bug' : type === 'suggestion' ? 'Suggestion' : 'Others')).trim().slice(0, 50);
+    const message = String(data.message || data.report || data.suggestion || data.details || '').trim().slice(0, 5000);
+    const email = String(data.email || '').trim().slice(0, 150);
+    const page = String(data.page || '').trim().slice(0, 200);
+
     const cleanRecord = {
       id: `fb_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-      purpose: String(data.purpose || '').trim().slice(0, 150),
-      purposeId: String(data.purposeId || '').trim().slice(0, 80),
-      trigger: String(data.trigger || 'manual').trim().slice(0, 50),
+      type: type || 'feedback',
+      category: category,
+      message: message,
+      email: email,
+      page: page,
+      purpose: String(data.purpose || (message ? `${category}: ${message.slice(0, 60)}` : category)).trim().slice(0, 150),
+      purposeId: String(data.purposeId || type || '').trim().slice(0, 80),
+      trigger: String(data.trigger || (type === 'bug' ? 'bug' : 'manual')).trim().slice(0, 50),
       timestamp: data.timestamp || new Date().toISOString(),
       username: String(data.username || 'anonymous').trim().slice(0, 100),
     };
