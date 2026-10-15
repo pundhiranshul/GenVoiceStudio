@@ -10,8 +10,7 @@ import { AuthAudioGuide } from "@/components/AuthAudioGuide";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { stitchChunks } from "@/utils/audioEditor";
 import { VOCAL_TAGS, AUDIO_TAGS_STRING } from "@/utils/audioTags";
-import { AvatarPicker } from "@/components/AvatarPicker";
-import { TEMPLATE_AVATARS } from "@/lib/avatars";
+import { generateAIAvatarUrl } from "@/lib/avatars";
 
 const GenVoiceLogo = ({ size = 24, className = "", animate = false }) => {
   const delays = ["0s", "0.15s", "0.3s", "0.15s", "0s"];
@@ -101,12 +100,12 @@ const PRESET_VOICES: CustomVoice[] = [
   { id: "el_v3_21", name: "Jane - Professional Audiobook Reader", data: "/presets/el_21.mp3", transcript: "Hello, I'm Jane. A great voice for any form of narration where you need a strong, older female voice.", isPreset: true, avatar: "/avatars/avatar_jane.jpg" },
   { id: "el_v3_22", name: "Hope - upbeat and clear", data: "/presets/el_22.mp3", transcript: "Hey, are you looking for a fresh and engaging voice for your podcast or social media? Then I'm the voice for you.", isPreset: true, avatar: "/avatars/avatar_hope.jpg" },
   { id: "el_v3_0", name: "Roger - Confident and Deep", data: "/presets/el_0.wav", transcript: "It is not so important to know everything as to appreciate what we learn.", isPreset: true, avatar: "/avatars/avatar_tpl_3.jpg" },
-  { id: "el_v3_1", name: "Charlie - Friendly and Conversational", data: "/presets/el_1.wav", transcript: "Love all, trust a few, do wrong to none.", isPreset: true, avatar: "/avatars/avatar_tpl_1.jpg" },
+  { id: "el_v3_1", name: "Charlie - Friendly and Conversational", data: "/presets/el_1.wav", transcript: "Love all, trust a few, do wrong to none.", isPreset: true, avatar: "/avatars/avatar_mark.jpg" },
   { id: "el_v3_2", name: "George - Warm and Authoritative", data: "/presets/el_2.wav", transcript: "God has given you one face, and you make yourself another.", isPreset: true, avatar: "/avatars/avatar_james.jpg" },
   { id: "el_v3_3", name: "Callum - Smooth and Engaging", data: "/presets/el_3.wav", transcript: "Life without love is like a tree without blossoms or fruit.", isPreset: true, avatar: "/avatars/avatar_mark.jpg" },
   { id: "el_v3_4", name: "River - Calm and Neutral", data: "/presets/el_4.wav", transcript: "Nature is a mutable cloud which is always and never the same.", isPreset: true, avatar: "/avatars/avatar_tpl_2.jpg" },
   { id: "el_v3_5", name: "Harry - Bright and Energetic", data: "/presets/el_5.wav", transcript: "Friends show their love in times of trouble, not in happiness.", isPreset: true, avatar: "/avatars/avatar_standard.jpg" },
-  { id: "el_v3_6", name: "Liam - Strong and Articulate", data: "/presets/el_6.wav", transcript: "Life isn't about finding yourself. Life is about creating yourself.", isPreset: true, avatar: "/avatars/avatar_tpl_1.jpg" },
+  { id: "el_v3_6", name: "Liam - Strong and Articulate", data: "/presets/el_6.wav", transcript: "Life isn't about finding yourself. Life is about creating yourself.", isPreset: true, avatar: "/avatars/avatar_james.jpg" },
   { id: "el_v3_7", name: "Alice - Soft and Sweet", data: "/presets/el_7.wav", transcript: "Just trust yourself, then you will know how to live.", isPreset: true, avatar: "/avatars/avatar_amy.jpg" },
   { id: "el_v3_8", name: "Matilda - Warm and Expressive", data: "/presets/el_8.wav", transcript: "Ideas are the beginning points of all fortunes.", isPreset: true, avatar: "/avatars/avatar_juniper.jpg" },
   { id: "el_v3_9", name: "Jessica - Bright and Professional", data: "/presets/el_9.wav", transcript: "If you spend your whole life waiting for the storm, you'll never enjoy the sunshine.", isPreset: true, avatar: "/avatars/avatar_hope.jpg" },
@@ -405,8 +404,7 @@ export default function Home() {
   const [newVoiceName, setNewVoiceName] = useState("");
   const [newVoiceText, setNewVoiceText] = useState("");
   const [newVoiceFile, setNewVoiceFile] = useState<File | null>(null);
-  const [newVoiceAvatar, setNewVoiceAvatar] = useState<string>(TEMPLATE_AVATARS[0].url);
-  const [designVoiceAvatar, setDesignVoiceAvatar] = useState<string>(TEMPLATE_AVATARS[0].url);
+  const [aiAvatarUrl, setAiAvatarUrl] = useState<string>("");
 
   const [copiedText, setCopiedText] = useState(false);
   const [copiedTags, setCopiedTags] = useState(false);
@@ -494,12 +492,13 @@ export default function Home() {
         const data = reader.result as string;
         const activePrompt = designPrompt.trim();
         const finalName = voiceName.trim() || (activePrompt ? (activePrompt.length > 30 ? activePrompt.substring(0, 30) + "..." : activePrompt) : "Designed Voice");
+        const finalAvatar = aiAvatarUrl || generateAIAvatarUrl(activePrompt || finalName);
         const newVoice: CustomVoice = {
-          id: Date.now().toString(),
+          id: `ai_${Date.now()}`,
           name: finalName,
           transcript: generatedPreviewText || text,
           data,
-          avatar: designVoiceAvatar
+          avatar: finalAvatar
         };
         const updated = [...customVoices.filter(v => v.id !== newVoice.id), newVoice];
         setCustomVoices(updated);
@@ -850,6 +849,12 @@ export default function Home() {
     isStoppedRef.current = false;
     setIsVoiceSaved(false);
     setStatus("generating"); setMessage("Submitting…");
+    
+    // Automatically trigger AI model image generation matching the voice persona
+    const promptForAvatar = activeInstructions || voiceName || textToUse;
+    if (promptForAvatar) {
+      setAiAvatarUrl(generateAIAvatarUrl(promptForAvatar));
+    }
     setAudios([]); audiosRef.current = []; setLogs([]); setChunks([]);
     setChunksDone(0); setChunksTotal(0); setCellsDone(0); setCellsTotal(0); setEta(""); setIsLongMode(false);
     startRef.current = Date.now(); firstChunkRef.current = null;
@@ -2146,13 +2151,39 @@ export default function Home() {
                   />
                 </div>
 
-                {/* Template Avatar Choice */}
-                <div className="pt-2 border-t border-border-subtle">
-                  <AvatarPicker
-                    selectedAvatar={designVoiceAvatar}
-                    onSelectAvatar={setDesignVoiceAvatar}
-                    label="Voice Persona Avatar"
-                  />
+                {/* AI Model Generated Avatar */}
+                <div className="pt-2 border-t border-border-subtle flex items-center gap-3.5 p-3 bg-bg-base/60 rounded-xl">
+                  <div className="relative w-12 h-12 rounded-full overflow-hidden bg-zinc-800 shrink-0 ring-2 ring-accent-bg/40 shadow-sm flex items-center justify-center">
+                    {aiAvatarUrl ? (
+                      <img
+                        src={aiAvatarUrl}
+                        alt={voiceName || "AI Voice Avatar"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Sparkles size={18} className="text-accent-bg animate-pulse" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-text-primary truncate">AI Voice Avatar</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const prompt = designPrompt.trim() || voiceName.trim() || 'voice persona';
+                          const fresh = `${generateAIAvatarUrl(prompt)}&seed=${Date.now()}`;
+                          setAiAvatarUrl(fresh);
+                        }}
+                        className="text-[10px] text-accent-bg hover:underline flex items-center gap-1 font-medium cursor-pointer"
+                        title="Generate another avatar variation"
+                      >
+                        <RotateCcw size={10} /> Regenerate Image
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-text-muted truncate">
+                      AI-generated visual matching &ldquo;{voiceName || designPrompt || 'Voice Persona'}&rdquo;
+                    </p>
+                  </div>
                 </div>
 
                 <button
@@ -2297,12 +2328,6 @@ export default function Home() {
                   <textarea value={newVoiceText} onChange={e => setNewVoiceText(e.target.value)} placeholder="Transcript of the audio file..." rows={3} className="w-full bg-bg-input border border-border-color rounded-lg px-3 py-2 text-sm text-text-primary outline-none resize-none focus:border-border-color" />
                 </div>
 
-                <AvatarPicker
-                  selectedAvatar={newVoiceAvatar}
-                  onSelectAvatar={setNewVoiceAvatar}
-                  label="Choose Voice Avatar"
-                />
-
                 <div className="flex justify-end gap-3 mt-2 items-center">
                   {uploadError && <span className="text-red-500 text-xs mr-auto">{uploadError}</span>}
                   <button onClick={() => setShowUpload(false)} className="px-4 py-2 rounded-full text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">Cancel</button>
@@ -2312,7 +2337,7 @@ export default function Home() {
                     const reader = new FileReader();
                     reader.onload = async () => {
                       const data = reader.result as string;
-                      const newVoice: CustomVoice = { id: Date.now().toString(), name: newVoiceName, transcript: newVoiceText, data, avatar: newVoiceAvatar };
+                      const newVoice: CustomVoice = { id: `rec_${Date.now()}`, name: newVoiceName, transcript: newVoiceText, data, type: 'recorded' };
                       const updated = [...customVoices, newVoice];
                       setCustomVoices(updated);
                       await set('custom_voices', updated);

@@ -12,8 +12,6 @@ import {
   RECORDING_SUGGESTED_SCRIPTS
 } from '@/utils/audioRecorder';
 import { set, get } from 'idb-keyval';
-import { AvatarPicker } from '@/components/AvatarPicker';
-import { TEMPLATE_AVATARS } from '@/lib/avatars';
 
 export interface CustomVoice {
   id: string;
@@ -22,6 +20,7 @@ export interface CustomVoice {
   transcript: string;
   isPreset?: boolean;
   avatar?: string;
+  type?: string;
 }
 
 interface VoiceRecorderProps {
@@ -45,7 +44,6 @@ export function VoiceRecorder({
   const [selectedScriptIdx, setSelectedScriptIdx] = useState<number | null>(0);
   const [copiedTranscript, setCopiedTranscript] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [selectedAvatar, setSelectedAvatar] = useState<string>(TEMPLATE_AVATARS[0].url);
 
   // Audio & playback state
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -480,7 +478,7 @@ export function VoiceRecorder({
         data: dataUrl,
         transcript: transcriptToSave,
         isPreset: false,
-        avatar: selectedAvatar
+        type: 'recorded'
       };
 
       const existing = (await get('custom_voices')) || [];
@@ -869,15 +867,6 @@ export function VoiceRecorder({
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Avatar Selection from Templates */}
-      <div className="pt-2 border-t border-border-color/50">
-        <AvatarPicker
-          selectedAvatar={selectedAvatar}
-          onSelectAvatar={setSelectedAvatar}
-          label="Voice Persona Avatar"
-        />
       </div>
 
       {/* Error / Success Alerts */}

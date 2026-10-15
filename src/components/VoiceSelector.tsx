@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Search, Check, ChevronDown, X, Play, Pause, Trash2, HelpCircle, Download, Pencil } from 'lucide-react';
+import { Search, Check, ChevronDown, User, X, Play, Pause, Trash2, HelpCircle, Download, Pencil } from 'lucide-react';
 import { getVoiceAvatar } from '@/lib/avatars';
 
 export interface Voice {
@@ -11,6 +11,7 @@ export interface Voice {
   transcript: string;
   isPreset?: boolean;
   avatar?: string;
+  type?: string;
 }
 
 interface VoiceSelectorProps {
@@ -147,12 +148,16 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
         aria-expanded={isOpen}
         className="flex items-center gap-2.5 px-3 py-2 bg-bg-panel border border-border-color rounded-lg hover:bg-accent-bg/5 transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none w-full sm:w-[280px]"
       >
-        <div className="w-6 h-6 rounded-full bg-zinc-800 shrink-0 overflow-hidden ring-1 ring-border-color">
-          <img
-            src={getVoiceAvatar(selectedVoice)}
-            alt={selectedVoice?.name || "Voice avatar"}
-            className="w-full h-full object-cover"
-          />
+        <div className="w-6 h-6 rounded-full bg-zinc-800 shrink-0 flex items-center justify-center overflow-hidden ring-1 ring-border-color">
+          {getVoiceAvatar(selectedVoice) ? (
+            <img
+              src={getVoiceAvatar(selectedVoice)!}
+              alt={selectedVoice?.name || "Voice avatar"}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <User size={13} className="text-text-secondary" />
+          )}
         </div>
         <span className="text-sm font-medium text-text-primary truncate flex-1 text-left">
           {selectedVoice ? selectedVoice.name : 'Select Voice'}
@@ -193,53 +198,66 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
             <div className="flex-1 overflow-y-auto p-2">
               <div className="flex flex-col gap-1">
                 {filteredVoices.length > 0 ? (
-                  filteredVoices.map(voice => (
-                    <div key={voice.id} className="flex flex-col">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => {
-                          if (editingId !== voice.id) {
-                            onSelect(voice.id);
-                            setIsOpen(false);
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (editingId !== voice.id && (e.key === 'Enter' || e.key === ' ')) {
-                            e.preventDefault();
-                            onSelect(voice.id);
-                            setIsOpen(false);
-                          }
-                        }}
-                        className={`group flex items-center gap-3 w-full text-left p-3 rounded-xl transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${
-                          selectedId === voice.id ? 'bg-accent-bg/10' : 'hover:bg-accent-bg/5'
-                        }`}
-                      >
-                        {voice.data ? (
-                          <button
-                            type="button"
-                            onClick={(e) => togglePreview(e, voice)}
-                            className="group/play relative w-9 h-9 rounded-full bg-zinc-800 shrink-0 cursor-pointer overflow-hidden ring-1 ring-border-color/60 focus-visible:ring-2 focus-visible:ring-white/30 outline-none"
-                            aria-label={playingId === voice.id ? "Pause preview" : "Play preview"}
-                          >
-                            <img
-                              src={getVoiceAvatar(voice)}
-                              alt={voice.name}
-                              className="w-full h-full object-cover"
-                            />
-                            <div className={`absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[1px] transition-opacity duration-150 ${playingId === voice.id ? 'opacity-100' : 'opacity-0 group-hover/play:opacity-100'}`}>
-                              {playingId === voice.id ? <Pause size={14} className="text-white" /> : <Play size={14} className="text-white ml-0.5" />}
+                  filteredVoices.map(voice => {
+                    const voiceAvatar = getVoiceAvatar(voice);
+                    return (
+                      <div key={voice.id} className="flex flex-col">
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => {
+                            if (editingId !== voice.id) {
+                              onSelect(voice.id);
+                              setIsOpen(false);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (editingId !== voice.id && (e.key === 'Enter' || e.key === ' ')) {
+                              e.preventDefault();
+                              onSelect(voice.id);
+                              setIsOpen(false);
+                            }
+                          }}
+                          className={`group flex items-center gap-3 w-full text-left p-3 rounded-xl transition-colors cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring-color ${
+                            selectedId === voice.id ? 'bg-accent-bg/10' : 'hover:bg-accent-bg/5'
+                          }`}
+                        >
+                          {voice.data ? (
+                            <button
+                              type="button"
+                              onClick={(e) => togglePreview(e, voice)}
+                              className="group/play relative w-9 h-9 rounded-full bg-zinc-800 shrink-0 flex items-center justify-center cursor-pointer overflow-hidden ring-1 ring-border-color/60 focus-visible:ring-2 focus-visible:ring-white/30 outline-none"
+                              aria-label={playingId === voice.id ? "Pause preview" : "Play preview"}
+                            >
+                              {voiceAvatar ? (
+                                <img
+                                  src={voiceAvatar}
+                                  alt={voice.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <User 
+                                  size={16} 
+                                  className={`transition-opacity duration-200 ${playingId === voice.id ? 'opacity-0' : 'group-hover/play:opacity-0'} ${selectedId === voice.id ? 'text-text-primary' : 'text-text-secondary'}`} 
+                                />
+                              )}
+                              <div className={`absolute inset-0 flex items-center justify-center ${voiceAvatar ? 'bg-black/60 backdrop-blur-[1px]' : 'bg-zinc-600'} transition-opacity duration-150 ${playingId === voice.id ? 'opacity-100' : 'opacity-0 group-hover/play:opacity-100'}`}>
+                                {playingId === voice.id ? <Pause size={14} className="text-white" /> : <Play size={14} className="text-white ml-0.5" />}
+                              </div>
+                            </button>
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-zinc-800 shrink-0 flex items-center justify-center overflow-hidden ring-1 ring-border-color/60">
+                              {voiceAvatar ? (
+                                <img
+                                  src={voiceAvatar}
+                                  alt={voice.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <User size={16} className={selectedId === voice.id ? 'text-text-primary' : 'text-text-secondary'} />
+                              )}
                             </div>
-                          </button>
-                        ) : (
-                          <div className="w-9 h-9 rounded-full bg-zinc-800 shrink-0 overflow-hidden ring-1 ring-border-color/60">
-                            <img
-                              src={getVoiceAvatar(voice)}
-                              alt={voice.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
+                          )}
 
                         {editingId === voice.id ? (
                           <div
