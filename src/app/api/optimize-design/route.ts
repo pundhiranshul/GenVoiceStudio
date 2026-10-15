@@ -42,20 +42,22 @@ You are given a rough idea, premise, or draft instruction for a synthetic voice.
 
 Tasks:
 1. OPTIMIZE THE PROMPT ("prompt"):
-   Enhance the voice design prompt with specific vocal characteristics: age, gender, nationality/accent, vocal timbre/tone (e.g. gravelly, warm, crisp, resonant), and speaking style. Keep the prompt concise and under 2 sentences.
+   Enhance the voice design prompt with specific vocal characteristics: age, gender, nationality/accent, vocal timbre/tone (e.g. gravelly, warm, crisp, resonant, soft-spoken), pacing, and speaking style. Keep the prompt concise and under 2 sentences.
 
 2. SUGGEST AN ACCURATE VOICE PERSONA NAME ("name"):
    IMPORTANT: This voice name is directly used by an AI image generation model to generate an authentic photographic portrait avatar for the designed voice.
-   - The voice name MUST be highly descriptive and accurate to the voice's persona, specifying demographic and visual attributes such as age group, gender, nationality/ethnicity, and character archetype.
-   - Examples of good names: "Elderly Scottish Storyteller", "Young British Female Detective", "Middle-Aged Deep-Voiced Executive", "Wise Buddhist Monk", "Cheerful Californian Surfer Guy", "Warm Southern Grandma".
-   - DO NOT use generic single first names alone (such as "Caleb", "Serena", "David", "Emma") and DO NOT use abstract names (such as "Voice 1", "Echo", "Synthesizer") because an image generation model cannot derive an accurate persona headshot from them.
-   - Keep the name concise: between 2 to 5 descriptive words.
+   - POPULAR PERSONALITIES / CELEBRITIES / HISTORICAL FIGURES:
+     If the user's input refers to, mentions, or describes a specific famous or popular person, historical figure, leader, celebrity, or iconic figure (e.g. "Mahatma Gandhi", "Albert Einstein", "Morgan Freeman", "Steve Jobs", "Winston Churchill", "Barack Obama", "Sherlock Holmes"), the voice name MUST be their real full name (e.g. "Mahatma Gandhi", "Albert Einstein", "Morgan Freeman"). NEVER replace a real famous personality with a generic description like "Elderly Indian Spiritual Leader" or "Famous Theoretical Physicist". Using their actual full name is required so the AI image model can generate their true likeness.
+   - FICTIONAL OR ORIGINAL PERSONAS:
+     If the voice is not a specific famous figure, provide a descriptive persona name specifying demographic and visual attributes such as age group, gender, nationality/ethnicity, and character archetype (e.g. "Elderly Scottish Storyteller", "Young British Female Detective", "Middle-Aged Deep-Voiced Executive", "Wise Buddhist Monk", "Cheerful Californian Surfer Guy", "Warm Southern Grandma").
+   - DO NOT use generic single first names alone (such as "Caleb", "Serena", "David", "Emma") unless it's a globally recognized mononym, and DO NOT use abstract labels (such as "Voice 1", "Echo", "Synthesizer").
+   - Keep the name concise: between 2 to 4 words.
 
 ${instruction ? `User's specific instruction: ${instruction}\n` : ''}
 
 You MUST return the output as a valid JSON object with EXACTLY two keys:
 {
-  "name": "The suggested accurate, visually descriptive persona name (2-5 words)",
+  "name": "The suggested full name (for famous figures) or descriptive persona name (2-4 words)",
   "prompt": "The optimized voice design prompt (under 2 sentences)"
 }
 Do NOT return markdown formatting like \`\`\`json. Return ONLY the raw JSON object.
@@ -163,7 +165,7 @@ export async function POST(req: Request) {
       // Fallback: derive a descriptive persona snippet from text
       const cleanSnippet = text.replace(/[^a-zA-Z0-9\s]/g, ' ').trim().split(/\s+/).slice(0, 4).join(' ');
       parsedResult = {
-        name: cleanSnippet ? `${cleanSnippet} Persona` : "Custom AI Voice Persona",
+        name: cleanSnippet || "Custom AI Voice Persona",
         prompt: optimizedResult.replace(/```[\s\S]*?```/g, '').trim() || text
       };
     }

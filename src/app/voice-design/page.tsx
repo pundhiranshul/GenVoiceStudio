@@ -579,7 +579,7 @@ export default function Home() {
     try {
       const payload: any = {
         text: designPrompt,
-        instruction: "Optimize this prompt for Voice Design. Enhance it by adding descriptive words about the age, gender, accent, tone, and character. Also generate an accurate, visually descriptive voice persona name (specifying age, gender, and archetype) suitable for AI portrait avatar generation. Keep the prompt under 2 sentences.",
+        instruction: "Optimize this prompt for Voice Design. Enhance it by adding descriptive words about the age, gender, accent, tone, and character. Also generate an accurate voice persona name suitable for AI avatar generation: if based on a real, famous, or historical personality, use their full real name (e.g. 'Mahatma Gandhi', 'Albert Einstein'); otherwise use an accurate descriptive archetype (e.g. 'Elderly Scottish Storyteller'). Keep the prompt under 2 sentences.",
         aiModel
       };
       const pass = localStorage.getItem('appPassword');
@@ -626,7 +626,7 @@ export default function Home() {
     try {
       const payload: any = {
         text: writeDesignTopic,
-        instruction: "You are an expert voice actor casting director. Write a highly detailed Voice Design instruction prompt based on the user's premise. Describe the age, gender, accent, tone, and character. Also provide an accurate, visually descriptive voice persona name (specifying age, gender, and archetype) suitable for AI portrait image creation. Keep the prompt under 2 sentences.",
+        instruction: "You are an expert voice actor casting director. Write a highly detailed Voice Design instruction prompt based on the user's premise. Describe the age, gender, accent, tone, and character. Also provide an accurate voice persona name suitable for AI avatar generation: if based on a real, famous, or historical personality, use their full real name (e.g. 'Mahatma Gandhi', 'Albert Einstein'); otherwise use an accurate descriptive archetype (e.g. 'Elderly Scottish Storyteller'). Keep the prompt under 2 sentences.",
         aiModel
       };
       const pass = localStorage.getItem('appPassword');
@@ -2006,7 +2006,7 @@ export default function Home() {
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Elderly Scottish Storyteller, Young British Detective"
+                    placeholder="e.g. Mahatma Gandhi, Elderly Scottish Storyteller"
                     value={voiceName}
                     onChange={(e) => setVoiceName(e.target.value)}
                     className="w-full bg-bg-input border border-border-color rounded-xl px-3.5 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-color transition-all"
@@ -2700,7 +2700,7 @@ export default function Home() {
                 <textarea
                   value={writeDesignTopic}
                   onChange={e => setWriteDesignTopic(e.target.value)}
-                  placeholder="e.g. A grumpy old wizard..."
+                  placeholder="e.g. Mahatma Gandhi, Albert Einstein, or a grumpy old wizard..."
                   className="w-full bg-bg-input border border-border-color rounded-xl px-4 py-3 text-sm text-text-primary outline-none focus:border-text-muted resize-none transition-colors"
                   rows={3}
                 />
