@@ -6,8 +6,6 @@ import {
   Video,
   BookOpen,
   Gamepad2,
-  Briefcase,
-  Bot,
   Sparkles,
   Check,
   ArrowRight,
@@ -40,37 +38,25 @@ const PURPOSE_OPTIONS: PurposeOption[] = [
   {
     id: "content-creation",
     label: "Content Creation",
-    description: "YouTube, TikTok, Reels, Podcasts & Voiceovers",
+    description: "YouTube, podcasts & social media",
     icon: Video,
   },
   {
     id: "audiobooks",
     label: "Audiobooks & Narration",
-    description: "Audiobooks, stories, documentaries & education",
+    description: "Audiobooks, storytelling & education",
     icon: BookOpen,
   },
   {
     id: "gaming",
-    label: "Game Dev & Animation",
-    description: "Character dialogue, NPCs & game cutscenes",
+    label: "Gaming & Animation",
+    description: "Character dialogue, NPCs & games",
     icon: Gamepad2,
   },
   {
-    id: "commercial",
-    label: "Commercial & Marketing",
-    description: "Product ads, brand promos & corporate videos",
-    icon: Briefcase,
-  },
-  {
-    id: "ai-agents",
-    label: "AI Agents & Voicebots",
-    description: "Conversational assistants, IVR & automated calls",
-    icon: Bot,
-  },
-  {
     id: "personal",
-    label: "Personal & Creative Fun",
-    description: "Voice cloning, experimenting & creative hobbies",
+    label: "Personal & Creative",
+    description: "Voice cloning, experimenting & fun",
     icon: Sparkles,
   },
 ];
@@ -307,7 +293,7 @@ export function FeedbackModal({
       }}
     >
       <div
-        className="w-full max-w-lg bg-bg-panel border border-border-color rounded-3xl shadow-2xl overflow-hidden flex flex-col p-6 sm:p-8 animate-in zoom-in-95 duration-200 relative"
+        className="w-full max-w-xl bg-bg-panel border border-border-color rounded-3xl shadow-2xl overflow-hidden flex flex-col p-6 sm:p-8 animate-in zoom-in-95 duration-200 relative"
         role="dialog"
         aria-modal="true"
       >
@@ -565,7 +551,7 @@ export function FeedbackModal({
             </div>
 
             {/* Options Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-6">
               {PURPOSE_OPTIONS.map((option) => {
                 const Icon = option.icon;
                 const isSelected = selectedPurposeId === option.id;
@@ -582,7 +568,7 @@ export function FeedbackModal({
                         handleRecordPurposePoll(option.id);
                       }
                     }}
-                    className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl text-left transition-all border outline-none select-none cursor-pointer group ${
+                    className={`flex items-start gap-3.5 p-4 rounded-2xl text-left transition-all border outline-none select-none cursor-pointer group ${
                       isSelected
                         ? "bg-accent-bg text-accent-text border-accent-bg shadow-md scale-[1.01]"
                         : "bg-bg-input text-text-primary border-border-color hover:border-accent-bg/40 hover:bg-bg-hover"
@@ -600,14 +586,18 @@ export function FeedbackModal({
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
-                        <span className="font-semibold text-xs sm:text-sm truncate">
+                        <span
+                          className={`font-semibold text-xs sm:text-sm leading-snug ${
+                            isSelected ? "text-accent-text" : "text-text-primary"
+                          }`}
+                        >
                           {option.label}
                         </span>
-                        {isSelected && <Check size={14} className="shrink-0 animate-in zoom-in-50" />}
+                        {isSelected && <Check size={14} className="shrink-0 text-accent-text animate-in zoom-in-50" />}
                       </div>
                       <p
-                        className={`text-[11px] leading-tight line-clamp-2 mt-0.5 ${
-                          isSelected ? "text-accent-text/80" : "text-text-muted"
+                        className={`text-xs leading-normal mt-1 ${
+                          isSelected ? "text-accent-text/85" : "text-text-muted"
                         }`}
                       >
                         {option.description}
