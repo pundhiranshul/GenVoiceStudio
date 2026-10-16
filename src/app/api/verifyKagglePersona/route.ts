@@ -70,7 +70,7 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           model: targetModel,
           messages: [{ role: 'user', content: 'ping' }],
-          max_tokens: 1
+          max_tokens: 50
         })
       });
 
@@ -84,6 +84,16 @@ export async function POST(req: Request) {
       }
 
       const testErrText = await testRes.text();
+
+      // If the error is merely that max_tokens was reached, access to the model proxy is already working!
+      if (testErrText.toLowerCase().includes('max_tokens')) {
+        return NextResponse.json({
+          verified: true,
+          modelProxyKey: token,
+          modelProxyExpiresAt: expiryTime,
+          modelProxyBaseUri: cleanBaseUri
+        });
+      }
       if (testRes.status === 403 || testErrText.toLowerCase().includes('verif') || testErrText.toLowerCase().includes('permission') || testErrText.toLowerCase().includes('denied')) {
         return NextResponse.json({
           verified: false,
