@@ -73,18 +73,12 @@ When generating speech, the neural acoustic pipeline interprets embedded vocal m
 Listen to this long-form dramatic narration generated entirely end-to-end on GenVoice Studio (*The Autobiography of Albert Einstein*):
 
 <p align="center">
-  <video src="https://github.com/pundhiranshul/GenVoiceStudio/raw/main/public/samples/genvoice_sample.mp4" controls width="100%"></video>
+  <video src="https://github.com/user-attachments/assets/32ae2325-8bfa-48f2-8d78-24a9a82c9abb" controls width="100%"></video>
 </p>
 
-<p align="center">
-  <a href="https://github.com/pundhiranshul/GenVoiceStudio/blob/main/public/samples/genvoice_voice_1791392674247.mp3">
-    <img src="public/samples/audio_player_banner.png" alt="Play GenVoice Studio Sample" width="100%" />
-  </a>
-</p>
-
-- [▶️ **Play Audio on GitHub (Built-in Audio Player, No Download)**](https://github.com/pundhiranshul/GenVoiceStudio/blob/main/public/samples/genvoice_voice_1791392674247.mp3)
 - [🌐 **Direct Stream in Browser Tab**](https://gen-voice-eight.vercel.app/samples/genvoice_voice_1791392674247.mp3)
-- [⬇️ **Download Audio File (WAV, 24.9 MB)**](https://github.com/pundhiranshul/GenVoiceStudio/raw/main/public/samples/genvoice_voice_1791392674247.wav)
+- [▶️ **Play in GitHub Audio Viewer**](https://github.com/pundhiranshul/GenVoiceStudio/blob/main/public/samples/genvoice_voice_1791392674247.mp3)
+- [⬇️ **Download Master Audio (WAV, 24.9 MB)**](https://github.com/pundhiranshul/GenVoiceStudio/raw/main/public/samples/genvoice_voice_1791392674247.wav)
 
 ---
 
