@@ -146,9 +146,13 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="true"
         aria-expanded={isOpen}
-        className="flex items-center gap-3 px-3.5 py-2.5 bg-bg-panel border border-border-color rounded-xl hover:bg-bg-hover/60 hover:border-border-color/80 transition-all focus-visible:ring-2 focus-visible:ring-ring-color outline-none w-full shadow-sm text-left group"
+        className="flex items-center gap-3.5 px-3.5 py-3 bg-bg-panel border border-border-color rounded-xl hover:bg-bg-hover/60 hover:border-border-color/80 transition-all focus-visible:ring-2 focus-visible:ring-ring-color outline-none w-full shadow-sm text-left group"
       >
-        <div className="w-10 h-10 rounded-full bg-zinc-800 shrink-0 flex items-center justify-center overflow-hidden ring-1 ring-border-color/70">
+        <div className={`relative w-10 h-10 rounded-full bg-zinc-800 shrink-0 flex items-center justify-center overflow-hidden transition-all duration-150 ${
+          selectedVoice
+            ? 'ring-2 ring-accent-bg ring-offset-2 ring-offset-bg-panel shadow-sm'
+            : 'ring-1 ring-border-color/70'
+        }`}>
           {getVoiceAvatar(selectedVoice) ? (
             <img
               src={getVoiceAvatar(selectedVoice)!}
@@ -248,7 +252,11 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
                             <button
                               type="button"
                               onClick={(e) => togglePreview(e, voice)}
-                              className="group/play relative w-9 h-9 rounded-full bg-zinc-800 shrink-0 flex items-center justify-center cursor-pointer overflow-hidden ring-1 ring-border-color/60 focus-visible:ring-2 focus-visible:ring-white/30 outline-none"
+                              className={`group/play relative w-9 h-9 rounded-full bg-zinc-800 shrink-0 flex items-center justify-center cursor-pointer overflow-hidden transition-all duration-150 focus-visible:ring-2 focus-visible:ring-white/30 outline-none ${
+                                selectedId === voice.id
+                                  ? 'ring-2 ring-accent-bg ring-offset-2 ring-offset-bg-panel shadow-sm'
+                                  : 'ring-1 ring-black/10 dark:ring-white/10'
+                              }`}
                               aria-label={playingId === voice.id ? "Pause preview" : "Play preview"}
                             >
                               {voiceAvatar ? (
@@ -268,7 +276,11 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
                               </div>
                             </button>
                           ) : (
-                            <div className="w-9 h-9 rounded-full bg-zinc-800 shrink-0 flex items-center justify-center overflow-hidden ring-1 ring-border-color/60">
+                            <div className={`w-9 h-9 rounded-full bg-zinc-800 shrink-0 flex items-center justify-center overflow-hidden transition-all duration-150 ${
+                              selectedId === voice.id
+                                ? 'ring-2 ring-accent-bg ring-offset-2 ring-offset-bg-panel shadow-sm'
+                                : 'ring-1 ring-black/10 dark:ring-white/10'
+                            }`}>
                               {voiceAvatar ? (
                                 <img
                                   src={voiceAvatar}
