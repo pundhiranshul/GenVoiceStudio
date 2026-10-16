@@ -10,8 +10,18 @@ export const PRESET_AVATAR_MAP: Record<string, string> = {
   el_v3_22: '/avatars/avatar_hope.jpg',
   el_v3_0: '/avatars/avatar_roger.jpg',
   el_v3_1: '/avatars/avatar_charlie.jpg',
+  el_v3_2: '/avatars/avatar_george.jpg',
   el_v3_3: '/avatars/avatar_callum.jpg',
   el_v3_4: '/avatars/avatar_river.jpg',
+  el_v3_5: '/avatars/avatar_harry.jpg',
+  el_v3_6: '/avatars/avatar_liam.jpg',
+  el_v3_7: '/avatars/avatar_alice.jpg',
+  el_v3_8: '/avatars/avatar_matilda.jpg',
+  el_v3_9: '/avatars/avatar_jessica.jpg',
+  el_v3_10: '/avatars/avatar_eric.jpg',
+  el_v3_11: '/avatars/avatar_bella.jpg',
+  el_v3_12: '/avatars/avatar_chris.jpg',
+  el_v3_13: '/avatars/avatar_brian.jpg',
   el_v3_14: '/avatars/avatar_daniel.jpg',
 };
 
