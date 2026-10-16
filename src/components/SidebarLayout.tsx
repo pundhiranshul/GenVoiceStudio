@@ -5,7 +5,7 @@ import { FeedbackModal } from "@/components/FeedbackModal";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Mic, AudioLines, Bug, ChevronLeft, ChevronRight, Menu, X, User, Wand2, Library, LogOut, MessageSquareHeart } from "lucide-react";
+import { Mic, AudioLines, Bug, ChevronLeft, ChevronRight, Menu, X, Wand2, Library, LogOut, MessageSquareHeart } from "lucide-react";
 import { getAuthInfo, handleSignOut } from "@/lib/auth";
 
 const GenVoiceLogo = ({ size = 24, className = "" }) => (
@@ -190,23 +190,31 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         `}
       >
         {/* Logo Area */}
-        <div className={`h-16 flex items-center px-4 border-b border-border-color shrink-0 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
-          <Link href="/" className={`flex items-center gap-3 overflow-hidden ${isCollapsed ? 'justify-center' : ''}`} onClick={(e) => {
-            if (pathname === "/") {
-              e.preventDefault();
-              setIsMobileOpen(false);
-              window.location.reload();
-              return;
-            }
-            if (typeof window !== "undefined" && (window as any).isGenerating) {
-              if (!confirm("You have an active generation running. Are you sure you want to navigate away? Progress will be lost.")) {
+        <div className="h-16 flex items-center justify-between px-3 border-b border-border-color shrink-0 overflow-hidden">
+          <Link 
+            href="/" 
+            className="flex items-center h-12 w-full rounded-xl px-1.5 overflow-hidden" 
+            onClick={(e) => {
+              if (pathname === "/") {
                 e.preventDefault();
+                setIsMobileOpen(false);
+                window.location.reload();
                 return;
               }
-            }
-          }}>
-            <GenVoiceLogo size={42} className={`shrink-0 text-text-primary ${isCollapsed ? "mx-auto" : ""}`} />
-            {!isCollapsed && <span className="font-semibold text-lg tracking-tight whitespace-nowrap text-text-primary">GenVoice Studio</span>}
+              if (typeof window !== "undefined" && (window as any).isGenerating) {
+                if (!confirm("You have an active generation running. Are you sure you want to navigate away? Progress will be lost.")) {
+                  e.preventDefault();
+                  return;
+                }
+              }
+            }}
+          >
+            <div className="w-11 h-11 flex items-center justify-center shrink-0">
+              <GenVoiceLogo size={40} className="shrink-0 text-text-primary" />
+            </div>
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center ${isCollapsed ? "max-w-0 opacity-0 pointer-events-none" : "max-w-[180px] opacity-100 ml-1.5"}`}>
+              <span className="font-semibold text-lg tracking-tight whitespace-nowrap text-text-primary">GenVoice Studio</span>
+            </div>
           </Link>
           
           <button 
@@ -218,7 +226,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 flex flex-col gap-1 px-3">
+        <nav className="flex-1 overflow-y-auto py-4 flex flex-col gap-1 px-3 overflow-x-hidden">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
@@ -255,17 +263,23 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
                     }
                   }
                 }}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors outline-none
-                  ${isActive 
+                className={`flex items-center h-11 w-full px-1.5 rounded-xl transition-colors outline-none shrink-0 group ${
+                  isActive 
                     ? "bg-accent-bg text-accent-text font-medium shadow-sm" 
                     : "text-text-secondary hover:bg-bg-hover hover:text-text-primary"
-                  }
-                  ${isCollapsed ? "justify-center" : ""}
-                `}
+                }`}
                 title={isCollapsed ? item.name : undefined}
               >
-                <Icon size={18} className="shrink-0" />
-                {!isCollapsed && <span className="whitespace-nowrap text-sm">{item.name}</span>}
+                <div className="w-11 h-11 flex items-center justify-center shrink-0">
+                  <Icon size={18} className="shrink-0" />
+                </div>
+                <div 
+                  className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center ${
+                    isCollapsed ? "max-w-0 opacity-0 pointer-events-none" : "max-w-[180px] opacity-100 ml-1.5"
+                  }`}
+                >
+                  <span className="whitespace-nowrap text-sm font-medium">{item.name}</span>
+                </div>
               </Link>
             );
           })}
@@ -273,37 +287,47 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
 
         {/* Docked Feedback Button in Left Panel */}
         {isFeedbackDocked && !isFeedbackSubmitted && (
-          <div className="px-3 pb-2 pt-1 border-t border-border-color">
+          <div className="px-3 pb-2 pt-1 border-t border-border-color shrink-0 overflow-hidden">
             <button
               onClick={handleOpenManualFeedback}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all outline-none border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium group cursor-pointer ${
-                isCollapsed ? "justify-center px-0" : ""
-              }`}
+              className="w-full h-11 flex items-center px-1.5 rounded-xl transition-all outline-none border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium group cursor-pointer shrink-0"
               title="Give Feedback"
             >
-              <MessageSquareHeart size={18} className="shrink-0 text-amber-500 group-hover:scale-110 transition-transform" />
-              {!isCollapsed && (
-                <div className="flex items-center justify-between w-full min-w-0">
-                  <span className="text-sm font-semibold truncate">Give Feedback</span>
-                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                </div>
-              )}
+              <div className="w-11 h-11 flex items-center justify-center shrink-0">
+                <MessageSquareHeart size={18} className="shrink-0 text-amber-500 group-hover:scale-110 transition-transform" />
+              </div>
+              <div 
+                className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-between min-w-0 ${
+                  isCollapsed ? "max-w-0 opacity-0 pointer-events-none" : "flex-1 opacity-100 ml-1.5 pr-2"
+                }`}
+              >
+                <span className="text-sm font-semibold truncate">Give Feedback</span>
+                <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 ml-1" />
+              </div>
             </button>
           </div>
         )}
 
         {/* Bottom Area (About & Report Bug) */}
-        <div className="p-3 border-t border-border-color flex flex-col gap-1">
+        <div className="p-3 border-t border-border-color flex flex-col gap-1 shrink-0 overflow-hidden">
           {bottomItems.map((item) => {
             const Icon = item.icon;
             const content = (
               <>
-                <Icon size={18} className="shrink-0" />
-                {!isCollapsed && <span className="whitespace-nowrap text-sm">{item.name}</span>}
+                <div className="w-11 h-11 flex items-center justify-center shrink-0">
+                  <Icon size={18} className="shrink-0" />
+                </div>
+                <div 
+                  className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center ${
+                    isCollapsed ? "max-w-0 opacity-0 pointer-events-none" : "max-w-[180px] opacity-100 ml-1.5"
+                  }`}
+                >
+                  <span className="whitespace-nowrap text-sm">{item.name}</span>
+                </div>
               </>
             );
 
-            const className = `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-text-secondary hover:bg-bg-hover hover:text-text-primary outline-none ${isCollapsed ? "justify-center" : ""}`;
+            const className = "flex items-center h-11 w-full px-1.5 rounded-xl transition-colors text-text-secondary hover:bg-bg-hover hover:text-text-primary outline-none shrink-0";
             
             if (item.external) {
               return (
@@ -321,27 +345,26 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
           })}
         </div>
 
-        {/* User Profile */}
-        <div className={`p-3.5 border-t border-border-color bg-bg-panel/50 flex ${isCollapsed ? 'flex-col items-center gap-2' : 'items-center justify-between gap-2'} overflow-hidden`}>
-          <div className="flex items-center gap-2.5 min-w-0 truncate">
-            <div className="w-8 h-8 rounded-lg bg-border-color/30 flex items-center justify-center shrink-0 border border-border-color/50" title={isCollapsed ? (authInfo.username || 'Studio User') : undefined}>
-              <User size={15} className="text-text-secondary" />
-            </div>
-            {!isCollapsed && (
-              <div className="flex flex-col truncate">
-                <span className="text-xs font-semibold text-text-primary truncate leading-tight">
-                  {authInfo.username || 'Studio User'}
-                </span>
-                <span className="text-[10px] text-text-muted font-medium tracking-wide">
-                  {authInfo.authType === 'kaggle' ? 'Kaggle Authenticated' : authInfo.authType === 'admin' ? 'Admin Access' : 'Not Signed In'}
-                </span>
-              </div>
-            )}
+        {/* User Profile / Status */}
+        <div className={`p-3 border-t border-border-color bg-bg-panel/50 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} overflow-hidden min-h-[56px] shrink-0`}>
+          <div 
+            className={`overflow-hidden transition-all duration-300 ease-in-out flex flex-col justify-center ${
+              isCollapsed ? "max-w-0 opacity-0 pointer-events-none" : "max-w-[170px] opacity-100 pl-1.5 pr-1"
+            }`}
+          >
+            <span className="text-xs font-semibold text-text-primary truncate leading-tight">
+              {authInfo.username || 'Studio User'}
+            </span>
+            <span className="text-[10px] text-text-muted font-medium tracking-wide truncate">
+              {authInfo.authType === 'kaggle' ? 'Kaggle Authenticated' : authInfo.authType === 'admin' ? 'Admin Access' : 'Not Signed In'}
+            </span>
           </div>
           {authInfo.isAuthenticated && (
             <button
               onClick={() => setShowSignOut(true)}
-              className="p-1.5 text-text-muted hover:text-red-400 hover:bg-bg-hover rounded-lg transition-colors shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+              className={`${
+                isCollapsed ? "w-11 h-11" : "p-2"
+              } flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-bg-hover rounded-xl transition-colors shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring-color`}
               title="Sign Out (flushes auth, keeps your generated items)"
               aria-label="Sign Out"
             >
