@@ -33,7 +33,7 @@ async function mintProxyToken(username: string | null, key: string) {
   };
 }
 
-async function optimizeDesign(token: string, baseUri: string, text: string, instruction: string, model: string = 'google/gemini-3.7-flash') {
+async function optimizeDesign(token: string, baseUri: string, text: string, instruction: string, model: string = 'openai/gpt-5.4-nano-2026-03-17') {
   const cleanBaseUri = baseUri.replace(/\/$/, '');
   const url = `${cleanBaseUri}/openapi/chat/completions`;
   

@@ -426,7 +426,7 @@ export default function Home() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizeError, setOptimizeError] = useState("");
 
-  const [aiModel, setAiModel] = useState("google/gemini-3.7-flash");
+  const [aiModel, setAiModel] = useState("openai/gpt-5.4-nano-2026-03-17");
 
   // AI Recommend Voices State
   const [showRecommendModal, setShowRecommendModal] = useState(false);
@@ -549,7 +549,12 @@ export default function Home() {
     if (storedPass) setPassword(storedPass);
     if (storedProxyKey) setModelProxyKey(storedProxyKey);
     if (storedProxyExpires) setModelProxyExpiresAt(storedProxyExpires);
-    if (storedAiModel && AVAILABLE_AI_MODELS.includes(storedAiModel)) setAiModel(storedAiModel);
+    if (storedAiModel && AVAILABLE_AI_MODELS.includes(storedAiModel) && storedAiModel !== 'google/gemini-3.7-flash') {
+      setAiModel(storedAiModel);
+    } else if (storedAiModel === 'google/gemini-3.7-flash') {
+      setAiModel('openai/gpt-5.4-nano-2026-03-17');
+      localStorage.setItem('aiModel', 'openai/gpt-5.4-nano-2026-03-17');
+    }
 
     if ((storedUsername && storedKey) || storedPass) {
       setHasCredentials(true);
@@ -1348,7 +1353,7 @@ export default function Home() {
                         const res = await fetch('/api/verifyKagglePersona', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ kaggleUsername, kaggleKey })
+                          body: JSON.stringify({ kaggleUsername, kaggleKey, model: 'openai/gpt-5.4-nano-2026-03-17' })
                         });
                         const data = await res.json();
                         if (data.verified) {

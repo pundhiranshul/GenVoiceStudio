@@ -4,7 +4,7 @@ const KAGGLE_PROXY_MINT_URL = 'https://www.kaggle.com/api/v1/models.ModelProxyAp
 
 export async function POST(req: Request) {
   try {
-    const { kaggleUsername, kaggleKey } = await req.json();
+    const { kaggleUsername, kaggleKey, model } = await req.json();
 
     if (!kaggleUsername || !kaggleKey) {
       return NextResponse.json({ verified: false, error: 'Username and API Key are required' }, { status: 400 });
@@ -60,6 +60,7 @@ export async function POST(req: Request) {
     const url = `${cleanBaseUri}/openapi/chat/completions`;
 
     try {
+      const targetModel = model || 'openai/gpt-5.4-nano-2026-03-17';
       const testRes = await fetch(url, {
         method: 'POST',
         headers: {
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'google/gemini-3.7-flash',
+          model: targetModel,
           messages: [{ role: 'user', content: 'ping' }],
           max_tokens: 1
         })

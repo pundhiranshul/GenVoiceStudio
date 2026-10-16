@@ -33,7 +33,7 @@ async function mintProxyToken(username: string | null, key: string) {
   };
 }
 
-async function generateStory(token: string, baseUri: string, prompt: string, model: string = 'google/gemini-3.7-flash') {
+async function generateStory(token: string, baseUri: string, prompt: string, model: string = 'openai/gpt-5.4-nano-2026-03-17') {
   // Model Proxy URL formatting:
   // We append /openapi/chat/completions to the baseUri (e.g., https://mp-staging.kaggle.net/models)
   // This endpoint is an OpenAI-compatible REST API.

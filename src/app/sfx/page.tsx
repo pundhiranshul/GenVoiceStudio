@@ -54,7 +54,7 @@ export default function SFXStudio() {
   const [status, setStatus] = useState<Status>("idle");
   const [audioUrl, setAudioUrl] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-  const [aiModel, setAiModel] = useState("google/gemini-3.7-flash");
+  const [aiModel, setAiModel] = useState("openai/gpt-5.4-nano-2026-03-17");
 
   const [kaggleUsername, setKaggleUsername] = useState("");
   const [kaggleKey, setKaggleKey] = useState("");
@@ -179,7 +179,12 @@ export default function SFXStudio() {
     setIsDark(document.documentElement.classList.contains('dark'));
     
     const storedAiModel = localStorage.getItem('aiModel');
-    if (storedAiModel && AVAILABLE_AI_MODELS.includes(storedAiModel)) setAiModel(storedAiModel);
+    if (storedAiModel && AVAILABLE_AI_MODELS.includes(storedAiModel) && storedAiModel !== 'google/gemini-3.7-flash') {
+      setAiModel(storedAiModel);
+    } else if (storedAiModel === 'google/gemini-3.7-flash') {
+      setAiModel('openai/gpt-5.4-nano-2026-03-17');
+      localStorage.setItem('aiModel', 'openai/gpt-5.4-nano-2026-03-17');
+    }
   }, []);
   
   useEffect(() => {
@@ -555,7 +560,7 @@ export default function SFXStudio() {
                         const res = await fetch('/api/verifyKagglePersona', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ kaggleUsername, kaggleKey })
+                          body: JSON.stringify({ kaggleUsername, kaggleKey, model: 'openai/gpt-5.4-nano-2026-03-17' })
                         });
                         const data = await res.json();
                         if (data.verified) {
