@@ -32,9 +32,9 @@ export interface TemplateAvatar {
 }
 
 export const TEMPLATE_AVATARS: TemplateAvatar[] = [
-  { id: 'tpl_1', url: '/avatars/avatar_tpl_1.jpg', label: 'Portrait 1' },
-  { id: 'tpl_2', url: '/avatars/avatar_tpl_2.jpg', label: 'Portrait 2' },
-  { id: 'tpl_3', url: '/avatars/avatar_tpl_3.jpg', label: 'Portrait 3' },
+  { id: 'tpl_1', url: '/avatars/avatar_daniel.jpg', label: 'Portrait 1' },
+  { id: 'tpl_2', url: '/avatars/avatar_river.jpg', label: 'Portrait 2' },
+  { id: 'tpl_3', url: '/avatars/avatar_roger.jpg', label: 'Portrait 3' },
 ];
 
 /**
