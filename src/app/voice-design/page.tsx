@@ -90,7 +90,7 @@ type AudioFile = { name: string; url: string };
 type CustomVoice = { id: string; name: string; data: string; transcript: string; isPreset?: boolean; avatar?: string; type?: string; };
 
 const PRESET_VOICES: CustomVoice[] = [
-  { id: "std_S0", name: "Standard AI Voice (S0)", data: "", transcript: "", isPreset: true, avatar: "/avatars/avatar_standard.jpg" },
+  { id: "std_S0", name: "Oliver - Poetic and Dramatic", data: "/presets/std_voice.wav", transcript: "(inhale) Choose my voice—this is only a sentence for an audio check, but my heart won't believe it: \"The candle remembers the storm.\" (pauses) (exhale) Now go on—test me, and if my voice wavers, forgive me.", isPreset: true, avatar: "/avatars/avatar_standard.jpg" },
   { id: "el_v3_15", name: "Ellen - Serious, Direct and Confident", data: "/presets/el_15.mp3", transcript: "Freedom kindles the flames of hope in every heart.", isPreset: true, avatar: "/avatars/avatar_ellen.jpg" },
   { id: "el_v3_16", name: "James - Husky, Engaging and Bold", data: "/presets/el_16.mp3", transcript: "Cleanliness is the key to a healthy, happy life.", isPreset: true, avatar: "/avatars/avatar_james.jpg" },
   { id: "el_v3_17", name: "Amy - Natural and Sweet", data: "/presets/el_17.mp3", transcript: "Life can be funny sometimes with all the hills and valleys, but without the lows, you'd never get to experience the highs.", isPreset: true, avatar: "/avatars/avatar_amy.jpg" },

@@ -89,7 +89,7 @@ type AudioFile = { name: string; url: string };
 type CustomVoice = { id: string; name: string; data: string; transcript: string; isPreset?: boolean; avatar?: string; type?: string; };
 
 const PRESET_VOICES: CustomVoice[] = [
-  { id: "std_S0", name: "Standard AI Voice (S0)", data: "", transcript: "", isPreset: true, avatar: "/avatars/avatar_standard.jpg" },
+  { id: "std_S0", name: "Oliver - Poetic and Dramatic", data: "/presets/std_voice.wav", transcript: "(inhale) Choose my voice—this is only a sentence for an audio check, but my heart won't believe it: \"The candle remembers the storm.\" (pauses) (exhale) Now go on—test me, and if my voice wavers, forgive me.", isPreset: true, avatar: "/avatars/avatar_standard.jpg" },
   { id: "el_v3_15", name: "Ellen - Serious, Direct and Confident", data: "/presets/el_15.mp3", transcript: "Freedom kindles the flames of hope in every heart.", isPreset: true, avatar: "/avatars/avatar_ellen.jpg" },
   { id: "el_v3_16", name: "James - Husky, Engaging and Bold", data: "/presets/el_16.mp3", transcript: "Cleanliness is the key to a healthy, happy life.", isPreset: true, avatar: "/avatars/avatar_james.jpg" },
   { id: "el_v3_17", name: "Amy - Natural and Sweet", data: "/presets/el_17.mp3", transcript: "Life can be funny sometimes with all the hills and valleys, but without the lows, you'd never get to experience the highs.", isPreset: true, avatar: "/avatars/avatar_amy.jpg" },
@@ -1096,7 +1096,7 @@ export default function Home() {
 
     setText(finalNewText);
 
-    if (status === 'complete' && audios.length > 0 && !isEditorOpen) {
+    if (status === 'complete' && (audios.length > 0 || stitchedAudioUrl) && !isEditorOpen) {
       setAudios([]);
       setStitchedAudioUrl(null);
       setStatus('idle');
@@ -1941,15 +1941,195 @@ export default function Home() {
             )}
             </div>
 
+
+
+            {/* Generated Output Audio Section (Full Width Dedicated Card) */}
+            {(stitchedAudioUrl || finalAudios.length > 0 || chunkAudios.length > 0) && (status === "complete" || status === "generating") && (
+              <div className="mt-6 w-full animate-in slide-in-from-bottom-3 fade-in duration-300">
+                <div className="bg-bg-panel border border-border-color rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col gap-3.5">
+                  <div className="flex items-center justify-between pb-2.5 border-b border-border-subtle">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <h3 className="text-xs font-semibold tracking-wider text-text-primary uppercase">Generated Output</h3>
+                    </div>
+                    {status === "complete" && (
+                      <span className="text-[11px] font-medium text-text-muted bg-bg-input px-2.5 py-0.5 rounded-full border border-border-subtle">
+                        Ready to download
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-3 w-full">
+                    {isStitching ? (
+                      <div className="p-4 bg-bg-input border border-border-color rounded-xl flex items-center gap-3 text-sm text-text-primary">
+                        <Loader2 size={16} className="animate-spin text-text-muted" />
+                        <span>Stitching audio chunks...</span>
+                      </div>
+                    ) : stitchedAudioUrl ? (
+                      <AudioPlayer src={stitchedAudioUrl} name="GenVoice_Final.wav" />
+                    ) : finalAudios.map((a, i) => (
+                      <AudioPlayer key={i} src={a.url} name={getDownloadFilename(a.name)} />
+                    ))}
+                  </div>
+
+                  {/* Raw Chunks Toggle */}
+                  {chunkAudios.length > 0 && !isEditorOpen && (
+                    <button 
+                      onClick={() => setIsEditorOpen(true)}
+                      className="mt-2 w-full flex items-center justify-between p-3.5 border border-border-subtle rounded-xl bg-bg-base/50 hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color group"
+                    >
+                      <span className="flex items-center gap-2 text-xs font-medium text-text-secondary">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent-bg" />
+                        Chunk Editor ({chunkAudios.length} parts)
+                      </span>
+                      <span className="text-text-muted text-[11px] bg-bg-input px-2 py-0.5 rounded-md group-hover:bg-bg-panel transition-colors">
+                        Edit Crossfade
+                      </span>
+                    </button>
+                  )}
+
+                  {/* The Chunk Editor View */}
+                  {/* The Chunk Editor View */}
+                {chunkAudios.length > 0 && isEditorOpen && (
+                  <div className="mt-8 flex flex-col gap-4 animate-in fade-in duration-200">
+                    <div className="flex justify-between items-center mb-2 pb-4 border-b border-border-subtle sticky top-0 bg-bg-base z-20">
+                      <div className="flex items-center gap-4">
+                        <button 
+                          onClick={() => setIsEditorOpen(false)}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-input text-text-primary hover:bg-bg-hover transition-colors text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                        >
+                          <ArrowLeft size={16} /> Back
+                        </button>
+                        <h2 className="text-lg font-semibold text-text-primary">Chunk Editor</h2>
+                      </div>
+                      
+                      <button
+                        onClick={handleDownloadZip}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bg-panel border border-border-color text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+                        title="Download all chunks as ZIP"
+                      >
+                        <Download size={14} />
+                        Download ZIP
+                      </button>
+                    </div>
+                    
+                    <div className="bg-bg-input/30 border border-border-subtle rounded-xl p-3 mb-2 flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full border border-border-color flex items-center justify-center text-[10px] font-bold text-text-muted shrink-0 mt-0.5">
+                        i
+                      </div>
+                      <div className="text-xs text-text-secondary leading-relaxed">
+                        <strong className="text-text-primary block mb-1">Crossfade vs Trim</strong>
+                        <strong>Crossfade</strong> smoothly blends the overlap between this chunk and the next. <strong>Trim</strong> performs a hard cut, removing the specified duration from the end of the chunk without blending. <strong>Negative values</strong> add silence (padding) between chunks instead of trimming. Changes apply instantly.
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 max-h-[700px] overflow-y-auto pr-2 pb-2">
+                      {chunkAudios.map((a, i) => (
+                          <div key={i}>
+                            <AudioPlayer src={a.url} name={getDownloadFilename(a.name)} transcript={chunks[i]} />
+                            {i < chunkAudios.length - 1 && (
+                              <div className="flex flex-col gap-3 bg-bg-input/20 p-4 rounded-xl border border-border-subtle ml-6 relative before:absolute before:left-[-12px] before:top-1/2 before:w-3 before:h-px before:bg-border-subtle">
+                                <div className="flex flex-wrap justify-between items-center gap-3">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1.5 p-1 bg-bg-panel border border-border-color rounded-lg">
+                                      <button
+                                        onClick={() => {
+                                          const modes = [...chunkTrimModes];
+                                          modes[i] = 'crossfade';
+                                          setChunkTrimModes(modes);
+                                        }}
+                                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                                          (chunkTrimModes[i] || 'crossfade') === 'crossfade' 
+                                            ? 'bg-accent-bg text-accent-text shadow-sm' 
+                                            : 'text-text-muted hover:text-text-primary hover:bg-bg-hover'
+                                        }`}
+                                      >
+                                        Crossfade
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          const modes = [...chunkTrimModes];
+                                          modes[i] = 'trim';
+                                          setChunkTrimModes(modes);
+                                        }}
+                                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                                          chunkTrimModes[i] === 'trim' 
+                                            ? 'bg-accent-bg text-accent-text shadow-sm' 
+                                            : 'text-text-muted hover:text-text-primary hover:bg-bg-hover'
+                                        }`}
+                                      >
+                                        Trim
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => {
+                                        const currentTrim = chunkTrims[i] || 0;
+                                        const currentMode = chunkTrimModes[i] || 'crossfade';
+                                        setChunkTrims(Array(chunkAudios.length - 1).fill(currentTrim));
+                                        setChunkTrimModes(Array(chunkAudios.length - 1).fill(currentMode));
+                                      }}
+                                      className="text-[10px] bg-bg-panel border border-border-color hover:bg-bg-hover text-text-muted hover:text-text-primary px-2 py-1 rounded transition-colors whitespace-nowrap"
+                                      title="Apply this exact setting to all chunks"
+                                    >
+                                      Apply to All
+                                    </button>
+                                    <input
+                                      type="number"
+                                      min="-2000"
+                                      value={chunkTrims[i] || 0}
+                                      onChange={(e) => {
+                                        const newTrims = [...chunkTrims];
+                                        newTrims[i] = parseInt(e.target.value) || 0;
+                                        setChunkTrims(newTrims);
+                                      }}
+                                      className="w-16 bg-bg-base border border-border-subtle rounded-md px-2 py-1 text-right font-mono text-sm text-text-primary outline-none focus:border-accent-bg transition-colors shadow-sm"
+                                    />
+                                    <span className="text-xs text-text-muted font-medium">ms</span>
+                                  </div>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="-2000"
+                                  max="2000"
+                                  step="10"
+                                  value={chunkTrims[i] || 0}
+                                  onChange={(e) => {
+                                    const newTrims = [...chunkTrims];
+                                    newTrims[i] = parseInt(e.target.value) || 0;
+                                    setChunkTrims(newTrims);
+                                  }}
+                                  className="w-full h-1.5 bg-border-color rounded-full appearance-none cursor-pointer accent-accent-bg"
+                                />
+                                <div className="flex justify-between text-[10px] font-medium text-text-muted/60 mt-0.5 px-1">
+                                  <span>-2s</span>
+                                  <span>-1s</span>
+                                  <span>0s</span>
+                                  <span>1s</span>
+                                  <span>2s</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+                </div>
+              </div>
+            )}
+
             {/* Editor Footer (Actions & Status) */}
-            <div className="mt-8 flex flex-col lg:flex-row items-stretch lg:items-end justify-between border-t border-border-color pt-6 gap-6 shrink-0">
+            <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-t border-border-color pt-5 gap-4 shrink-0">
               
-              <div className="flex-1 w-full min-w-0 lg:pr-8">
-                {(status === "idle" || (status === "error" && message.includes("Voice Design Instruction"))) && finalAudios.length === 0 && (
+              <div className="flex-1 w-full min-w-0">
+                {(status === "idle" || (status === "error" && message.includes("Voice Design Instruction"))) && !stitchedAudioUrl && finalAudios.length === 0 && (
                   <div className="flex items-center gap-2 text-text-muted text-sm">
                     <Wand2 size={16} />
                     <span>
-                      'Select a voice and click Generate to begin.'
+                      Select a voice and click Generate to begin.
                     </span>
                   </div>
                 )}
@@ -1968,175 +2148,6 @@ export default function Home() {
                         : "Generation Failed: "}
                     </strong>
                     {message}
-                  </div>
-                )}
-
-                {/* Final Output Audio */}
-                {(stitchedAudioUrl || finalAudios.length > 0 || chunkAudios.length > 0) && (status === "complete" || status === "generating") && (
-                  <div className="animate-in slide-in-from-bottom-4 fade-in duration-500 w-full">
-                    <h3 className="text-xs font-semibold tracking-wider text-text-muted uppercase mb-3">Generated Output</h3>
-                    {false && generatedPreviewText && status === "complete" && (
-                      <div className="mb-4 p-3 bg-bg-input/50 border border-border-color rounded-xl text-sm italic text-text-secondary">
-                        "{generatedPreviewText}"
-                      </div>
-                    )}
-                    <div className="flex flex-col gap-3">
-                      {isStitching ? (
-                        <div className="p-4 bg-bg-input border border-border-color rounded-xl flex items-center gap-3 text-sm text-text-primary">
-                          <Loader2 size={16} className="animate-spin text-text-muted" />
-                          <span>Stitching audio chunks...</span>
-                        </div>
-                      ) : stitchedAudioUrl ? (
-                        <AudioPlayer src={stitchedAudioUrl} name="GenVoice_Final.wav" />
-                      ) : finalAudios.map((a, i) => (
-                        <AudioPlayer key={i} src={a.url} name={getDownloadFilename(a.name)} />
-                      ))}
-                    </div>
-
-                    {/* Raw Chunks Toggle */}
-                    {chunkAudios.length > 0 && !isEditorOpen && (
-                      <button 
-                        onClick={() => setIsEditorOpen(true)}
-                        className="mt-6 w-full flex items-center justify-between p-4 border border-border-subtle rounded-xl bg-bg-base/50 hover:bg-bg-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring-color group"
-                      >
-                        <span className="flex items-center gap-2 text-sm font-medium text-text-secondary">
-                          <span className="w-1.5 h-1.5 rounded-full bg-accent-bg" />
-                          Chunk Editor ({chunkAudios.length})
-                        </span>
-                        <span className="text-text-muted text-xs bg-bg-input px-2 py-1 rounded-md group-hover:bg-bg-panel transition-colors">
-                          Edit Crossfade
-                        </span>
-                      </button>
-                    )}
-
-                    {/* The Chunk Editor View */}
-                    {chunkAudios.length > 0 && isEditorOpen && (
-                      <div className="mt-8 flex flex-col gap-4 animate-in fade-in duration-200">
-                        <div className="flex justify-between items-center mb-2 pb-4 border-b border-border-subtle sticky top-0 bg-bg-base z-20">
-                          <div className="flex items-center gap-4">
-                            <button 
-                              onClick={() => setIsEditorOpen(false)}
-                              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-input text-text-primary hover:bg-bg-hover transition-colors text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
-                            >
-                              <ArrowLeft size={16} /> Back
-                            </button>
-                            <h2 className="text-lg font-semibold text-text-primary">Chunk Editor</h2>
-                          </div>
-                          
-                          <button
-                            onClick={handleDownloadZip}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bg-panel border border-border-color text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
-                            title="Download all chunks as ZIP"
-                          >
-                            <Download size={14} />
-                            Download ZIP
-                          </button>
-                        </div>
-                        
-                        <div className="bg-bg-input/30 border border-border-subtle rounded-xl p-3 mb-2 flex items-start gap-3">
-                          <div className="w-5 h-5 rounded-full border border-border-color flex items-center justify-center text-[10px] font-bold text-text-muted shrink-0 mt-0.5">
-                            i
-                          </div>
-                          <div className="text-xs text-text-secondary leading-relaxed">
-                            <strong className="text-text-primary block mb-1">Crossfade vs Trim</strong>
-                            <strong>Crossfade</strong> smoothly blends the overlap between this chunk and the next. <strong>Trim</strong> performs a hard cut, removing the specified duration from the end of the chunk without blending. <strong>Negative values</strong> add silence (padding) between chunks instead of trimming. Changes apply instantly.
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col gap-3 max-h-[700px] overflow-y-auto pr-2 pb-2">
-                          {chunkAudios.map((a, i) => (
-                              <div key={i}>
-                                <AudioPlayer src={a.url} name={getDownloadFilename(a.name)} transcript={chunks[i]} />
-                                {i < chunkAudios.length - 1 && (
-                                  <div className="flex flex-col gap-3 bg-bg-input/20 p-4 rounded-xl border border-border-subtle ml-6 relative before:absolute before:left-[-12px] before:top-1/2 before:w-3 before:h-px before:bg-border-subtle">
-                                    <div className="flex flex-wrap justify-between items-center gap-3">
-                                      <div className="flex items-center gap-3">
-                                        <div className="flex items-center gap-1.5 p-1 bg-bg-panel border border-border-color rounded-lg">
-                                          <button
-                                            onClick={() => {
-                                              const modes = [...chunkTrimModes];
-                                              modes[i] = 'crossfade';
-                                              setChunkTrimModes(modes);
-                                            }}
-                                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                                              (chunkTrimModes[i] || 'crossfade') === 'crossfade' 
-                                                ? 'bg-accent-bg text-accent-text shadow-sm' 
-                                                : 'text-text-muted hover:text-text-primary hover:bg-bg-hover'
-                                            }`}
-                                          >
-                                            Crossfade
-                                          </button>
-                                          <button
-                                            onClick={() => {
-                                              const modes = [...chunkTrimModes];
-                                              modes[i] = 'trim';
-                                              setChunkTrimModes(modes);
-                                            }}
-                                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                                              chunkTrimModes[i] === 'trim' 
-                                                ? 'bg-accent-bg text-accent-text shadow-sm' 
-                                                : 'text-text-muted hover:text-text-primary hover:bg-bg-hover'
-                                            }`}
-                                          >
-                                            Trim
-                                          </button>
-                                        </div>
-                                      </div>
-
-                                      <div className="flex items-center gap-2">
-                                        <button
-                                          onClick={() => {
-                                            const currentTrim = chunkTrims[i] || 0;
-                                            const currentMode = chunkTrimModes[i] || 'crossfade';
-                                            setChunkTrims(Array(chunkAudios.length - 1).fill(currentTrim));
-                                            setChunkTrimModes(Array(chunkAudios.length - 1).fill(currentMode));
-                                          }}
-                                          className="text-[10px] bg-bg-panel border border-border-color hover:bg-bg-hover text-text-muted hover:text-text-primary px-2 py-1 rounded transition-colors whitespace-nowrap"
-                                          title="Apply this exact setting to all chunks"
-                                        >
-                                          Apply to All
-                                        </button>
-                                        <input
-                                          type="number"
-                                          min="-2000"
-                                          value={chunkTrims[i] || 0}
-                                          onChange={(e) => {
-                                            const newTrims = [...chunkTrims];
-                                            newTrims[i] = parseInt(e.target.value) || 0;
-                                            setChunkTrims(newTrims);
-                                          }}
-                                          className="w-16 bg-bg-base border border-border-subtle rounded-md px-2 py-1 text-right font-mono text-sm text-text-primary outline-none focus:border-accent-bg transition-colors shadow-sm"
-                                        />
-                                        <span className="text-xs text-text-muted font-medium">ms</span>
-                                      </div>
-                                    </div>
-                                    <input
-                                      type="range"
-                                      min="-2000"
-                                      max="2000"
-                                      step="10"
-                                      value={chunkTrims[i] || 0}
-                                      onChange={(e) => {
-                                        const newTrims = [...chunkTrims];
-                                        newTrims[i] = parseInt(e.target.value) || 0;
-                                        setChunkTrims(newTrims);
-                                      }}
-                                      className="w-full h-1.5 bg-border-color rounded-full appearance-none cursor-pointer accent-accent-bg"
-                                    />
-                                    <div className="flex justify-between text-[10px] font-medium text-text-muted/60 mt-0.5 px-1">
-                                      <span>-2s</span>
-                                      <span>-1s</span>
-                                      <span>0s</span>
-                                      <span>1s</span>
-                                      <span>2s</span>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -2166,27 +2177,27 @@ export default function Home() {
 
               {/* Action Buttons */}
               {!isEditorOpen && (
-                <div className="flex flex-col sm:flex-row items-center gap-3 ml-0 sm:ml-6 shrink-0 w-full sm:w-auto mt-4 sm:mt-0">
+                <div className="flex flex-wrap items-center justify-end gap-3 shrink-0">
 
                   {isGen ? (
                     <button
                       onClick={stopRun}
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-input text-text-primary hover:bg-bg-hover-strong border border-border-color font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-bg-input text-text-primary hover:bg-bg-hover-strong border border-border-color font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                     >
                       <Square size={16} className="fill-current text-text-secondary" />
                       Stop
                     </button>
-                  ) : (status === "complete" && (finalAudios.length > 0 || chunkAudios.length > 0)) ? (
+                  ) : (status === "complete" && (stitchedAudioUrl || finalAudios.length > 0 || chunkAudios.length > 0)) ? (
                     <>
                       <button
                         onClick={handleNewScript}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                       >
                         New Script
                       </button>
                       <button
                         onClick={() => { setAudios([]); setStitchedAudioUrl(null); setStatus("idle"); }}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                       >
                         Edit Script
                       </button>
@@ -2194,7 +2205,7 @@ export default function Home() {
                         id="main-generate-btn"
                         onClick={handleGenerate}
                         disabled={isGen || isStoryGen || !text.trim()}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color shadow-sm"
                       >
                         Retry Generation
                       </button>
@@ -2204,14 +2215,14 @@ export default function Home() {
                         <button
                           onClick={() => { setShowStoryModal(true); setStoryError(""); }}
                           disabled={isGen || isStoryGen || isOptimizing}
-                          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                          className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
                         >
                           {isStoryGen ? <Loader2 size={16} className="animate-spin" /> : <><Sparkles size={16} /> AI Write Story</>}
                         </button>
                         <button
                           onClick={() => { setShowOptimizeModal(true); setOptimizeError(""); }}
                           disabled={isGen || isStoryGen || isOptimizing || !text.trim()}
-                          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isOptimizing ? <Loader2 size={16} className="animate-spin" /> : <><Wand2 size={16} /> Optimize Script</>}
                         </button>
@@ -2219,7 +2230,7 @@ export default function Home() {
                           id="main-generate-btn"
                           onClick={handleGenerate}
                           disabled={isGen || isStoryGen || !text.trim()}
-                          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color"
+                          className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-accent-bg text-accent-text hover:bg-accent-bg/90 disabled:opacity-50 disabled:hover:bg-accent-bg font-medium text-sm transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-ring-color shadow-sm"
                         >
                           Generate Speech
                         </button>
