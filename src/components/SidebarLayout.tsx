@@ -287,7 +287,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
 
         {/* Docked Feedback Button in Left Panel */}
         {isFeedbackDocked && !isFeedbackSubmitted && (
-          <div className="px-3 pb-2 pt-1 border-t border-border-color shrink-0 overflow-hidden">
+          <div className="h-16 px-3 border-t border-border-color flex items-center shrink-0 overflow-hidden">
             <button
               onClick={handleOpenManualFeedback}
               className="w-full h-11 flex items-center px-1.5 rounded-xl transition-all outline-none border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium group cursor-pointer shrink-0"
@@ -309,7 +309,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Bottom Area (About & Report Bug) */}
-        <div className="p-3 border-t border-border-color flex flex-col gap-1 shrink-0 overflow-hidden">
+        <div className="h-16 px-3 border-t border-border-color flex items-center shrink-0 overflow-hidden">
           {bottomItems.map((item) => {
             const Icon = item.icon;
             const content = (
@@ -322,7 +322,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
                     isCollapsed ? "max-w-0 opacity-0 pointer-events-none" : "max-w-[180px] opacity-100 ml-1.5"
                   }`}
                 >
-                  <span className="whitespace-nowrap text-sm">{item.name}</span>
+                  <span className="whitespace-nowrap text-sm font-medium">{item.name}</span>
                 </div>
               </>
             );
@@ -346,39 +346,60 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* User Profile / Status */}
-        <div className={`p-3 border-t border-border-color bg-bg-panel/50 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} overflow-hidden min-h-[56px] shrink-0`}>
-          <div 
-            className={`overflow-hidden transition-all duration-300 ease-in-out flex flex-col justify-center ${
-              isCollapsed ? "max-w-0 opacity-0 pointer-events-none" : "max-w-[170px] opacity-100 pl-1.5 pr-1"
-            }`}
-          >
-            <span className="text-xs font-semibold text-text-primary truncate leading-tight">
-              {authInfo.username || 'Studio User'}
-            </span>
-            <span className="text-[10px] text-text-muted font-medium tracking-wide truncate">
-              {authInfo.authType === 'kaggle' ? 'Kaggle Authenticated' : authInfo.authType === 'admin' ? 'Admin Access' : 'Not Signed In'}
-            </span>
-          </div>
-          {authInfo.isAuthenticated && (
+        <div className="h-16 px-3 border-t border-border-color bg-bg-panel/50 flex items-center shrink-0 overflow-hidden">
+          {authInfo.isAuthenticated ? (
             <button
               onClick={() => setShowSignOut(true)}
-              className={`${
-                isCollapsed ? "w-11 h-11" : "p-2"
-              } flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-bg-hover rounded-xl transition-colors shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring-color`}
+              className="flex items-center h-11 w-full px-1.5 rounded-xl transition-colors text-text-secondary hover:bg-bg-hover hover:text-red-400 outline-none shrink-0 group text-left"
               title="Sign Out (flushes auth, keeps your generated items)"
               aria-label="Sign Out"
             >
-              <LogOut size={16} />
+              <div className="w-11 h-11 flex items-center justify-center shrink-0">
+                <LogOut size={16} className="shrink-0 transition-colors group-hover:text-red-400" />
+              </div>
+              <div 
+                className={`overflow-hidden transition-all duration-300 ease-in-out flex flex-col justify-center min-w-0 ${
+                  isCollapsed ? "max-w-0 opacity-0 pointer-events-none" : "max-w-[170px] opacity-100 ml-1.5"
+                }`}
+              >
+                <span className="text-xs font-semibold text-text-primary group-hover:text-red-400 transition-colors truncate leading-tight">
+                  {authInfo.username || 'Studio User'}
+                </span>
+                <span className="text-[10px] text-text-muted font-medium tracking-wide truncate">
+                  {authInfo.authType === 'kaggle' ? 'Kaggle Authenticated' : authInfo.authType === 'admin' ? 'Admin Access' : 'Sign Out'}
+                </span>
+              </div>
             </button>
+          ) : (
+            <div className="flex items-center h-11 w-full px-1.5 shrink-0">
+              <div className="w-11 h-11 flex items-center justify-center shrink-0">
+                <LogOut size={16} className="shrink-0 opacity-30 text-text-muted" />
+              </div>
+              <div 
+                className={`overflow-hidden transition-all duration-300 ease-in-out flex flex-col justify-center min-w-0 ${
+                  isCollapsed ? "max-w-0 opacity-0 pointer-events-none" : "max-w-[170px] opacity-100 ml-1.5"
+                }`}
+              >
+                <span className="text-xs font-semibold text-text-muted truncate leading-tight">
+                  Not Signed In
+                </span>
+              </div>
+            </div>
           )}
         </div>
 
         {/* Collapse Toggle (Desktop only) */}
         <button 
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden md:flex absolute -right-3 top-20 w-6 h-6 bg-bg-panel border border-border-color rounded-full items-center justify-center text-text-muted hover:text-text-primary shadow-sm z-[100] transition-transform hover:scale-110"
+          className="hidden md:flex absolute -right-3 top-5 w-6 h-6 bg-bg-panel border border-border-color rounded-full items-center justify-center text-black dark:text-white hover:bg-bg-hover shadow-sm z-[100] transition-all hover:scale-110 cursor-pointer"
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          {isCollapsed ? (
+            <ChevronRight size={14} strokeWidth={2.5} className="text-black dark:text-white" />
+          ) : (
+            <ChevronLeft size={14} strokeWidth={2.5} className="text-black dark:text-white" />
+          )}
         </button>
       </aside>
 
