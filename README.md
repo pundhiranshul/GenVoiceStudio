@@ -14,7 +14,11 @@
   [![Model](https://img.shields.io/badge/Breeze_TTS_2-HuggingFace-ffd21e?style=flat-square&logo=huggingface&logoColor=black)](https://huggingface.co/BreezeBlue/Breeze-TTS-2)
   [![License](https://img.shields.io/badge/License-MIT-22c55e?style=flat-square)](./LICENSE)
 
-  [**Explore the Live Studio →**](https://gen-voice-eight.vercel.app/) &nbsp;&nbsp;•&nbsp;&nbsp; [**▶️ Play Audio Sample**](https://gen-voice-eight.vercel.app/samples/genvoice_voice_1791392674247.mp3)
+  <p align="center">
+    <a href="https://gen-voice-eight.vercel.app/" target="_blank" rel="noopener noreferrer"><strong>Explore the Live Studio →</strong></a>
+    &nbsp;&nbsp;•&nbsp;&nbsp;
+    <a href="https://gen-voice-eight.vercel.app/samples/genvoice_voice_1791392674247.mp3" target="_blank" rel="noopener noreferrer"><strong>▶️ Play Audio Sample ↗</strong></a>
+  </p>
 
 </div>
 
@@ -70,9 +74,9 @@ When generating speech, the neural acoustic pipeline interprets embedded vocal m
 
 Listen to this long-form dramatic narration generated entirely end-to-end on GenVoice Studio (*The Autobiography of Albert Einstein*):
 
-- [▶️ **Play Audio Sample**](https://gen-voice-eight.vercel.app/samples/genvoice_voice_1791392674247.mp3)
-- [🎧 **Play in GitHub Audio Viewer**](https://github.com/pundhiranshul/GenVoiceStudio/blob/main/public/samples/genvoice_voice_1791392674247.mp3)
-- [⬇️ **Download Master Audio (WAV, 24.9 MB)**](https://github.com/pundhiranshul/GenVoiceStudio/raw/main/public/samples/genvoice_voice_1791392674247.wav)
+- <a href="https://gen-voice-eight.vercel.app/samples/genvoice_voice_1791392674247.mp3" target="_blank" rel="noopener noreferrer">▶️ <strong>Play Audio Sample ↗</strong></a>
+- <a href="https://github.com/pundhiranshul/GenVoiceStudio/blob/main/public/samples/genvoice_voice_1791392674247.mp3" target="_blank" rel="noopener noreferrer">🎧 <strong>Play in GitHub Audio Viewer ↗</strong></a>
+- <a href="https://github.com/pundhiranshul/GenVoiceStudio/raw/main/public/samples/genvoice_voice_1791392674247.wav" target="_blank" rel="noopener noreferrer">⬇️ <strong>Download Master Audio (WAV, 24.9 MB)</strong></a>
 
 ---
 

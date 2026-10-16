@@ -27,6 +27,7 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
   const modalRef = useRef<HTMLDivElement>(null);
@@ -90,8 +91,9 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
       activeAudioRef.current = null;
     }
 
-    if (playingId === voice.id) {
+    if (playingId === voice.id || loadingId === voice.id) {
       setPlayingId(null);
+      setLoadingId(null);
     } else {
       let audio = audioCacheRef.current[voice.id];
       if (!audio) {
@@ -100,13 +102,40 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
       }
       
       audio.currentTime = 0;
+
+      // Check if audio has already buffered and can play immediately
+      const isReady = audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA;
+      if (!isReady) {
+        setLoadingId(voice.id);
+      }
+      setPlayingId(voice.id);
+
+      audio.onplaying = () => {
+        setLoadingId(null);
+      };
+      audio.oncanplay = () => {
+        setLoadingId(null);
+      };
+      audio.onwaiting = () => {
+        setLoadingId(voice.id);
+      };
       audio.onended = () => {
         setPlayingId(null);
+        setLoadingId(null);
         activeAudioRef.current = null;
       };
-      audio.play().catch(err => console.error("Preview play failed:", err));
+      audio.onerror = () => {
+        setPlayingId(null);
+        setLoadingId(null);
+        activeAudioRef.current = null;
+      };
+      
       activeAudioRef.current = audio;
-      setPlayingId(voice.id);
+      audio.play().catch(err => {
+        console.error("Preview play failed:", err);
+        setPlayingId(null);
+        setLoadingId(null);
+      });
     }
   };
 
@@ -137,6 +166,7 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
       activeAudioRef.current.currentTime = 0;
       activeAudioRef.current = null;
       setPlayingId(null);
+      setLoadingId(null);
     }
   }, [isOpen]);
 
@@ -271,9 +301,41 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
                                   className={`transition-opacity duration-200 ${playingId === voice.id ? 'opacity-0' : 'group-hover/play:opacity-0'} ${selectedId === voice.id ? 'text-text-primary' : 'text-text-secondary'}`} 
                                 />
                               )}
-                              <div className={`absolute inset-0 flex items-center justify-center ${voiceAvatar ? 'bg-black/60 backdrop-blur-[1px]' : 'bg-zinc-600'} transition-opacity duration-150 ${playingId === voice.id ? 'opacity-100' : 'opacity-0 group-hover/play:opacity-100'}`}>
-                                {playingId === voice.id ? <Pause size={14} className="text-white" /> : <Play size={14} className="text-white ml-0.5" />}
-                              </div>
+                              {/* Pizza slice circular loading inside the picture itself */}
+                              {loadingId === voice.id ? (
+                                <div 
+                                  className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 backdrop-blur-[0.5px] rounded-full overflow-hidden pointer-events-none"
+                                  title="Loading audio..."
+                                >
+                                  <svg viewBox="0 0 36 36" className="w-full h-full animate-spin">
+                                    {/* Black tint circular background with subtle shadow */}
+                                    <circle cx="18" cy="18" r="17.5" fill="rgba(0, 0, 0, 0.4)" />
+                                    
+                                    {/* Black tint pizza slice filler with clean white outline */}
+                                    <path
+                                      d="M 18 18 L 18 0 A 18 18 0 0 1 33.59 9.00 Z"
+                                      fill="rgba(0, 0, 0, 0.92)"
+                                      stroke="rgba(255, 255, 255, 0.55)"
+                                      strokeWidth="0.9"
+                                      strokeLinejoin="round"
+                                    />
+                                    {/* Outer crust rim highlight */}
+                                    <path
+                                      d="M 18 0 A 18 18 0 0 1 33.59 9.00"
+                                      fill="none"
+                                      stroke="rgba(255, 255, 255, 0.85)"
+                                      strokeWidth="1.6"
+                                      strokeLinecap="round"
+                                    />
+                                    {/* Pizza tip / center pivot */}
+                                    <circle cx="18" cy="18" r="2.2" fill="rgba(255, 255, 255, 0.85)" />
+                                  </svg>
+                                </div>
+                              ) : (
+                                <div className={`absolute inset-0 flex items-center justify-center ${voiceAvatar ? 'bg-black/60 backdrop-blur-[1px]' : 'bg-zinc-600'} transition-opacity duration-150 ${playingId === voice.id ? 'opacity-100' : 'opacity-0 group-hover/play:opacity-100'}`}>
+                                  {playingId === voice.id ? <Pause size={14} className="text-white" /> : <Play size={14} className="text-white ml-0.5" />}
+                                </div>
+                              )}
                             </button>
                           ) : (
                             <div className={`w-9 h-9 rounded-full bg-zinc-800 shrink-0 flex items-center justify-center overflow-hidden transition-all duration-150 ${
