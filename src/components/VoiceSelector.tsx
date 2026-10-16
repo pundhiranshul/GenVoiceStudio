@@ -146,9 +146,9 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="true"
         aria-expanded={isOpen}
-        className="flex items-center gap-2.5 px-3 py-2 bg-bg-panel border border-border-color rounded-lg hover:bg-accent-bg/5 transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none w-full sm:w-[280px]"
+        className="flex items-center gap-3 px-3.5 py-2.5 bg-bg-panel border border-border-color rounded-xl hover:bg-bg-hover/60 hover:border-border-color/80 transition-all focus-visible:ring-2 focus-visible:ring-ring-color outline-none w-full shadow-sm text-left group"
       >
-        <div className="w-6 h-6 rounded-full bg-zinc-800 shrink-0 flex items-center justify-center overflow-hidden ring-1 ring-border-color">
+        <div className="w-10 h-10 rounded-full bg-zinc-800 shrink-0 flex items-center justify-center overflow-hidden ring-1 ring-border-color/70">
           {getVoiceAvatar(selectedVoice) ? (
             <img
               src={getVoiceAvatar(selectedVoice)!}
@@ -156,13 +156,35 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
               className="w-full h-full object-cover"
             />
           ) : (
-            <User size={13} className="text-text-secondary" />
+            <User size={18} className="text-text-secondary" />
           )}
         </div>
-        <span className="text-sm font-medium text-text-primary truncate flex-1 text-left">
-          {selectedVoice ? selectedVoice.name : 'Select Voice'}
-        </span>
-        <ChevronDown size={16} className="text-text-muted shrink-0" />
+        {selectedVoice ? (
+          selectedVoice.name.includes(' - ') ? (
+            <div className="flex flex-col min-w-0 flex-1 text-left">
+              <span className="text-sm font-semibold text-text-primary truncate leading-tight">
+                {selectedVoice.name.split(' - ')[0]}
+              </span>
+              <span className="text-xs text-text-muted truncate leading-tight mt-0.5">
+                {selectedVoice.name.split(' - ').slice(1).join(' - ')}
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col min-w-0 flex-1 text-left">
+              <span className="text-sm font-semibold text-text-primary truncate leading-tight">
+                {selectedVoice.name}
+              </span>
+              <span className="text-xs text-text-muted truncate leading-tight mt-0.5">
+                {selectedVoice.isPreset ? 'Preset Voice' : (selectedVoice.type === 'recorded' ? 'Recorded Voice' : 'Custom Voice')}
+              </span>
+            </div>
+          )
+        ) : (
+          <span className="text-sm font-medium text-text-primary truncate flex-1 text-left">
+            Select Voice
+          </span>
+        )}
+        <ChevronDown size={18} className="text-text-muted shrink-0 transition-transform duration-200 group-hover:text-text-primary" />
       </button>
 
       {isOpen && (
