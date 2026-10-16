@@ -2278,7 +2278,7 @@ export default function Home() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-base/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-bg-panel border border-border-color rounded-2xl w-full max-w-lg p-6 flex flex-col gap-5 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium text-text-primary">Add Custom Voice</h3>
+              <h3 className="text-lg font-medium text-text-primary">Upload Custom Voice</h3>
               <button
                 type="button"
                 onClick={() => setShowUpload(false)}

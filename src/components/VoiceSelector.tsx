@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Search, Check, ChevronDown, User, X, Play, Pause, Trash2, HelpCircle, Download, Pencil } from 'lucide-react';
+import Link from 'next/link';
+import { Search, Check, ChevronDown, User, X, Play, Pause, Trash2, HelpCircle, Download, Pencil, Upload, Wand2 } from 'lucide-react';
 import { getVoiceAvatar } from '@/lib/avatars';
 
 export interface Voice {
@@ -481,16 +482,26 @@ export function VoiceSelector({ voices, selectedId, onSelect, onUploadClick, onD
               </div>
             </div>
 
-            <div className="p-4 border-t border-border-subtle bg-bg-input">
+            <div className="p-3 border-t border-border-subtle bg-bg-input flex items-center gap-2">
               <button
+                type="button"
                 onClick={() => {
                   setIsOpen(false);
                   onUploadClick();
                 }}
-                className="w-full py-2.5 rounded-lg text-sm font-medium bg-accent-bg text-accent-text hover:bg-accent-bg/90 transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-xs sm:text-sm font-medium bg-accent-bg text-accent-text hover:bg-accent-bg/90 transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none shadow-sm"
               >
-                + Add Custom Voice
+                <Upload size={14} className="shrink-0" />
+                <span>Upload Custom Voice</span>
               </button>
+              <Link
+                href="/voice-design"
+                onClick={() => setIsOpen(false)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-xs sm:text-sm font-medium bg-bg-panel text-text-primary border border-border-color hover:bg-bg-hover hover:border-accent-bg/40 transition-colors focus-visible:ring-2 focus-visible:ring-ring-color outline-none shadow-sm"
+              >
+                <Wand2 size={14} className="shrink-0 text-accent-bg" />
+                <span>Design Voice</span>
+              </Link>
             </div>
           </div>
         </div>
